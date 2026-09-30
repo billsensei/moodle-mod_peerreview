@@ -266,3 +266,13 @@ Where the built allocation code differs from the plan above:
   5. On a phone, the reviewee sees "Anonymous", 83.33 / 100 and the comment, but not the reviewer's name, neither next to the feedback nor on the details page. The gradebook user report shows 83.33.
 - **Plugin steps** (`tests/behat/behat_mod_peerreview.php`): pages "View", "Report", "Allocate", "Allocate random"; `I fill in the peer review rubric with:` (core's rubric step only works in mod_assign with JavaScript); `the peer review page should not scroll horizontally`.
 - **Grades in the scenario** follow core's rubric rule `lockzeropoints`: with levels of 1–3 points, the grade is score / maximum (5/6 = 83.33). The core rubric step cannot define 0-point levels.
+
+## 15. Implementation notes (Phase 9)
+
+- **CI**: `.github/workflows/ci.yml` is moodle-plugin-ci 4.5.11's `gha.dist.yml` with only the matrix changed: `MOODLE_500_STABLE`, PHP 8.2 and 8.3, PostgreSQL 17 and MariaDB 11 (4 jobs). It has not run on GitHub yet: there is no remote here. The same checks run locally with `scripts/ci-local.sh`.
+- **Databases**: the PHPUnit suite passes on MariaDB 11.8 and PostgreSQL 17.11 (local user-space servers). Behat and the dev site run on MariaDB only.
+- **phpmd** (advisory, `continue-on-error` in the workflow): five real findings fixed (unused variables, `count()` in loop conditions). The remaining 38 are left:
+  - signatures core forces on us: unused `$mform`, `$course`, `$type`, `$settingsnav`, `$output` parameters of callbacks and `export_for_template()`; `validate_defined_fields()` flag; `get_other_mapping()` returning bool; `peerreview_supports()` switch;
+  - core's naming of backup classes (`backup_peerreview_activity_structure_step`);
+  - complexity and coupling metrics of the allocator, the service, the privacy provider and some test classes. Splitting these now would change tested code just before the beta without changing behaviour; noted in ROADMAP.md.
+- **Maturity**: `MATURITY_BETA`, release 0.9.0, version 2026093003 (no database change, so no upgrade step).

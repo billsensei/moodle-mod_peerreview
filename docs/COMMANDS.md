@@ -287,3 +287,47 @@ Command:
 Expected output (summary): "Acceptance tests environment enabled on http://127.0.0.1:8001"; then "1 scenario (1 passed)"
 Actual output (phase 8): init exit 0; run "1 scenario (1 passed) 63 steps (63 passed)" in about 2 minutes, 3 runs in a row
 If it fails: read the HTML and PNG in ~/test/behat_dataroot/faildumps/<time>/; "not ready after 10 seconds" → raise behat_increasetimeout; "Could not open connection" → `scripts/behat.sh status`, then start.
+
+## Full local CI (scripts/ci-local.sh)
+Purpose: every moodle-plugin-ci check, in the same order as .github/workflows/ci.yml, with a pass/fail summary
+Run from: ~/test/moodle/mod/peerreview
+Command:
+    source scripts/env.sh && scripts/db.sh start && scripts/behat.sh start
+    scripts/ci-local.sh                 # or --no-phpunit / --no-behat
+Expected output (summary): the summary lists PASS for phplint, phpmd, phpcs, phpdoc, validate, savepoints, mustache, grunt, phpunit, behat
+Actual output (phase 9, first run): 8 PASS; mustache and grunt FAIL from the environment (no working Java; grunt could not restore read-only .git objects). Both were fixed (entries below). The final run is at the end of this file.
+If it fails: do not edit files in the plugin during the run (grunt restores a backup of the plugin and deletes newer files). phpmd always exits 0 and lists advisory violations; see DESIGN.md section 15.
+
+## Java for the mustache HTML validator (no root)
+Purpose: `moodle-plugin-ci mustache` runs `java -jar vnu.jar` on every rendered template
+Run from: any directory
+Command:
+    apt-get download openjdk-21-jre-headless && dpkg-deb -x openjdk-21-jre-headless_*.deb ~/.local/root
+    J=~/.local/root/usr/lib/jvm/java-21-openjdk-arm64
+    find $J -type l -lname '/etc/*' | while read -r l; do t=$(readlink "$l"); [ -e "$HOME/.local/root$t" ] && ln -sfn "$HOME/.local/root$t" "$l"; done
+    ln -sf $J/bin/java ~/.local/bin/java
+Expected output (summary): `java -version` prints openjdk 21; the mustache lint says "OK: Mustache rendered html succesfully" for each template
+Actual output (phase 9): openjdk version "21.0.12.1"; all 7 templates OK
+If it fails: "Error loading java.security file" → the /etc symlinks were not repointed; "Problem calling HTML validator" → java is not on PATH (`source scripts/env.sh`).
+
+## PostgreSQL for PHPUnit (no root)
+Purpose: run the plugin's PHPUnit tests on PostgreSQL as well as MariaDB
+Run from: ~/test/moodle
+Command:
+    apt-get download postgresql-17 postgresql-client-17 libpq5 && for d in *.deb; do dpkg-deb -x $d ~/.local/root; done
+    mod/peerreview/scripts/pg.sh init          # once; later: scripts/pg.sh start
+    export PEERREVIEW_TEST_DB=pgsql            # config.php switches to PostgreSQL only in this shell
+    php admin/tool/phpunit/cli/init.php
+    php vendor/bin/phpunit --testsuite mod_peerreview_testsuite
+Expected output (summary): the PHPUnit header shows "pgsql: 17.x"; OK
+Actual output (phase 9): "Php: 8.4.26, pgsql: 17.11 (Debian 17.11-0+deb13u1)"; OK (130 tests, 30351 assertions) in 1:20
+If it fails: "connection refused" → `scripts/pg.sh start`; tests on MariaDB again → open a new shell (unset PEERREVIEW_TEST_DB).
+
+## Upgrade the dev site after the beta bump
+Purpose: install version 2026093003 (MATURITY_BETA, release 0.9.0) on the dev site
+Run from: ~/test/moodle
+Command:
+    source mod/peerreview/scripts/env.sh && php admin/cli/upgrade.php --non-interactive && php admin/cli/purge_caches.php
+Expected output (summary): "-->mod_peerreview ++ 2026093003: Success" and "completed successfully"
+Actual output (phase 9): as expected; "Command line upgrade from 5.0.10+ (Build: 20260928) (2025041410.01) to 5.0.10+ ... completed successfully."
+If it fails: after the bump the PHPUnit and Behat sites must be initialised again (`php admin/tool/phpunit/cli/init.php`, `scripts/behat.sh init`).

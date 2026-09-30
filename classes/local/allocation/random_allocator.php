@@ -157,7 +157,8 @@ class random_allocator {
         // If the only students still short of reviews are few (a late joiner), the slots may only match each other.
         // Pad with the least-loaded students, one more slot at a time, until every slot can be placed.
         $best = null;
-        for ($count = $base; $count <= $base + count($members) && ($best === null || $best[2] > 0); $count++) {
+        $maxcount = $base + count($members);
+        for ($count = $base; $count <= $maxcount && ($best === null || $best[2] > 0); $count++) {
             for ($attempt = 0; $attempt < self::MATCH_ATTEMPTS && ($best === null || $best[2] > 0); $attempt++) {
                 $giveslots = $this->random->shuffleArray($this->pad($giveneeded, $given, $count));
                 $receiveslots = $this->random->shuffleArray($this->pad($receiveneeded, $received, $count));
@@ -209,7 +210,7 @@ class random_allocator {
         foreach ($slots as $userid) {
             $counts[$userid]++;
         }
-        while (count($slots) < $count) {
+        for ($have = count($slots); $have < $count; $have++) {
             $min = min($counts);
             $candidates = array_keys(array_filter($counts, static fn($c) => $c === $min));
             $pick = $candidates[$this->random->getInt(0, count($candidates) - 1)];

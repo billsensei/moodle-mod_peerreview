@@ -13,7 +13,10 @@ Moodle 5.0 activity plugin: lightweight in-class peer assessment. Spec: `~/test/
 ## Toolchain (no root; installed under ~/.local)
 - Every session: `source scripts/env.sh`, then `scripts/db.sh start`.
 - PHP 8.4.26 (extracted .debs in ~/.local/root, wrapper ~/.local/bin/php), Composer 2.10.3, Node 22.23.3 (Moodle needs >=22.11 <23).
-- DB: user-space MariaDB 11.8.6, 127.0.0.1:3307, db/user/pass `moodle`. PostgreSQL not installed (CI matrix covers it in Phase 9).
+- DB: user-space MariaDB 11.8.6, 127.0.0.1:3307, db/user/pass `moodle`.
+- PostgreSQL 17.11 (user space, `scripts/pg.sh init|start|stop`), 127.0.0.1:5433, db/user/pass `moodle`; used only for PHPUnit: `export PEERREVIEW_TEST_DB=pgsql` switches config.php (own phpunit_dataroot_pgsql).
+- Java 21 (OpenJDK headless, ~/.local/bin/java) for the mustache lint's HTML validator.
+- Full local CI: `scripts/ci-local.sh` (do not edit plugin files while it runs: the grunt step restores a backup of the plugin).
 - Behat: headless Chromium (system /usr/bin/chromium) driven directly by chromedriver 154 (~/.local/root/usr/bin, extracted from the chromium-driver .deb), no Selenium/Java. Site: 127.0.0.1:8001, prefix `bht_`, dataroot ~/test/behat_dataroot, fail dumps in its `faildumps/`. Use `scripts/behat.sh start|init|run|stop`. Not available: docker.
 
 ## Conventions

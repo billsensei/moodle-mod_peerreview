@@ -205,7 +205,7 @@ final class manager_test extends \advanced_testcase {
     public function test_late_joiner_leaves_existing_pairs_alone(): void {
         $this->resetAfterTest();
         global $DB;
-        [$manager, $course, $instance, $s, $teacher] = $this->setup_course(6);
+        [$manager, $course, $instance, , $teacher] = $this->setup_course(6);
         $plan = $manager->plan('random', ['n' => 2, 'crossgroup' => 0, 'replace' => 0], 5);
         $manager->save($plan->proposal, $teacher->id);
         $before = $DB->get_records('peerreview_alloc', null, 'id', 'id, reviewerid, revieweeid');

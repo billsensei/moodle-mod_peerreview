@@ -62,7 +62,7 @@ class progress {
     public function get_rows(int $groupid = 0): array {
         $students = $this->manager->get_students();
         $counts = [];
-        foreach ($students as $userid => $unused) {
+        foreach (array_keys($students) as $userid) {
             $counts[$userid] = ['gd' => 0, 'gt' => 0, 'rd' => 0, 'rt' => 0];
         }
         foreach ($this->manager->get_allocations() as $alloc) {

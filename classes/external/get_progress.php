@@ -69,7 +69,7 @@ class get_progress extends external_api {
             self::execute_parameters(),
             ['cmid' => $cmid, 'groupid' => $groupid]
         );
-        [$course, $cm] = get_course_and_cm_from_cmid($cmid, 'peerreview');
+        [, $cm] = get_course_and_cm_from_cmid($cmid, 'peerreview');
         $context = \context_module::instance($cm->id);
         self::validate_context($context);
         require_capability('mod/peerreview:viewallreviews', $context);
