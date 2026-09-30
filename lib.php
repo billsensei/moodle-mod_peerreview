@@ -44,6 +44,7 @@ function peerreview_supports($feature) {
         case FEATURE_ADVANCED_GRADING:
         case FEATURE_GROUPS:
         case FEATURE_GROUPINGS:
+        case FEATURE_COMPLETION_HAS_RULES:
             return true;
         case FEATURE_MOD_PURPOSE:
             return MOD_PURPOSE_ASSESSMENT;
@@ -212,14 +213,124 @@ function peerreview_grade_item_delete(stdClass $peerreview): int {
 }
 
 /**
- * Push grades to the gradebook. Aggregation arrives in phase 6; until then only the items are (re)created.
+ * Push grades to the gradebook: the received grade (mean/median of submitted reviews, or the teacher override) and,
+ * when enabled, the participation grade. Students with no counted review get no grade rather than zero.
+ *
+ * Modelled on assign_update_grades() in mod/assign/lib.php.
  *
  * @param stdClass $peerreview Instance record.
  * @param int $userid Specific user only, 0 for all.
- * @param bool $nullifnone Unused until phase 6.
+ * @param bool $nullifnone Not used: everyone asked about is always sent, with null when there is no grade.
  */
 function peerreview_update_grades(stdClass $peerreview, int $userid = 0, bool $nullifnone = true): void {
     peerreview_grade_item_update($peerreview);
+    (new \mod_peerreview\local\grade\gradebook($peerreview))->push($userid);
+}
+
+/**
+ * Cached information for the course page, including the custom completion rule.
+ *
+ * Modelled on assign_get_coursemodule_info() in mod/assign/lib.php.
+ *
+ * @param stdClass $coursemodule Course module record.
+ * @return cached_cm_info|false
+ */
+function peerreview_get_coursemodule_info($coursemodule) {
+    global $DB;
+
+    $fields = 'id, name, intro, introformat, completionallreviews';
+    if (!$peerreview = $DB->get_record('peerreview', ['id' => $coursemodule->instance], $fields)) {
+        return false;
+    }
+    $result = new cached_cm_info();
+    $result->name = $peerreview->name;
+    if ($coursemodule->showdescription) {
+        $result->content = format_module_intro('peerreview', $peerreview, $coursemodule->id, false);
+    }
+    if ($coursemodule->completion == COMPLETION_TRACKING_AUTOMATIC) {
+        $result->customdata['customcompletionrules']['completionallreviews'] = $peerreview->completionallreviews;
+    }
+    return $result;
+}
+
+/**
+ * Add the reset options to the course reset form.
+ *
+ * Modelled on workshop_reset_course_form_definition() in mod/workshop/lib.php.
+ *
+ * @param MoodleQuickForm $mform The reset form.
+ */
+function peerreview_reset_course_form_definition($mform): void {
+    $mform->addElement('header', 'peerreviewheader', get_string('modulenameplural', 'mod_peerreview'));
+    $mform->addElement('advcheckbox', 'reset_peerreview_reviews', get_string('resetreviews', 'mod_peerreview'));
+    $mform->addElement('advcheckbox', 'reset_peerreview_gradebook', get_string('resetgradebook', 'mod_peerreview'));
+    $mform->addHelpButton('reset_peerreview_gradebook', 'resetgradebook', 'mod_peerreview');
+}
+
+/**
+ * Defaults for the reset form.
+ *
+ * @param stdClass $course The course.
+ * @return array
+ */
+function peerreview_reset_course_form_defaults($course): array {
+    return ['reset_peerreview_reviews' => 1, 'reset_peerreview_gradebook' => 1];
+}
+
+/**
+ * Reset the gradebook items of all peer reviews in a course.
+ *
+ * @param int $courseid Course id.
+ * @param string $type Optional item type filter (unused).
+ */
+function peerreview_reset_gradebook($courseid, $type = ''): void {
+    global $DB;
+
+    foreach ($DB->get_records('peerreview', ['course' => $courseid]) as $peerreview) {
+        peerreview_grade_item_update($peerreview, 'reset');
+    }
+}
+
+/**
+ * Course reset: delete allocations, reviews (with their rubric/guide data), overrides and hide the feedback again.
+ *
+ * @param stdClass $data Reset form data.
+ * @return array Status rows for the reset report.
+ */
+function peerreview_reset_userdata($data): array {
+    global $DB;
+
+    $componentstr = get_string('modulenameplural', 'mod_peerreview');
+    $status = [];
+
+    if (!empty($data->reset_peerreview_reviews)) {
+        foreach ($DB->get_records('peerreview', ['course' => $data->courseid]) as $peerreview) {
+            $cm = get_coursemodule_from_instance('peerreview', $peerreview->id, $data->courseid);
+            if (!$cm) {
+                continue;
+            }
+            $context = context_module::instance($cm->id);
+            \core_grading\privacy\provider::delete_data_for_instances($context);
+            $DB->delete_records('peerreview_alloc', ['peerreviewid' => $peerreview->id]);
+            $DB->delete_records('peerreview_override', ['peerreviewid' => $peerreview->id]);
+            $DB->set_field('peerreview', 'feedbackreleased', 0, ['id' => $peerreview->id]);
+        }
+        $status[] = [
+            'component' => $componentstr,
+            'item' => get_string('resetreviews', 'mod_peerreview'),
+            'error' => false,
+        ];
+    }
+
+    if (!empty($data->reset_peerreview_gradebook)) {
+        peerreview_reset_gradebook($data->courseid);
+        $status[] = [
+            'component' => $componentstr,
+            'item' => get_string('resetgradebook', 'mod_peerreview'),
+            'error' => false,
+        ];
+    }
+    return $status;
 }
 
 /**
@@ -240,4 +351,22 @@ function peerreview_extend_settings_navigation(settings_navigation $settingsnav,
             navigation_node::TYPE_SETTING
         );
     }
+}
+
+/**
+ * User preferences this module may store (whether the teacher report refreshes itself).
+ *
+ * Modelled on mod_workshop_user_preferences() in mod/workshop/lib.php.
+ *
+ * @return array[]
+ */
+function mod_peerreview_user_preferences(): array {
+    return [
+        'mod_peerreview_autorefresh' => [
+            'type' => PARAM_BOOL,
+            'null' => NULL_NOT_ALLOWED,
+            'default' => true,
+            'permissioncallback' => [core_user::class, 'is_current_user'],
+        ],
+    ];
 }

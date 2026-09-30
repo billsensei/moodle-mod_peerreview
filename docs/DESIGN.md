@@ -226,3 +226,21 @@ Where the built allocation code differs from the plan above:
 - **Deleting an allocation** removes its grading instances and fillings via `\core_grading\privacy\provider::delete_data_for_instances()`.
 - **Read-only view** (`review.php` for teachers with `viewallreviews`, or for the reviewer once closed) shows the active instance; the reviewer's name is shown to teachers. Reviewees viewing received feedback (with anonymity) is Phase 5.
 - **Not built yet**: the student "Reviews to do" cards linking to `review.php` (Phase 5); grade aggregation and completion updates on submit (Phase 6).
+
+## 11. Implementation notes (Phase 5)
+
+- **Pages**: `view.php` (student cards + received feedback, teacher summary), `report.php` (progress table, group menu, live refresh, `?user=` drill-down that opens each review read-only), `feedback.php` (one received review, reviewer hidden when anonymous), `action.php` (POST + sesskey: release/hide), `export.php` (dataformat; needs `export` and `viewallreviews`).
+- **Web services**: `mod_peerreview_get_progress` (needs `viewallreviews`; respects group visibility through `group_access::resolve()`) and `mod_peerreview_set_feedback_release` (needs `releasefeedback`). `amd/src/progress.js` polls the first every 15 s with one request in flight at a time, pauses while the tab is hidden, and stores the on/off switch in the user preference `mod_peerreview_autorefresh`.
+- **Anonymity** is decided in `student_data::get_received()`: with `anonymous = 1` the reviewer record is never loaded into the data, so it cannot reach a template, the JSON context or the HTML. Received reviews are shown in a hash order unrelated to who wrote them. Self-reviews are shown to their author, labelled, and never counted in the grade.
+- **Counting rules** (`progress`): only allocations where both people are current active students count; a self-review counts as work done for participation but not as "received".
+- **Aggregation** (`grade\aggregator`) is here because the pages show the received grade; Phase 6 adds the gradebook push and the override editor on top of it (`peerreview_override` is already read).
+- **Mobile**: one-column cards from 375 px, two columns from 576 px, 44 px minimum touch targets, whole card is the link. This is CSS-verified only; there is no browser here, so the phone check is left to Phase 8 (Behat with a small window) or a manual look.
+- **Deviation**: no "Push grades to gradebook" button yet (Phase 6). The report already has release/hide and export.
+
+## 12. Implementation notes (Phase 6)
+
+- **Gradebook** (`local/grade/gradebook.php`): item 0 = received grade (aggregate or override), item 1 = participation (submitted / assigned as a percentage of its maximum, only when enabled). `peerreview_update_grades()` sends every student it is asked about, with `null` for "no grade", so a grade that stops applying (allocation deleted, override removed) is cleared rather than left behind. Nobody gets a zero for having no reviews.
+- **When grades are sent** (D5): only by the report's "Push grades to gradebook" button (capability `mod/peerreview:overridegrade`, the grade-affecting capability), by course reset, and by any core call to `peerreview_update_grades()`. Overrides and submitted reviews change the report immediately, but reach the gradebook only when a teacher pushes.
+- **Override** (`local/grade/override.php`): stored in `peerreview_override`, one row per student, range 0..max, with a note; set/revert are logged with `grade_overridden` (other: grade, reverted). Reverting deletes the row, so the peer aggregate applies again. UI: drill-down page of the report (form + "Remove override").
+- **Completion**: rule `completionallreviews` in `classes/completion/custom_completion.php`; complete when the student has at least one assigned review and all are submitted (vacuous "0 of 0" is not complete). It is re-evaluated when a review is submitted and whenever allocations are added or removed. The settings form only shows the rule when course completion is enabled; with two grade items the form also needs `grade_received_name` / `grade_participation_name` strings.
+- **Course reset**: "Delete allocations, reviews and grade overrides" (also removes the rubric/guide data and hides feedback again) and "Delete gradebook grades"; the activity itself stays.

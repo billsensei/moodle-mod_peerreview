@@ -15,17 +15,32 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version metadata for mod_peerreview.
+ * Export all reviews with the dataformat API (CSV, Excel, ODS, ...).
  *
  * @package    mod_peerreview
  * @copyright  2026 Bill <wrwjpn@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+require_once('../../config.php');
 
-$plugin->component = 'mod_peerreview';
-$plugin->version = 2026093002;
-$plugin->requires = 2025041400; // Moodle 5.0.
-$plugin->maturity = MATURITY_ALPHA;
-$plugin->release = '0.3.0';
+use mod_peerreview\local\export;
+
+$id = required_param('id', PARAM_INT); // Course module id.
+$dataformat = required_param('dataformat', PARAM_PLUGIN);
+
+[$course, $cm] = get_course_and_cm_from_cmid($id, 'peerreview');
+$peerreview = $DB->get_record('peerreview', ['id' => $cm->instance], '*', MUST_EXIST);
+require_login($course, false, $cm);
+$context = context_module::instance($cm->id);
+require_capability('mod/peerreview:export', $context);
+require_capability('mod/peerreview:viewallreviews', $context);
+
+$export = new export($peerreview, $context);
+\core\dataformat::download_data(
+    clean_filename('peerreview_' . $peerreview->name),
+    $dataformat,
+    $export->get_columns(),
+    $export->get_rows()
+);
+die();

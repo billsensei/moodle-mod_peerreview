@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version metadata for mod_peerreview.
+ * Web service definitions for mod_peerreview.
  *
  * @package    mod_peerreview
  * @copyright  2026 Bill <wrwjpn@gmail.com>
@@ -24,8 +24,21 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'mod_peerreview';
-$plugin->version = 2026093002;
-$plugin->requires = 2025041400; // Moodle 5.0.
-$plugin->maturity = MATURITY_ALPHA;
-$plugin->release = '0.3.0';
+$functions = [
+    'mod_peerreview_get_progress' => [
+        'classname' => 'mod_peerreview\external\get_progress',
+        'methodname' => 'execute',
+        'description' => 'Per-student review progress for the teacher report (live refresh).',
+        'type' => 'read',
+        'ajax' => true,
+        'capabilities' => 'mod/peerreview:viewallreviews',
+    ],
+    'mod_peerreview_set_feedback_release' => [
+        'classname' => 'mod_peerreview\external\set_feedback_release',
+        'methodname' => 'execute',
+        'description' => 'Release feedback to reviewees or hide it again.',
+        'type' => 'write',
+        'ajax' => true,
+        'capabilities' => 'mod/peerreview:releasefeedback',
+    ],
+];

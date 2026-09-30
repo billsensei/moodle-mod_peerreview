@@ -254,6 +254,8 @@ class service {
             'userid' => $userid,
             'relateduserid' => $alloc->revieweeid,
         ])->trigger();
+
+        \mod_peerreview\local\completion::update($this->peerreview, [(int) $alloc->reviewerid]);
     }
 
     /**

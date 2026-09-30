@@ -1,0 +1,96 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_peerreview/report_detail
+
+    One student's reviews, given and received, for teachers. Each started review opens read-only.
+
+    Context variables required for this template:
+    * name, picture, backurl - The student and a link back
+    * hasgiven, given, hasreceived, received - Rows: name, status, grade, url, viewable
+
+    Example context (json):
+    {
+        "name": "Ann Lee",
+        "picture": "",
+        "backurl": "https://example.org/mod/peerreview/report.php?id=5",
+        "hasgiven": true,
+        "hasreceived": true,
+        "given": [{"name": "Bo Chen", "status": "Submitted", "grade": "80.00", "url": "https://example.org/mod/peerreview/review.php?id=5&alloc=1", "viewable": true}],
+        "received": [{"name": "Cy Diaz", "status": "Not started", "grade": "", "url": "https://example.org/mod/peerreview/review.php?id=5&alloc=2", "viewable": false}]
+    }
+}}
+<div class="mod_peerreview-detail">
+    <div class="d-flex align-items-center gap-3 mb-3">
+        <span>{{{picture}}}</span>
+        <h3 class="h4 mb-0">{{name}}</h3>
+    </div>
+    <h4 class="h5">{{#str}} reviewsgiven, mod_peerreview {{/str}}</h4>
+    {{#hasgiven}}
+    <div class="table-responsive">
+        <table class="table table-striped generaltable">
+            <thead>
+                <tr>
+                    <th scope="col">{{#str}} reviewee, mod_peerreview {{/str}}</th>
+                    <th scope="col">{{#str}} status, mod_peerreview {{/str}}</th>
+                    <th scope="col">{{#str}} gradecol, mod_peerreview {{/str}}</th>
+                    <th scope="col"><span class="visually-hidden">{{#str}} actionscol, mod_peerreview {{/str}}</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#given}}
+                <tr>
+                    <th scope="row">{{name}}</th>
+                    <td>{{status}}</td>
+                    <td>{{grade}}</td>
+                    <td>{{#viewable}}<a href="{{{url}}}">{{#str}} openreview, mod_peerreview {{/str}}</a>{{/viewable}}</td>
+                </tr>
+                {{/given}}
+            </tbody>
+        </table>
+    </div>
+    {{/hasgiven}}
+    {{^hasgiven}}<p class="text-muted">{{#str}} nonegiven, mod_peerreview {{/str}}</p>{{/hasgiven}}
+
+    <h4 class="h5">{{#str}} reviewsreceivedtitle, mod_peerreview {{/str}}</h4>
+    {{#hasreceived}}
+    <div class="table-responsive">
+        <table class="table table-striped generaltable">
+            <thead>
+                <tr>
+                    <th scope="col">{{#str}} reviewer, mod_peerreview {{/str}}</th>
+                    <th scope="col">{{#str}} status, mod_peerreview {{/str}}</th>
+                    <th scope="col">{{#str}} gradecol, mod_peerreview {{/str}}</th>
+                    <th scope="col"><span class="visually-hidden">{{#str}} actionscol, mod_peerreview {{/str}}</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#received}}
+                <tr>
+                    <th scope="row">{{name}}</th>
+                    <td>{{status}}</td>
+                    <td>{{grade}}</td>
+                    <td>{{#viewable}}<a href="{{{url}}}">{{#str}} openreview, mod_peerreview {{/str}}</a>{{/viewable}}</td>
+                </tr>
+                {{/received}}
+            </tbody>
+        </table>
+    </div>
+    {{/hasreceived}}
+    {{^hasreceived}}<p class="text-muted">{{#str}} nonereceived, mod_peerreview {{/str}}</p>{{/hasreceived}}
+    <a class="btn btn-secondary" href="{{{backurl}}}">{{#str}} backtoreport, mod_peerreview {{/str}}</a>
+</div>

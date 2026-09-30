@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Prints the main page of a peer review activity. Phase 2 stub; the student and teacher views arrive in phase 5.
+ * The activity page: students see their reviews to do and the feedback received; teachers see a summary.
  *
- * Modelled on mod/page/view.php.
+ * Modelled on mod/workshop/view.php and mod/assign/view.php.
  *
  * @package    mod_peerreview
  * @copyright  2026 Bill <wrwjpn@gmail.com>
@@ -25,6 +25,13 @@
  */
 
 require_once('../../config.php');
+
+use mod_peerreview\local\allocation\manager;
+use mod_peerreview\local\progress;
+use mod_peerreview\local\review\service;
+use mod_peerreview\local\student_data;
+use mod_peerreview\output\student_view;
+use mod_peerreview\output\teacher_summary;
 
 $id = required_param('id', PARAM_INT); // Course module id.
 
@@ -46,10 +53,58 @@ $event->trigger();
 $PAGE->set_url('/mod/peerreview/view.php', ['id' => $cm->id]);
 $PAGE->set_title(format_string($peerreview->name));
 $PAGE->set_heading(format_string($course->fullname));
+$renderer = $PAGE->get_renderer('mod_peerreview');
+
+$manager = new manager($peerreview, $cm->get_course_module_record(), $context);
+$window = 'open';
+if ($peerreview->timeopen && time() < $peerreview->timeopen) {
+    $window = 'notopen';
+} else if (!(new service($peerreview, $context))->is_open()) {
+    $window = 'closed';
+}
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(format_string($peerreview->name));
 if (!empty($peerreview->intro)) {
     echo $OUTPUT->box(format_module_intro('peerreview', $peerreview, $cm->id), 'generalbox mod_introbox');
+}
+$dates = [];
+if ($peerreview->timeopen) {
+    $dates[] = get_string('opensat', 'mod_peerreview', userdate($peerreview->timeopen));
+}
+if ($peerreview->timeclose) {
+    $dates[] = get_string('closeson', 'mod_peerreview', userdate($peerreview->timeclose));
+}
+if ($dates) {
+    echo $OUTPUT->box(implode(' &middot; ', array_map('s', $dates)), 'mod_peerreview-dates text-muted mb-3');
+}
+
+$isteacher = has_any_capability(
+    ['mod/peerreview:viewallreviews', 'mod/peerreview:allocate', 'mod/peerreview:releasefeedback'],
+    $context
+);
+if ($isteacher) {
+    $progress = new progress($peerreview, $manager);
+    echo $renderer->render(new teacher_summary(
+        $peerreview,
+        $context,
+        $cm->id,
+        $progress->summarise($progress->get_rows())
+    ));
+}
+
+if (has_capability('mod/peerreview:review', $context)) {
+    $data = new student_data($peerreview, $manager);
+    $received = $peerreview->feedbackreleased ? $data->get_received((int) $USER->id) : null;
+    $grade = $peerreview->feedbackreleased ? $data->get_grade((int) $USER->id) : null;
+    echo $renderer->render(new student_view(
+        $peerreview,
+        $context,
+        $cm->id,
+        $data->get_todo((int) $USER->id),
+        $received,
+        $grade,
+        $window
+    ));
 }
 echo $OUTPUT->footer();

@@ -51,4 +51,44 @@ class renderer extends \plugin_renderer_base {
     protected function render_allocation_preview(allocation_preview $preview): string {
         return $this->render_from_template('mod_peerreview/allocation_preview', $preview->export_for_template($this));
     }
+
+    /**
+     * Render the student page.
+     *
+     * @param student_view $view
+     * @return string
+     */
+    protected function render_student_view(student_view $view): string {
+        return $this->render_from_template('mod_peerreview/student_view', $view->export_for_template($this));
+    }
+
+    /**
+     * Render the teacher summary.
+     *
+     * @param teacher_summary $summary
+     * @return string
+     */
+    protected function render_teacher_summary(teacher_summary $summary): string {
+        return $this->render_from_template('mod_peerreview/teacher_summary', $summary->export_for_template($this));
+    }
+
+    /**
+     * Render the report table.
+     *
+     * @param report_table $table
+     * @return string
+     */
+    protected function render_report_table(report_table $table): string {
+        return $this->render_from_template('mod_peerreview/report_table', $table->export_for_template($this));
+    }
+
+    /**
+     * Render the report drill-down.
+     *
+     * @param report_detail $detail
+     * @return string
+     */
+    protected function render_report_detail(report_detail $detail): string {
+        return $this->render_from_template('mod_peerreview/report_detail', $detail->export_for_template($this));
+    }
 }

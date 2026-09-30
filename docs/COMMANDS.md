@@ -162,3 +162,55 @@ Command:
 Expected output (summary): the form with the rubric/guide (or score box). Post fields: `id`, `alloc`, `advancedgradinginstanceid`, `advancedgrading[criteria][CID][levelid|score|remark]`, `feedback_editor[text|format]`, `sesskey`, `_qf__mod_peerreview_form_review_form=1`, and `savedraft` or `submitreview`.
 Actual output (phase 4): rubric draft with a half-filled form saved (status 1, no grade); incomplete submit refused; complete submit graded 88.89 (8/9); edit gave a new active instance (55.56) and archived the old one; after closing, page read-only and edits refused; teacher (admin) sees the review read-only; guide 15+5 of 30 gave 66.67; simple form accepted 72.5 and refused empty/150
 If it fails: allocation ids belong to specific students (a student opening someone else's gets a permissions error); purge caches (`php admin/cli/purge_caches.php`) after changing lang strings.
+
+## Install the Node tools for Grunt (one-off)
+Purpose: build AMD JavaScript (`amd/build/*.min.js`) and run ESLint
+Run from: ~/test/moodle
+Command:
+    source mod/peerreview/scripts/env.sh && npm ci --no-audit --no-fund
+Expected output (summary): `added 1164 packages` (about a minute)
+Actual output (phase 5): added 1164 packages in 45s
+If it fails: wrong Node version (Moodle 5.0 needs 22.x; env.sh puts ~/.local/node first on PATH).
+
+## Build the plugin's JavaScript
+Purpose: turn amd/src/*.js into amd/build/*.min.js and lint it
+Run from: ~/test/moodle/mod/peerreview
+Command:
+    source scripts/env.sh && npx grunt amd
+Expected output (summary): `Running "eslint:amd"`, `Running "rollup:dist"`, `Done.`; amd/build/progress.min.js(.map) updated. Commit the build files.
+Actual output (phase 5): Done, no lint errors
+If it fails: run `npm ci` in ~/test/moodle first.
+
+## Try the teacher pages, live progress and release over HTTP
+Purpose: check view/report/drill-down/release/export and the web services without a browser
+Run from: ~/test/moodle/mod/peerreview
+Command:
+    scripts/dev-web.sh login admin 'Admin123!'
+    scripts/dev-web.sh get "mod/peerreview/report.php?id=5"
+    scripts/dev-web.sh get "mod/peerreview/export.php?id=5&dataformat=csv"
+    (web services: POST JSON to /lib/ajax/service.php?sesskey=SK&info=mod_peerreview_get_progress with body
+     [{"index":0,"methodname":"mod_peerreview_get_progress","args":{"cmid":5,"groupid":0}}])
+Expected output (summary): pages without PHP notices; CSV header Reviewer,Reviewee,Status,Grade,... plus one Score/Remark column pair per rubric or guide criterion
+Actual output (phase 5): all worked; students refused by both web services; release/hide need a valid sesskey (a request without it changed nothing)
+If it fails: after editing lang strings run `php admin/cli/purge_caches.php`; after adding web services bump version.php and run `php admin/cli/upgrade.php --non-interactive`, then re-run the PHPUnit init.
+
+## Push grades, override and revert (dev site, over HTTP)
+Purpose: check the gradebook path end to end
+Run from: ~/test/moodle/mod/peerreview
+Command:
+    scripts/dev-web.sh login admin 'Admin123!'
+    scripts/dev-web.sh post "mod/peerreview/action.php" id=5 action=pushgrades returnto=report sesskey=SK
+    scripts/dev-web.sh post "mod/peerreview/report.php?id=5&user=UID" id=5 user=UID overridegrade=90 overridenote=why sesskey=SK _qf__mod_peerreview_form_override_form=1 submitbutton=Save
+    scripts/dev-web.sh post "mod/peerreview/action.php" id=5 action=revertoverride user=UID returnto=report sesskey=SK
+Expected output (summary): "Grades were sent to the gradebook." / "Override saved..." / "Override removed..."; `grade_grades` shows the peer mean, then 90, then the mean again; students with no counted review are NULL
+Actual output (phase 6): student2 66.67 -> 90 -> 66.67; student1/3/6 NULL; participation student1 20/20; a student pushing got "Sorry, but you do not currently have permissions (Override received grades)"
+If it fails: the SK (sesskey) must come from a page fetched in the same login session.
+
+## Re-initialise PHPUnit after a version bump
+Purpose: PHPUnit refuses to run when version.php changed ("initialised for different version")
+Run from: ~/test/moodle
+Command:
+    source mod/peerreview/scripts/env.sh && php admin/tool/phpunit/cli/init.php
+Expected output (summary): ends with "PHPUnit test environment setup complete." after about 10 minutes
+Actual output (phase 6): success (run in the background)
+If it fails: see the phase 3 entry (locale) in this file.

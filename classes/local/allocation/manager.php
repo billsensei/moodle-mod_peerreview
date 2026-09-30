@@ -351,6 +351,8 @@ class manager {
             }
         }
         $transaction->allow_commit();
+        // Reviewers who just received new work are no longer "complete".
+        \mod_peerreview\local\completion::update($this->peerreview, array_column($proposal->pairs, 0));
         return $created;
     }
 
@@ -476,6 +478,8 @@ class manager {
                 'other' => ['reviewerid' => $record->reviewerid],
             ])->trigger();
         }
+        // A reviewer whose remaining reviews are all submitted may now be complete (or has no work left at all).
+        \mod_peerreview\local\completion::update($this->peerreview, array_column((array) $records, 'reviewerid'));
         return count($records);
     }
 

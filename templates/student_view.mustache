@@ -1,0 +1,97 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_peerreview/student_view
+
+    The student page: reviews to do as tappable cards, and (when released) the feedback received.
+
+    Context variables required for this template:
+    * notopen, closed - Window state flags
+    * hascards, cards, done, total, progresstext - Reviews to do (cards: name, picture, statuslabel, statusclass, actionlabel, url)
+    * showreceived, hasreceived, received - Feedback received (who, grade, hascomment, comment, url)
+    * hasgrade, grade - The aggregated received grade
+
+    Example context (json):
+    {
+        "notopen": false,
+        "closed": false,
+        "hascards": true,
+        "done": 1,
+        "total": 2,
+        "progresstext": "1 of 2 reviews done",
+        "cards": [
+            {"name": "Bo Chen", "picture": "", "statuslabel": "Submitted", "statusclass": "bg-success", "actionlabel": "Edit review", "url": "https://example.org/mod/peerreview/review.php?id=5&alloc=1"},
+            {"name": "Cy Diaz", "picture": "", "statuslabel": "Not started", "statusclass": "bg-secondary", "actionlabel": "Start review", "url": ""}
+        ],
+        "showreceived": true,
+        "hasreceived": true,
+        "hasgrade": true,
+        "grade": "75 / 100",
+        "received": [
+            {"who": "Anonymous", "grade": "80 / 100", "hascomment": true, "comment": "<p>Clear voice.</p>", "url": "https://example.org/mod/peerreview/feedback.php?id=5&alloc=2"}
+        ]
+    }
+}}
+<div class="mod_peerreview-student">
+    {{#notopen}}<div class="alert alert-info" role="status">{{#str}} notopenyet, mod_peerreview {{/str}}</div>{{/notopen}}
+    {{#closed}}<div class="alert alert-info" role="status">{{#str}} activityclosed, mod_peerreview {{/str}}</div>{{/closed}}
+
+    <section aria-labelledby="mod_peerreview-todo-heading" class="mb-4">
+        <h3 id="mod_peerreview-todo-heading" class="h4">{{#str}} reviewstodo, mod_peerreview {{/str}}</h3>
+        {{#hascards}}
+        <p id="mod_peerreview-progress-label" class="mb-1">{{progresstext}}</p>
+        <progress class="mod_peerreview-progress mb-3" max="{{total}}" value="{{done}}" aria-labelledby="mod_peerreview-progress-label"></progress>
+        <ul class="mod_peerreview-cards list-unstyled">
+            {{#cards}}
+            <li>
+                {{#url}}<a href="{{{url}}}" class="mod_peerreview-card card text-decoration-none">{{> mod_peerreview/review_card_body}}</a>{{/url}}
+                {{^url}}<div class="mod_peerreview-card mod_peerreview-card-static card">{{> mod_peerreview/review_card_body}}</div>{{/url}}
+            </li>
+            {{/cards}}
+        </ul>
+        {{/hascards}}
+        {{^hascards}}
+        <p class="text-muted">{{#str}} noreviewsassigned, mod_peerreview {{/str}}</p>
+        {{/hascards}}
+    </section>
+
+    {{#showreceived}}
+    <section aria-labelledby="mod_peerreview-received-heading">
+        <h3 id="mod_peerreview-received-heading" class="h4">{{#str}} feedbackreceived, mod_peerreview {{/str}}</h3>
+        {{#hasgrade}}<p class="mod_peerreview-grade h5">{{#str}} yourgrade, mod_peerreview {{/str}} <strong>{{grade}}</strong></p>{{/hasgrade}}
+        {{#hasreceived}}
+        <ul class="mod_peerreview-cards list-unstyled">
+            {{#received}}
+            <li>
+                <article class="mod_peerreview-card card">
+                    <div class="card-body">
+                        <h4 class="h5 card-title">{{who}}</h4>
+                        <p class="mb-2"><span class="badge bg-success">{{grade}}</span></p>
+                        {{#hascomment}}<div class="mod_peerreview-comment">{{{comment}}}</div>{{/hascomment}}
+                        <a href="{{{url}}}" class="btn btn-secondary mt-2">{{#str}} viewdetails, mod_peerreview {{/str}}</a>
+                    </div>
+                </article>
+            </li>
+            {{/received}}
+        </ul>
+        {{/hasreceived}}
+        {{^hasreceived}}
+        <p class="text-muted">{{#str}} noreviewsreceived, mod_peerreview {{/str}}</p>
+        {{/hasreceived}}
+    </section>
+    {{/showreceived}}
+</div>

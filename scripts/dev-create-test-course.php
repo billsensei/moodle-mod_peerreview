@@ -41,7 +41,7 @@ if ($DB->record_exists('course', ['shortname' => 'PR101'])) {
 }
 
 $course = create_course((object) ['fullname' => 'Peer review test', 'shortname' => 'PR101', 'category' => 1,
-    'format' => 'topics', 'numsections' => 1]);
+    'format' => 'topics', 'numsections' => 1, 'enablecompletion' => 1]);
 $manual = enrol_get_plugin('manual');
 $instance = $DB->get_record('enrol', ['courseid' => $course->id, 'enrol' => 'manual'], '*', MUST_EXIST);
 

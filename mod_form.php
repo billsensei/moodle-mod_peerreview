@@ -81,6 +81,30 @@ class mod_peerreview_mod_form extends moodleform_mod {
     }
 
     /**
+     * Add the custom completion rule "submit all assigned reviews".
+     *
+     * Modelled on mod_assign_mod_form::add_completion_rules().
+     *
+     * @return array Names of the elements added.
+     */
+    public function add_completion_rules(): array {
+        $mform = $this->_form;
+        $element = 'completionallreviews' . $this->get_suffix();
+        $mform->addElement('advcheckbox', $element, '', get_string('completionallreviews', 'mod_peerreview'));
+        return [$element];
+    }
+
+    /**
+     * Whether the custom completion rule is switched on in the submitted data.
+     *
+     * @param array $data Form data.
+     * @return bool
+     */
+    public function completion_rule_enabled($data): bool {
+        return !empty($data['completionallreviews' . $this->get_suffix()]);
+    }
+
+    /**
      * Validate the submitted data. Grades are points only in v1 (no scales).
      *
      * @param array $data Submitted data.
