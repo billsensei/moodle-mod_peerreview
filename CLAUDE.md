@@ -3,7 +3,7 @@
 Moodle 5.0 activity plugin: lightweight in-class peer assessment. Spec: `~/test/prompt.md` (phased; stop after each phase for approval).
 
 ## Paths
-- Plugin repo: `~/dev/mod_peerreview` (symlinked to `~/test/moodle/mod/peerreview`). Never edit Moodle core.
+- Plugin repo: **`~/test/moodle/mod/peerreview`** (the real directory; `~/dev/mod_peerreview` is a convenience symlink to it). It must NOT be the other way round: entry scripts do `require('../../config.php')`, which breaks when the plugin is only a symlink into dirroot. Never edit Moodle core.
 - Moodle 5.0.10+ (version 2025041410.01, branch 500, classic layout, no /public): `~/test/moodle` (dirroot; `config.php` there)
 - Moodledata: `~/test/moodledata`. Site wwwroot `http://localhost:8000` (serve with `php -S localhost:8000 -t ~/test/moodle`). Admin: admin / Admin123! (dev only).
 - moodle-plugin-ci 4.5.11: `~/test/moodle-plugin-ci/bin/moodle-plugin-ci`
