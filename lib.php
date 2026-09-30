@@ -42,6 +42,7 @@ function peerreview_supports($feature) {
         case FEATURE_SHOW_DESCRIPTION:
         case FEATURE_GRADE_HAS_GRADE:
         case FEATURE_ADVANCED_GRADING:
+        case FEATURE_BACKUP_MOODLE2:
         case FEATURE_GROUPS:
         case FEATURE_GROUPINGS:
         case FEATURE_COMPLETION_HAS_RULES:

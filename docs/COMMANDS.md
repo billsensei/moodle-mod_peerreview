@@ -214,3 +214,37 @@ Command:
 Expected output (summary): ends with "PHPUnit test environment setup complete." after about 10 minutes
 Actual output (phase 6): success (run in the background)
 If it fails: see the phase 3 entry (locale) in this file.
+
+## Phase 7 PHPUnit: privacy, backup/restore, events
+Purpose: run the new tests (privacy provider, backup→restore round trip with and without user data, every event)
+Run from: ~/test/moodle
+Command:
+    source mod/peerreview/scripts/env.sh && php admin/tool/phpunit/cli/util.php --buildconfig
+    php vendor/bin/phpunit --testsuite mod_peerreview_testsuite --filter 'provider_test|backup_restore_test|events_test'
+    php vendor/bin/phpunit --testsuite mod_peerreview_testsuite
+Expected output (summary): OK, no notices or deprecations
+Actual output (phase 7): OK (24 tests, 180 assertions); whole suite OK (130 tests, 30351 assertions)
+If it fails: "Unexpected debugging() call" names a missing lang string or a missing event mapping; add `--display-notices` to see it. `@covers` in a docblock shows up as a PHPUnit deprecation; use `#[CoversClass]`.
+
+## Core privacy compliance check for the plugin
+Purpose: core's check that the provider implements the right interfaces and every metadata string exists
+Run from: ~/test/moodle
+Command:
+    source mod/peerreview/scripts/env.sh && php vendor/bin/phpunit privacy/tests/privacy/provider_test.php --filter mod_peerreview
+Expected output (summary): 4 tests OK
+Actual output (phase 7): Tests: 4, Assertions: 64 (5 PHPUnit deprecations come from core's test file itself)
+If it fails: a `privacy:metadata:*` string is missing from lang/en/peerreview.php.
+
+## Backup and restore on the dev site (CLI)
+Purpose: real backup of the test course with user data, restored as a new course, then compared
+Run from: ~/test/moodle
+Command:
+    source mod/peerreview/scripts/env.sh && php admin/cli/purge_caches.php
+    php admin/cli/backup.php --courseid=5 --destination=/tmp/peerreview-backup
+    php admin/cli/restore_backup.php --file=/tmp/peerreview-backup/backup-moodle2-course-5-....mbz --categoryid=1
+    php mod/peerreview/scripts/dev-show-state.php
+    mod/peerreview/scripts/dev-web.sh login admin 'Admin123!'
+    mod/peerreview/scripts/dev-web.sh get "mod/peerreview/review.php?id=NEWCMID&alloc=NEWALLOCID"
+Expected output (summary): "Backup completed." and "== Restored course ID: N =="; the restored activity has the same counts; a restored guide review shows the same scores and remarks as the original
+Actual output (phase 7): restored course 6: allocs 12 submitted 3 overrides 0 gradinginst 3 method guide, same as course 5; review 13 (original) and 25 (restored) have identical text (15/20, 5/10, remarks); view, report, review and log pages had no debugging output
+If it fails: "backup not supported" → FEATURE_BACKUP_MOODLE2 missing in peerreview_supports(); a restored grading instance with itemid 0 → the restore step did not set the grading_item_received mapping.
