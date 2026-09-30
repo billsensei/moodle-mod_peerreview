@@ -331,3 +331,12 @@ Command:
 Expected output (summary): "-->mod_peerreview ++ 2026093003: Success" and "completed successfully"
 Actual output (phase 9): as expected; "Command line upgrade from 5.0.10+ (Build: 20260928) (2025041410.01) to 5.0.10+ ... completed successfully."
 If it fails: after the bump the PHPUnit and Behat sites must be initialised again (`php admin/tool/phpunit/cli/init.php`, `scripts/behat.sh init`).
+
+## Final local CI run (phase 9, version 2026093003)
+Purpose: release check after the beta bump, on freshly initialised PHPUnit and Behat sites
+Run from: ~/test/moodle and ~/test/moodle/mod/peerreview
+Command:
+    php admin/tool/phpunit/cli/init.php && scripts/behat.sh start && scripts/behat.sh init && scripts/ci-local.sh
+Expected output (summary): every check PASS
+Actual output (phase 9): PASS phplint, phpmd (38 advisory violations, 0 errors), phpcs (0 warnings), phpdoc (0 warnings), validate, savepoints, mustache (7/7 templates), grunt (0 lint warnings), phpunit (OK, 130 tests, 30351 assertions, MariaDB), behat (1 scenario, 63 steps passed). PHPUnit also OK on PostgreSQL 17.11 (see above).
+If it fails: see the entries for Java, PostgreSQL and ci-local.sh above.
