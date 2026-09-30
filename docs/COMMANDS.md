@@ -248,3 +248,42 @@ Command:
 Expected output (summary): "Backup completed." and "== Restored course ID: N =="; the restored activity has the same counts; a restored guide review shows the same scores and remarks as the original
 Actual output (phase 7): restored course 6: allocs 12 submitted 3 overrides 0 gradinginst 3 method guide, same as course 5; review 13 (original) and 25 (restored) have identical text (15/20, 5/10, remarks); view, report, review and log pages had no debugging output
 If it fails: "backup not supported" → FEATURE_BACKUP_MOODLE2 missing in peerreview_supports(); a restored grading instance with itemid 0 → the restore step did not set the grading_item_received mapping.
+
+## Install chromedriver without root
+Purpose: WebDriver for Behat's JavaScript scenarios, matching the system Chromium
+Run from: any directory
+Command:
+    apt-get download chromium-driver
+    dpkg-deb -x chromium-driver_*.deb ~/.local/root
+    ~/.local/root/usr/bin/chromedriver --version
+Expected output (summary): the version equals `chromium --version`
+Actual output (phase 8): ChromeDriver 154.0.8037.57 (Chromium 1:154.0.8037.57-1~deb13u1+rpt1 is installed)
+If it fails: after a Chromium upgrade the versions differ ("session not created: This version of ChromeDriver only supports..."); download and extract the matching chromium-driver again.
+
+## Behat settings in config.php
+Purpose: a separate Behat site and a headless Chromium profile that talks to chromedriver directly (no Selenium)
+Run from: ~/test/moodle (edit config.php)
+Command:
+    $CFG->behat_prefix = 'bht_';
+    $CFG->behat_dataroot = '/home/bill/test/behat_dataroot';
+    $CFG->behat_wwwroot = 'http://127.0.0.1:8001';
+    $CFG->behat_faildump_path = '/home/bill/test/behat_dataroot/faildumps';
+    $CFG->behat_increasetimeout = 2;
+    $CFG->behat_profiles = ['default' => ['browser' => 'chrome', 'wd_host' => 'http://127.0.0.1:9515',
+        'capabilities' => ['extra_capabilities' => ['goog:chromeOptions' => ['binary' => '/usr/bin/chromium',
+        'args' => ['headless=new', 'no-sandbox', 'disable-dev-shm-usage', 'disable-gpu', 'window-size=1366,768']]]]]];
+Expected output (summary): `php -l config.php` reports no syntax errors
+Actual output (phase 8): no syntax errors
+If it fails: behat_wwwroot must differ from wwwroot; after changing any behat setting run `php admin/tool/behat/cli/util.php --enable`.
+
+## Run Behat (scripts/behat.sh)
+Purpose: start the services, install the Behat site once, run the plugin's features
+Run from: ~/test/moodle/mod/peerreview
+Command:
+    source scripts/env.sh && scripts/behat.sh start
+    scripts/behat.sh init          # once, and again after version.php or install.xml changes (~10 min on the Pi)
+    scripts/behat.sh run           # add --format=pretty to see each step
+    scripts/behat.sh stop
+Expected output (summary): "Acceptance tests environment enabled on http://127.0.0.1:8001"; then "1 scenario (1 passed)"
+Actual output (phase 8): init exit 0; run "1 scenario (1 passed) 63 steps (63 passed)" in about 2 minutes, 3 runs in a row
+If it fails: read the HTML and PNG in ~/test/behat_dataroot/faildumps/<time>/; "not ready after 10 seconds" → raise behat_increasetimeout; "Could not open connection" → `scripts/behat.sh status`, then start.

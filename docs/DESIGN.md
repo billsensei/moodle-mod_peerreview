@@ -254,3 +254,15 @@ Where the built allocation code differs from the plan above:
 - **Backup/restore** (`backup/moodle2/`, modelled on mod_choice plus mod_assign's grading item mapping): `peerreview` → `allocations/allocation`, `overrides/override`; both are included only with user data. The rubric/guide comes from core's `backup_activity_grading_structure_step`. Restore maps each allocation to `peerreview_alloc` (event log objectids) and to `grading_item_received`, so the grading instances follow their review. Allocations or overrides whose student is not in the target are skipped. Without user data, `feedbackreleased` is reset to 0. Dates are shifted with the course offset.
 - **Events**: all eight already existed; the new `tests/event/events_test.php` checks each through its real code path (name, description, URL, context, restore mappings) and checks each event's required-data validation. This found a missing `eventfeedback_released` string.
 - **Known limitation (Phase 4, not changed here)**: if a teacher switches the grading method after reviews were submitted, those reviews' old fillings (e.g. rubric) stay stored and exported but are not shown on `review.php`, which renders the current method. Their stored grade is unaffected.
+
+## 14. Implementation notes (Phase 8)
+
+- **Behat runs locally** with headless Chromium driven straight by chromedriver (W3C), without Selenium or Java; `scripts/behat.sh` starts the PHP web server (4 workers) and chromedriver. moodle-plugin-ci's `behat` command expects its own Selenium set-up and is left to the CI workflow in Phase 9.
+- **Feature** `tests/behat/peer_review_flow.feature` (one `@javascript` scenario, 63 steps), all through the UI except user and course set-up:
+  1. The teacher adds the activity (anonymous, grading method Rubric) and defines and publishes a 2-criterion rubric.
+  2. The teacher allocates randomly with one review each; the preview says 2 allocations; confirm.
+  3. At 425×750 ("mobile"), each student opens their card, fills in the rubric and a comment, and submits. The progress text updates, the page never scrolls sideways, and there is no received feedback before release.
+  4. The report shows 1 / 1 and the aggregated grades (66.67 and 83.33). The teacher releases feedback and pushes grades.
+  5. On a phone, the reviewee sees "Anonymous", 83.33 / 100 and the comment, but not the reviewer's name, neither next to the feedback nor on the details page. The gradebook user report shows 83.33.
+- **Plugin steps** (`tests/behat/behat_mod_peerreview.php`): pages "View", "Report", "Allocate", "Allocate random"; `I fill in the peer review rubric with:` (core's rubric step only works in mod_assign with JavaScript); `the peer review page should not scroll horizontally`.
+- **Grades in the scenario** follow core's rubric rule `lockzeropoints`: with levels of 1–3 points, the grade is score / maximum (5/6 = 83.33). The core rubric step cannot define 0-point levels.
