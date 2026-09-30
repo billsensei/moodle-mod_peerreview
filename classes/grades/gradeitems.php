@@ -35,7 +35,8 @@ use core_grades\local\gradeitem\itemnumber_mapping;
 /**
  * Grade item mappings: item 0 is the received grade, item 1 the optional participation grade.
  *
- * Advanced grading has a single area, "peer", whose item ids are allocation ids. It is not a gradebook item.
+ * Advanced grading has a single area, "received". Core requires the area name to be a grade item name (guides look up
+ * the grade field from it), so it is the name of grade item 0. Its item ids are allocation ids.
  *
  * @package    mod_peerreview
  * @copyright  2026 Bill <wrwjpn@gmail.com>
@@ -83,6 +84,6 @@ class gradeitems implements advancedgrading_mapping, fieldname_mapping, itemnumb
      * @return array
      */
     public static function get_advancedgrading_itemnames(): array {
-        return ['peer'];
+        return ['received'];
     }
 }

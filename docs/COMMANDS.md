@@ -87,7 +87,7 @@ Run from: ~/test/moodle
 Command:
     php -S localhost:8000 -t ~/test/moodle
 Expected output (summary): server log lines per request; stop with Ctrl-C (or kill by PID)
-Actual output (phase 2): pages 200 with no PHP warnings: view.php, index.php, course/modedit.php, grade/grading/manage.php (area peer)
+Actual output (phase 2): pages 200 with no PHP warnings: view.php, index.php, course/modedit.php, grade/grading/manage.php (area peer, renamed to received in phase 4)
 If it fails: port in use; `php` not on PATH (source scripts/env.sh).
 
 ## Code-quality checks
@@ -143,3 +143,22 @@ Command:
 Expected output (summary): no warnings. Locally it prints "Problem calling HTML validator" because Java is not installed, so only the ESLint-style checks run.
 Actual output (phase 3): HTML validator unavailable (no Java); GitHub Actions in Phase 9 will run it fully
 If it fails: install a JRE (needs root, or extract a JRE deb into ~/.local/root).
+
+## Choose the grading method of a dev activity
+Purpose: give the test activity a rubric, a marking guide, or none (simple points and comment)
+Run from: ~/test/moodle/mod/peerreview
+Command:
+    source scripts/env.sh && php scripts/dev-set-grading-method.php 5 rubric    # or guide, or none
+Expected output (summary): `rubric set for cmid 5 (definition status ready)`
+Actual output (phase 4): rubric, guide and none all worked; the review form rendered correctly for each
+If it fails: "Call to undefined function file_postupdate_standard_editor" means filelib.php was not loaded (already required in the script).
+
+## Try the review form over HTTP
+Purpose: draft, submit, edit and close-window checks without a browser (students reach review.php by URL until Phase 5 adds the cards)
+Run from: ~/test/moodle/mod/peerreview
+Command:
+    scripts/dev-web.sh login student1 'Test123!'
+    scripts/dev-web.sh get "mod/peerreview/review.php?id=5&alloc=9"
+Expected output (summary): the form with the rubric/guide (or score box). Post fields: `id`, `alloc`, `advancedgradinginstanceid`, `advancedgrading[criteria][CID][levelid|score|remark]`, `feedback_editor[text|format]`, `sesskey`, `_qf__mod_peerreview_form_review_form=1`, and `savedraft` or `submitreview`.
+Actual output (phase 4): rubric draft with a half-filled form saved (status 1, no grade); incomplete submit refused; complete submit graded 88.89 (8/9); edit gave a new active instance (55.56) and archived the old one; after closing, page read-only and edits refused; teacher (admin) sees the review read-only; guide 15+5 of 30 gave 66.67; simple form accepted 72.5 and refused empty/150
+If it fails: allocation ids belong to specific students (a student opening someone else's gets a permissions error); purge caches (`php admin/cli/purge_caches.php`) after changing lang strings.

@@ -9,8 +9,8 @@ Core files this design was checked against (all under `~/test/moodle`):
 
 | # | Prompt says | Moodle 5.0 reality | Proposal |
 |---|---|---|---|
-| D1 | Implement `peerreview_grading_areas_list()` | `grading_manager::available_areas()` only calls that callback when the component has no `advancedgrading_mapping`, and then emits a `DEBUG_DEVELOPER` deprecation notice. | Do **not** write the callback. `classes/grades/gradeitems.php` implements `itemnumber_mapping`, `fieldname_mapping` and `advancedgrading_mapping`; lang string `gradeitem:peer`. |
-| D2 | "Each allocation row is the grading itemid" with area `peer` while grade items are 0=received, 1=participation | Fine: `get_advancedgrading_itemnames()` is independent of `get_itemname_mapping_for_component()`. Area name is **not** a gradebook item. | Mapping `[0=>'received', 1=>'participation']`; advanced-grading names `['peer']`. Keeps the completion and mod forms from seeing a phantom third grade item. |
+| D1 | Implement `peerreview_grading_areas_list()` | `grading_manager::available_areas()` only calls that callback when the component has no `advancedgrading_mapping`, and then emits a `DEBUG_DEVELOPER` deprecation notice. | Do **not** write the callback. `classes/grades/gradeitems.php` implements `itemnumber_mapping`, `fieldname_mapping` and `advancedgrading_mapping`; lang string `gradeitem:received`. |
+| D2 | "Each allocation row is the grading itemid" with area `peer` while grade items are 0=received, 1=participation | **Corrected in Phase 4.** The area name must be one of the grade item names: `gradingform_guide_controller::get_min_max_score()` calls `component_gradeitems::get_field_name_for_itemname($component, $area, 'grade')`, which throws "Unknown itemnumber mapping" for a name that is not in the mapping. | Area is `received` (= grade item 0); `get_advancedgrading_itemnames()` returns `['received']`. Each allocation row is still the grading `itemid`. |
 | D3 | Grade "the standard modgrade element" | modgrade also allows scales. Scales do not work with mean/median of rubric points. | Points only in v1 (`grade > 0`); the form restricts the type to points. |
 | D4 | Grade item 1 is "participation" | mod form fields come from `fieldname_mapping`. | Field names: item 0 → `grade`, item 1 → `gradeparticipation`. |
 
@@ -146,12 +146,12 @@ Columns `reviewer,reviewee` (username or email, header row required). Import sho
 ## 5. Grading data flow
 
 ### 5.1 Setup
-`peerreview_supports(FEATURE_ADVANCED_GRADING)` → true; `gradeitems` supplies area `peer` (D1/D2). The teacher defines a rubric or marking guide on `grade/grading/manage.php`; area is `get_grading_manager($context, 'mod_peerreview', 'peer')`. Modelled on `mod_assign` (`locallib.php` `get_grading_instance`).
+`peerreview_supports(FEATURE_ADVANCED_GRADING)` → true; `gradeitems` supplies area `received` (D1/D2). The teacher defines a rubric or marking guide on `grade/grading/manage.php`; area is `get_grading_manager($context, 'mod_peerreview', 'received')`. Modelled on `mod_assign` (`locallib.php` `get_grading_instance`).
 
 ### 5.2 Review form (`review.php`)
 ```
 alloc = fetch(id), check alloc.reviewerid == $USER->id (or viewallreviews for read-only)
-gm = get_grading_manager($context, 'mod_peerreview', 'peer')
+gm = get_grading_manager($context, 'mod_peerreview', 'received')
 method = gm->get_active_method()
 if method and controller->is_form_available():
     instance = controller->get_or_create_instance($instanceid, $USER->id, alloc.id)   # raterid=reviewer, itemid=alloc.id
@@ -211,3 +211,18 @@ Where the built allocation code differs from the plan above:
 - **Reproducible preview**: the preview picks a seed; the confirm request carries it, so the saved result equals the preview.
 - **Top-up algorithm** (section 4.2) is implemented as slot matching: one give-slot per missing review of each reviewer, one receive-slot per missing review of each reviewee, padded with the least-loaded students until the lists are equal and legal, matched at random, conflicts repaired by swapping targets. A stress test (1,500 scenarios) found no illegal pair, nobody left below N and nobody above `max(N+1, what they already had)`; in ~1.5% of scenarios manual pairs left the spread above 1 and in ~0.1% a pair could not be placed (reported as a warning).
 - **Advanced grading instances** of deleted allocations are removed in Phase 4, when reviews can first exist.
+
+## 10. Implementation notes (Phase 4)
+
+- **Grading area renamed `peer` → `received`** (see corrected D2): `gradingform_guide_controller::get_min_max_score()` needs the area name to be a grade item name.
+- **Service**: `classes/local/review/service.php` owns every rule (own review only, open window, drafts, submit, normalised grade, events); `review.php` and `review_form` are thin. The grade is stored in `peerreview_alloc.grade` only on submit (points on the activity's scale, from `submit_and_get_grade()` with `set_grade_range(make_grades_menu(max), true)`); the simple fallback also keeps a draft score in `grade`, but only `status = 2` rows are aggregated.
+- **Drafts** use core's own mechanism: an unfinished `grading_instances` row (status INCOMPLETE) per reviewer and item, fetched again by `get_or_create_instance()`; submitting calls `submit_and_get_grade()` which makes it active and archives the previous one. Partial data is reduced to what the method can store:
+  - rubric: criteria with a chosen level or a remark (remark-only criteria are kept);
+  - marking guide: criteria with a valid numeric score (the score column is mandatory, so a remark without a score is **not** kept in a draft);
+  - other grading methods: no drafts, submit only.
+  The "every criterion filled in" validation is skipped for the draft button by dropping the element's rule in `validate_defined_fields()`.
+- **Editing after submit** is offered until `timeclose` (button "Update review"); afterwards the review is read-only. `review_submitted` fires on the first submit, `review_updated` on later ones; drafts fire nothing.
+- **Rubric changed later**: core only flags instances `NEEDUPDATE` when the teacher chooses "regrade" in the rubric editor. The stored grade is kept until the reviewer re-submits.
+- **Deleting an allocation** removes its grading instances and fillings via `\core_grading\privacy\provider::delete_data_for_instances()`.
+- **Read-only view** (`review.php` for teachers with `viewallreviews`, or for the reviewer once closed) shows the active instance; the reviewer's name is shown to teachers. Reviewees viewing received feedback (with anonymity) is Phase 5.
+- **Not built yet**: the student "Reviews to do" cards linking to `review.php` (Phase 5); grade aggregation and completion updates on submit (Phase 6).

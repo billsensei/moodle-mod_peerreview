@@ -463,8 +463,11 @@ class manager {
             "peerreviewid = :pr AND id $insql",
             $params + ['pr' => $this->peerreview->id]
         );
+        if ($records) {
+            // Remove the advanced grading instances (rubric/guide fillings) of these allocations.
+            \core_grading\privacy\provider::delete_data_for_instances($this->context, array_keys($records));
+        }
         foreach ($records as $record) {
-            // Advanced grading instances for these items are removed in phase 4, when reviews can exist.
             $DB->delete_records('peerreview_alloc', ['id' => $record->id]);
             \mod_peerreview\event\allocation_deleted::create([
                 'objectid' => $record->id,
