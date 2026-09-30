@@ -221,3 +221,23 @@ function peerreview_grade_item_delete(stdClass $peerreview): int {
 function peerreview_update_grades(stdClass $peerreview, int $userid = 0, bool $nullifnone = true): void {
     peerreview_grade_item_update($peerreview);
 }
+
+/**
+ * Add the teacher links to the activity settings navigation.
+ *
+ * Modelled on mod/workshop/lib.php workshop_extend_settings_navigation().
+ *
+ * @param settings_navigation $settingsnav Settings navigation.
+ * @param navigation_node $node The activity's settings node.
+ */
+function peerreview_extend_settings_navigation(settings_navigation $settingsnav, navigation_node $node): void {
+    global $PAGE;
+
+    if (has_capability('mod/peerreview:allocate', $PAGE->cm->context)) {
+        $node->add(
+            get_string('allocate', 'mod_peerreview'),
+            new moodle_url('/mod/peerreview/allocate.php', ['id' => $PAGE->cm->id]),
+            navigation_node::TYPE_SETTING
+        );
+    }
+}

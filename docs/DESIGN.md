@@ -200,3 +200,14 @@ Please confirm or change each; my default is what I will build.
 | D8 | Random top-up balance | Heuristic with tests (see §4.2), not min-cost flow. |
 | D9 | Students in several groups (random per-group pools) | Lowest group id wins. |
 | D10 | `requires` value | `2025041400` (branch-date release for 5.0), verified against core in Phase 2. |
+
+## 9. Implementation notes (Phase 3)
+
+Where the built allocation code differs from the plan above:
+
+- **Eligible students** are active enrolments holding `mod/peerreview:review` (both as reviewers and reviewees), not "any gradebook role".
+- **One page**: CSV import/export and delete live in `allocate.php` (`method=csv|csvexport|delete`) instead of a separate `allocate_csv.php`.
+- **"Replace" never deletes started reviews.** It removes only not-started pairs in scope and reports how many started ones were kept. Started reviews are removed only through the delete page with an explicit warning and a check that the count of started reviews did not change since the page was shown.
+- **Reproducible preview**: the preview picks a seed; the confirm request carries it, so the saved result equals the preview.
+- **Top-up algorithm** (section 4.2) is implemented as slot matching: one give-slot per missing review of each reviewer, one receive-slot per missing review of each reviewee, padded with the least-loaded students until the lists are equal and legal, matched at random, conflicts repaired by swapping targets. A stress test (1,500 scenarios) found no illegal pair, nobody left below N and nobody above `max(N+1, what they already had)`; in ~1.5% of scenarios manual pairs left the spread above 1 and in ~0.1% a pair could not be placed (reported as a warning).
+- **Advanced grading instances** of deleted allocations are removed in Phase 4, when reviews can first exist.

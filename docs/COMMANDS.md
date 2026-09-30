@@ -98,3 +98,48 @@ Command:
 Expected output (summary): exit 0 each. (Run without `--moodle`; the plugin-ci finds Moodle from the plugin path.)
 Actual output (phase 2): phplint/validate/phpcs/phpdoc exit 0; phpmd exit 0 but lists 8 violations (parameters that Moodle callback signatures force, unused until later phases)
 If it fails: `phpcbf` fixes most phpcs formatting; Moodle CS rejects `@SuppressWarnings` tags, so do not use them.
+
+## Build the PHPUnit environment (one-off, slow: ~10 minutes on a Raspberry Pi)
+Purpose: install a separate Moodle test site (prefix phpu_) and create phpunit.xml
+Run from: ~/test/moodle
+Command:
+    source mod/peerreview/scripts/env.sh && php admin/tool/phpunit/cli/init.php
+Expected output (summary): a long install log ending without errors; `phpunit.xml` exists in ~/test/moodle. Needs in config.php: `$CFG->phpunit_prefix = 'phpu_'; $CFG->phpunit_dataroot = '/home/bill/test/phpunit_dataroot';`
+Actual output (phase 3): success after building the en_AU.UTF-8 locale (see learn.md)
+If it fails: "Required locale 'en_AU.UTF-8' is not installed" → `localedef -i en_AU -f UTF-8 ~/.local/locale/en_AU.UTF-8` (env.sh sets LOCPATH).
+
+## Run the plugin's PHPUnit tests
+Purpose: run all mod_peerreview tests
+Run from: ~/test/moodle
+Command:
+    source mod/peerreview/scripts/env.sh && php vendor/bin/phpunit --testsuite mod_peerreview_testsuite
+Expected output (summary): `OK (N tests, M assertions)`
+Actual output (phase 3): OK (48 tests, 29927 assertions), ~25 s
+If it fails: "No tests executed" → after adding new test files run `php admin/tool/phpunit/cli/util.php --buildconfig` first (and `--testsuite`, not a path, is required); after changing install.xml/version.php run `php admin/tool/phpunit/cli/init.php` again.
+
+## Exercise the teacher pages without a browser
+Purpose: log in and call allocate.php (preview, confirm, delete, CSV)
+Run from: ~/test/moodle/mod/peerreview
+Command:
+    scripts/dev-web.sh login admin 'Admin123!' && scripts/dev-web.sh get "mod/peerreview/allocate.php?id=5"
+Expected output (summary): `login 303` then the page HTML. Forms need the sesskey (from `"sesskey":"..."` in the page) and the hidden `_qf__mod_peerreview_form_allocate_form=1`.
+Actual output (phase 3): overview, random preview/confirm, delete with started-review warning, CSV upload/preview/confirm and export all behaved as expected; a student got "Sorry, but you do not currently have permissions"
+If it fails: server not running (`php -S localhost:8000 -t ~/test/moodle &`).
+
+## Stress the random top-up (throwaway check)
+Purpose: measure legality, minimum reviews and spread over 1500 messy scenarios
+Run from: ~/test/moodle
+Command:
+    php <scratch>/stress.php   (script not kept; the same checks live in random_allocator_test::test_messy_top_ups_stay_legal_and_bounded)
+Expected output (summary): illegal=0, short=0, over=0
+Actual output (phase 3): illegal 0, short 0, over 0; dropped-pair warnings 2/1500; spread>1 in 22/1500 (always due to pre-existing manual pairs)
+If it fails: n/a.
+
+## Mustache lint (limited here)
+Purpose: lint templates
+Run from: ~/test/moodle/mod/peerreview
+Command:
+    moodle-plugin-ci mustache .
+Expected output (summary): no warnings. Locally it prints "Problem calling HTML validator" because Java is not installed, so only the ESLint-style checks run.
+Actual output (phase 3): HTML validator unavailable (no Java); GitHub Actions in Phase 9 will run it fully
+If it fails: install a JRE (needs root, or extract a JRE deb into ~/.local/root).

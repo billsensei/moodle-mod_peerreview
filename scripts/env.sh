@@ -6,3 +6,4 @@
 export PATH="$HOME/.local/bin:$HOME/test/moodle-plugin-ci/bin:$PATH"
 export MOODLE_DIR="$HOME/test/moodle"
 export LD_LIBRARY_PATH="$HOME/.local/root/usr/lib/aarch64-linux-gnu${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export LOCPATH="$HOME/.local/locale"   # user-built en_AU.UTF-8 locale (needed by Moodle PHPUnit init)
