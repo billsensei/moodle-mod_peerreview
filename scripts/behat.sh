@@ -46,9 +46,16 @@ case "$action" in
     echo "web server :$WEB_PORT and chromedriver :$DRIVER_PORT are up"
     ;;
   stop)
-    pkill -f "php -S 127.0.0.1:$WEB_PORT" || true
-    pkill -f "chromedriver --port=$DRIVER_PORT" || true
-    echo "stopped"
+    # Match only the "-S host:port" / "--port=" arguments: the real command line is "php8.4 -c php.ini -S ...", so a
+    # pattern starting with "php -S" never matches it.
+    pkill -f -- "-S 127\.0\.0\.1:$WEB_PORT( |$)" || true
+    pkill -f -- "chromedriver.* --port=$DRIVER_PORT( |$)" || true
+    for _ in $(seq 1 20); do
+        curl -s -o /dev/null "http://127.0.0.1:$WEB_PORT/" || curl -s -o /dev/null "http://127.0.0.1:$DRIVER_PORT/status" || { echo "stopped"; exit 0; }
+        sleep 0.5
+    done
+    echo "still answering on :$WEB_PORT or :$DRIVER_PORT after stop" >&2
+    exit 1
     ;;
   status)
     curl -s -o /dev/null -w "web server :$WEB_PORT -> %{http_code}\n" "http://127.0.0.1:$WEB_PORT/" || echo "web server down"

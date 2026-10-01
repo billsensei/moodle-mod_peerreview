@@ -36,7 +36,7 @@ $context = context_module::instance($cm->id);
 require_capability('mod/peerreview:export', $context);
 require_capability('mod/peerreview:viewallreviews', $context);
 
-$export = new export($peerreview, $context);
+$export = new export($peerreview, $context, \mod_peerreview\local\group_access::visible_userids($cm, $context));
 \core\dataformat::download_data(
     clean_filename('peerreview_' . $peerreview->name),
     $dataformat,

@@ -112,4 +112,87 @@ final class export_test extends \advanced_testcase {
         $values = array_values(array_filter($row, static fn($key) => (bool) preg_match('/^c\d+_/', $key), ARRAY_FILTER_USE_KEY));
         $this->assertEqualsCanonicalizing(['20.00000', 'a few', '10.00000', 'two'], $values);
     }
+
+    /**
+     * Cells that a spreadsheet would run as a formula are prefixed with an apostrophe.
+     */
+    public function test_formula_cells_are_neutralised(): void {
+        $this->resetAfterTest();
+        $this->create_activity(5);
+        $comments = ['=HYPERLINK("http://evil.example","x")', '+1+1', '-2+3', '@SUM(A1)', 'fine = ok', '3 - 1'];
+        $targets = [2, 3, 4, 5, 3, 2];
+        $reviewers = [1, 1, 1, 1, 2, 3];
+        foreach ($comments as $i => $comment) {
+            $this->allocate($reviewers[$i], $targets[$i], manager::STATUS_SUBMITTED, 50, $comment);
+        }
+
+        $rows = iterator_to_array((new export($this->peerreview, $this->context))->get_rows(), false);
+        $found = array_column($rows, 'comment');
+        foreach (['=HYPERLINK("http://evil.example","x")', '+1+1', '-2+3', '@SUM(A1)'] as $dangerous) {
+            $this->assertContains("'" . $dangerous, $found, 'prefixed');
+            $this->assertNotContains($dangerous, $found, 'never raw');
+        }
+        $this->assertContains('fine = ok', $found, 'harmless text untouched');
+        $this->assertContains('3 - 1', $found, 'harmless text untouched');
+    }
+
+    /**
+     * Names starting with a formula character are neutralised too.
+     */
+    public function test_formula_names_are_neutralised(): void {
+        $this->resetAfterTest();
+        $this->create_activity(2);
+        global $DB;
+        $DB->set_field('user', 'firstname', '=cmd|calc', ['id' => $this->students[1]->id]);
+        $this->allocate(1, 2, manager::STATUS_SUBMITTED, 50, 'ok');
+
+        $row = iterator_to_array((new export($this->peerreview, $this->context))->get_rows(), false)[0];
+        $this->assertStringStartsWith("'=cmd|calc", $row['reviewer']);
+    }
+
+    /**
+     * Rubric/guide remarks are neutralised as well.
+     */
+    public function test_formula_remarks_are_neutralised(): void {
+        $this->resetAfterTest();
+        $this->create_activity(2);
+        $alloc = $this->allocate(1, 2);
+        $this->setAdminUser();
+        $guidegen = $this->getDataGenerator()->get_plugin_generator('gradingform_guide');
+        $controller = $guidegen->get_test_guide($this->context, 'mod_peerreview', 'received');
+        $this->setUser(0);
+        (new service($this->peerreview, $this->context))->submit($alloc, (int) $this->students[1]->id, [
+            'advancedgrading' => $guidegen->get_submitted_form_data($controller, $alloc->id, [
+                'Spelling mistakes' => ['score' => 20, 'remark' => '=1+1'],
+                'Pictures' => ['score' => 10, 'remark' => 'two'],
+            ]),
+        ]);
+        $row = iterator_to_array((new export($this->peerreview, $this->context))->get_rows(), false)[0];
+        $values = array_values(array_filter($row, static fn($key) => (bool) preg_match('/^c\d+_/', $key), ARRAY_FILTER_USE_KEY));
+        $this->assertContains("'=1+1", $values);
+        $this->assertNotContains('=1+1', $values);
+    }
+
+    /**
+     * Only reviews of visible reviewees are exported; an empty list exports nothing.
+     */
+    public function test_visible_users_restrict_rows(): void {
+        $this->resetAfterTest();
+        $this->create_activity(3);
+        $this->allocate(1, 2, manager::STATUS_SUBMITTED, 70, 'about two');
+        $this->allocate(2, 3, manager::STATUS_SUBMITTED, 60, 'about three');
+        $this->allocate(3, 1, manager::STATUS_SUBMITTED, 50, 'about one');
+
+        $all = iterator_to_array((new export($this->peerreview, $this->context))->get_rows(), false);
+        $this->assertCount(3, $all);
+        $none = iterator_to_array((new export($this->peerreview, $this->context, null))->get_rows(), false);
+        $this->assertCount(3, $none, 'null means no restriction');
+
+        $visible = [(int) $this->students[2]->id, (int) $this->students[3]->id];
+        $rows = iterator_to_array((new export($this->peerreview, $this->context, $visible))->get_rows(), false);
+        $this->assertEqualsCanonicalizing(['about two', 'about three'], array_column($rows, 'comment'));
+
+        $rows = iterator_to_array((new export($this->peerreview, $this->context, []))->get_rows(), false);
+        $this->assertSame([], $rows);
+    }
 }

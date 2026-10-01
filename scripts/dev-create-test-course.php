@@ -28,7 +28,7 @@
  */
 
 define('CLI_SCRIPT', true);
-require((getenv('MOODLE_DIR') ?: '/home/bill/test/moodle') . '/config.php');
+require((getenv('MOODLE_DIR') ?: dirname(__DIR__, 3)) . '/config.php');
 require_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->dirroot . '/course/modlib.php');
 require_once($CFG->dirroot . '/user/lib.php');

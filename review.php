@@ -29,6 +29,7 @@ require_once('../../config.php');
 use core\output\notification;
 use mod_peerreview\form\review_form;
 use mod_peerreview\local\allocation\manager;
+use mod_peerreview\local\group_access;
 use mod_peerreview\local\review\service;
 
 $id = required_param('id', PARAM_INT); // Course module id.
@@ -48,6 +49,10 @@ $pageurl = new moodle_url('/mod/peerreview/review.php', ['id' => $cm->id, 'alloc
 $isreviewer = (int) $alloc->reviewerid === (int) $USER->id;
 if (!$isreviewer) {
     require_capability('mod/peerreview:viewallreviews', $context);
+    $visible = group_access::visible_userids($cm, $context);
+    if ($visible !== null && !in_array((int) $alloc->revieweeid, $visible, true)) {
+        throw new required_capability_exception($context, 'mod/peerreview:viewallreviews', 'nopermissions', '');
+    }
 }
 
 // Editing is for the reviewer, inside the open window; everybody else sees the submitted review read-only.

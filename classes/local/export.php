@@ -43,14 +43,27 @@ class export {
      *
      * @param \stdClass $peerreview Activity record.
      * @param \context_module $context Module context.
+     * @param int[]|null $visibleusers Restrict to reviews of these reviewees, null for no restriction.
      */
     public function __construct(
         /** @var \stdClass Activity record. */
         private readonly \stdClass $peerreview,
         /** @var \context_module Module context. */
-        private readonly \context_module $context
+        private readonly \context_module $context,
+        /** @var int[]|null Only reviews of these reviewees, null for all (see group_access::visible_userids). */
+        private readonly ?array $visibleusers = null
     ) {
         $this->controller = (new service($peerreview, $context))->get_controller();
+    }
+
+    /**
+     * Neutralise spreadsheet formulas: a cell starting with = + - @ or a control character is prefixed with an apostrophe.
+     *
+     * @param string $text Cell text.
+     * @return string
+     */
+    private static function safe_cell(string $text): string {
+        return preg_match('/^[=+\-@\t\r]/', $text) ? "'" . $text : $text;
     }
 
     /**
@@ -115,14 +128,17 @@ class export {
               ORDER BY r.lastname, r.firstname, e.lastname, e.firstname, a.id";
         $rs = $DB->get_recordset_sql($sql, ['pr' => $this->peerreview->id]);
         foreach ($rs as $alloc) {
+            if ($this->visibleusers !== null && !in_array((int) $alloc->revieweeid, $this->visibleusers, true)) {
+                continue;
+            }
             $row = [
-                'reviewer' => $alloc->rfirst . ' ' . $alloc->rlast . ' (' . $alloc->rusername . ')',
-                'reviewee' => $alloc->efirst . ' ' . $alloc->elast . ' (' . $alloc->eusername . ')',
+                'reviewer' => self::safe_cell($alloc->rfirst . ' ' . $alloc->rlast . ' (' . $alloc->rusername . ')'),
+                'reviewee' => self::safe_cell($alloc->efirst . ' ' . $alloc->elast . ' (' . $alloc->eusername . ')'),
                 'status' => $statuses[$alloc->status],
                 'grade' => $alloc->grade !== null && (int) $alloc->status === manager::STATUS_SUBMITTED
                     ? format_float((float) $alloc->grade, 5, false) : '',
                 'submitted' => $alloc->timesubmitted ? userdate($alloc->timesubmitted, '%Y-%m-%d %H:%M') : '',
-                'comment' => trim(strip_tags((string) $alloc->feedback)),
+                'comment' => self::safe_cell(trim(strip_tags((string) $alloc->feedback))),
             ];
             if ((int) $alloc->status === manager::STATUS_SUBMITTED) {
                 $row += $this->get_criterion_values($alloc);
@@ -146,12 +162,12 @@ class export {
             foreach ($instance->get_rubric_filling(true)['criteria'] as $id => $filling) {
                 $level = $definition->rubric_criteria[$id]['levels'][$filling['levelid'] ?? 0] ?? null;
                 $values["c{$id}_score"] = $level ? format_float((float) $level['score'], 5, false) : '';
-                $values["c{$id}_remark"] = trim(strip_tags((string) ($filling['remark'] ?? '')));
+                $values["c{$id}_remark"] = self::safe_cell(trim(strip_tags((string) ($filling['remark'] ?? ''))));
             }
         } else if ($instance instanceof \gradingform_guide_instance) {
             foreach ($instance->get_guide_filling(true)['criteria'] as $id => $filling) {
                 $values["c{$id}_score"] = format_float((float) $filling['score'], 5, false);
-                $values["c{$id}_remark"] = trim(strip_tags((string) ($filling['remark'] ?? '')));
+                $values["c{$id}_remark"] = self::safe_cell(trim(strip_tags((string) ($filling['remark'] ?? ''))));
             }
         }
         return $values;

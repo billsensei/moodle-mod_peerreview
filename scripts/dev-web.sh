@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Purpose: log in to the dev site and make GET/POST requests with curl (for checking pages without a browser).
-# Usage:   scripts/dev-web.sh login USER PASS
+# Usage:   scripts/dev-web.sh login USER [PASS]    (without PASS: PEERREVIEW_PASS env var, else prompted)
 #          scripts/dev-web.sh get PATH
 #          scripts/dev-web.sh post PATH FIELD=VALUE...      (values are URL-encoded; repeat FIELD[]=v for arrays)
 # Arguments: PATH is relative to the site root, e.g. "mod/peerreview/allocate.php?id=5".
@@ -13,11 +13,16 @@ JAR="${JAR:-/tmp/peerreview-cookies}"
 action="${1:-}"
 case "$action" in
   login)
-    [ $# -eq 3 ] || { echo "usage: $0 login USER PASS" >&2; exit 1; }
+    [ $# -ge 2 ] && [ $# -le 3 ] || { echo "usage: $0 login USER [PASS]" >&2; exit 1; }
+    pass="${3:-${PEERREVIEW_PASS:-}}"
+    [ -n "$pass" ] || { read -r -s -p "Password: " pass; echo >&2; }
+    passfile=$(mktemp)
+    trap 'rm -f "$passfile"' EXIT
+    printf '%s' "$pass" > "$passfile"  # Keeps the password out of the curl command line (visible in ps).
     rm -f "$JAR"
     token=$(curl -s -c "$JAR" -b "$JAR" "$BASE/login/index.php" | grep -o 'name="logintoken" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"//')
     curl -s -c "$JAR" -b "$JAR" -o /dev/null -w "login %{http_code}\n" \
-      --data-urlencode "username=$2" --data-urlencode "password=$3" --data-urlencode "logintoken=$token" "$BASE/login/index.php"
+      --data-urlencode "username=$2" --data-urlencode "password@$passfile" --data-urlencode "logintoken=$token" "$BASE/login/index.php"
     ;;
   get)
     [ $# -eq 2 ] || { echo "usage: $0 get PATH" >&2; exit 1; }

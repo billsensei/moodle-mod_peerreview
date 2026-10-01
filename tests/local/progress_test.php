@@ -151,4 +151,47 @@ final class progress_test extends \advanced_testcase {
         $this->setUser($loner);
         $this->assertSame(-1, group_access::resolve($cm, $this->context, 0), 'in no group: sees nobody');
     }
+
+    /**
+     * Visible users: null without restriction, otherwise members of the user's own groups only.
+     */
+    public function test_group_access_visible_userids(): void {
+        $this->resetAfterTest();
+        $this->create_activity(3, [], SEPARATEGROUPS);
+        $generator = $this->getDataGenerator();
+        $mine = $generator->create_group(['courseid' => $this->course->id]);
+        $other = $generator->create_group(['courseid' => $this->course->id]);
+        $limited = $this->create_group_limited_teacher();
+        $generator->create_group_member(['groupid' => $mine->id, 'userid' => $limited->id]);
+        $generator->create_group_member(['groupid' => $mine->id, 'userid' => $this->students[1]->id]);
+        $generator->create_group_member(['groupid' => $mine->id, 'userid' => $this->students[2]->id]);
+        $generator->create_group_member(['groupid' => $other->id, 'userid' => $this->students[3]->id]);
+        $cm = get_fast_modinfo($this->course)->get_cm($this->cm->id);
+
+        $this->setUser($limited);
+        $visible = group_access::visible_userids($cm, $this->context);
+        $this->assertEqualsCanonicalizing(
+            [(int) $limited->id, (int) $this->students[1]->id, (int) $this->students[2]->id],
+            $visible
+        );
+        $this->assertNotContains((int) $this->students[3]->id, $visible);
+
+        $this->setUser($this->teacher); // Has moodle/site:accessallgroups.
+        $this->assertNull(group_access::visible_userids($cm, $this->context));
+
+        $loner = $this->create_group_limited_teacher();
+        $this->setUser($loner);
+        $this->assertSame([], group_access::visible_userids($cm, $this->context), 'in no group: sees nobody');
+    }
+
+    /**
+     * Outside separate-groups mode nobody is restricted.
+     */
+    public function test_group_access_visible_userids_unrestricted(): void {
+        $this->resetAfterTest();
+        $this->create_activity(2, [], NOGROUPS);
+        $cm = get_fast_modinfo($this->course)->get_cm($this->cm->id);
+        $this->setUser($this->create_group_limited_teacher());
+        $this->assertNull(group_access::visible_userids($cm, $this->context));
+    }
 }

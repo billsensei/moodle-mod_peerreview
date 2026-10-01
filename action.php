@@ -40,6 +40,18 @@ require_login($course, false, $cm);
 $context = context_module::instance($cm->id);
 require_sesskey();
 
+// Each action needs a capability; the called classes check it again.
+$actioncaps = [
+    'release' => 'mod/peerreview:releasefeedback',
+    'hide' => 'mod/peerreview:releasefeedback',
+    'pushgrades' => 'mod/peerreview:overridegrade',
+    'revertoverride' => 'mod/peerreview:overridegrade',
+];
+if (!isset($actioncaps[$action])) {
+    throw new moodle_exception('invalidparameter', 'debug');
+}
+require_capability($actioncaps[$action], $context);
+
 $target = new moodle_url($returnto === 'report' ? '/mod/peerreview/report.php' : '/mod/peerreview/view.php', ['id' => $cm->id]);
 if ($userid && $returnto === 'report') {
     $target->param('user', $userid);

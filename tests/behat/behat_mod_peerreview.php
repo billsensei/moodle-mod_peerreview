@@ -48,11 +48,28 @@ class behat_mod_peerreview extends behat_base {
      *
      * Example: I am on the "Talk review" "mod_peerreview > Report" page logged in as "teacher1"
      *
+     * The "Review" page takes "<activity name>: <reviewer username> reviews <reviewee username>", e.g.
+     * I am on the "Talk review: student1 reviews student2" "mod_peerreview > Review" page logged in as "teacher1"
+     *
      * @param string $type Page type.
      * @param string $identifier Activity name.
      * @return moodle_url
      */
     protected function resolve_page_instance_url(string $type, string $identifier): moodle_url {
+        global $DB;
+
+        if (strtolower($type) === 'review') {
+            if (!preg_match('/^(.+): (\S+) reviews (\S+)$/', $identifier, $m)) {
+                throw new Exception('Review page identifier must be "<activity>: <reviewer> reviews <reviewee>".');
+            }
+            $cm = $this->get_cm_by_activity_name('peerreview', $m[1]);
+            $alloc = $DB->get_record('peerreview_alloc', [
+                'peerreviewid' => $cm->instance,
+                'reviewerid' => $DB->get_field('user', 'id', ['username' => $m[2]], MUST_EXIST),
+                'revieweeid' => $DB->get_field('user', 'id', ['username' => $m[3]], MUST_EXIST),
+            ], 'id', MUST_EXIST);
+            return new moodle_url('/mod/peerreview/review.php', ['id' => $cm->id, 'alloc' => $alloc->id]);
+        }
         $cm = $this->get_cm_by_activity_name('peerreview', $identifier);
         return match (strtolower($type)) {
             'view' => new moodle_url('/mod/peerreview/view.php', ['id' => $cm->id]),
@@ -61,6 +78,64 @@ class behat_mod_peerreview extends behat_base {
             'allocate random' => new moodle_url('/mod/peerreview/allocate.php', ['id' => $cm->id, 'method' => 'random']),
             default => throw new Exception('Unrecognised mod_peerreview page type "' . $type . '".'),
         };
+    }
+
+    /**
+     * Create allocations without going through the allocation screens.
+     *
+     * Example:
+     *   Given the following peer review allocations exist:
+     *     | activity    | reviewer | reviewee |
+     *     | Talk review | student1 | student2 |
+     *
+     * @Given /^the following peer review allocations exist:$/
+     * @param TableNode $table Rows: activity name, reviewer username, reviewee username.
+     */
+    public function the_following_peer_review_allocations_exist(TableNode $table): void {
+        global $DB;
+
+        foreach ($table->getHash() as $row) {
+            $cm = $this->get_cm_by_activity_name('peerreview', $row['activity']);
+            $peerreview = $DB->get_record('peerreview', ['id' => $cm->instance], '*', MUST_EXIST);
+            $manager = new \mod_peerreview\local\allocation\manager(
+                $peerreview,
+                $cm->get_course_module_record(),
+                \context_module::instance($cm->id)
+            );
+            $reviewer = $DB->get_field('user', 'id', ['username' => $row['reviewer']], MUST_EXIST);
+            $reviewee = $DB->get_field('user', 'id', ['username' => $row['reviewee']], MUST_EXIST);
+            [$created] = $manager->add_manual((int) $reviewer, [(int) $reviewee], get_admin()->id);
+            if ($created !== 1) {
+                throw new Exception("Could not allocate {$row['reviewer']} to review {$row['reviewee']}.");
+            }
+        }
+    }
+
+    /**
+     * Open a review page that must be refused, check the "no permissions" error, then leave the error page.
+     *
+     * Behat fails any step that ends on an exception page, so the check and the navigation away happen in one step.
+     *
+     * Example: Then I should be refused the "Talk review: student3 reviews student4" peer review
+     *
+     * @Then /^I should be refused the "(?P<identifier>[^"]*)" peer review$/
+     * @param string $identifier "<activity>: <reviewer> reviews <reviewee>".
+     */
+    public function i_should_be_refused_the_peer_review(string $identifier): void {
+        $url = $this->resolve_page_instance_url('review', $identifier);
+        $this->getSession()->visit($this->locate_path($url->out_as_local_url(false)));
+        $error = $this->getSession()->getPage()->find('xpath', "//div[@data-rel='fatalerror']");
+        $errortext = $error ? $error->getText() : '';
+        $page = $this->getSession()->getPage()->getText();
+        $reviewshown = str_contains($page, get_string('reviewof', 'mod_peerreview', ''));
+        // Leave the error page first, or the exception check after this step would fail it.
+        $this->getSession()->visit($this->locate_path('/'));
+        if (!str_contains($errortext, 'Sorry, but you do not currently have permissions to do that')) {
+            throw new ExpectationException('Expected a "no permissions" error for ' . $identifier, $this->getSession());
+        }
+        if ($reviewshown) {
+            throw new ExpectationException('The review of ' . $identifier . ' was shown to a refused user', $this->getSession());
+        }
     }
 
     /**

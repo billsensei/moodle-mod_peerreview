@@ -51,4 +51,27 @@ class group_access {
         }
         return in_array($groupid, $allowed, true) ? $groupid : (int) reset($allowed);
     }
+
+    /**
+     * Ids of the users the current user may see, or null when not restricted.
+     *
+     * Restricted means separate groups without moodle/site:accessallgroups: only members of the user's own groups.
+     *
+     * @param \stdClass|\cm_info $cm Course module.
+     * @param \context_module $context Module context.
+     * @return int[]|null Visible user ids, null for no restriction.
+     */
+    public static function visible_userids(\stdClass|\cm_info $cm, \context_module $context): ?array {
+        if ((int) groups_get_activity_groupmode($cm) !== SEPARATEGROUPS
+                || has_capability('moodle/site:accessallgroups', $context)) {
+            return null;
+        }
+        $userids = [];
+        foreach (array_keys(groups_get_activity_allowed_groups($cm)) as $groupid) {
+            foreach (array_keys(groups_get_members($groupid, 'u.id')) as $userid) {
+                $userids[(int) $userid] = (int) $userid;
+            }
+        }
+        return array_values($userids);
+    }
 }

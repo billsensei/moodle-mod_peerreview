@@ -30,7 +30,7 @@
  */
 
 define('CLI_SCRIPT', true);
-require((getenv('MOODLE_DIR') ?: '/home/bill/test/moodle') . '/config.php');
+require((getenv('MOODLE_DIR') ?: dirname(__DIR__, 3)) . '/config.php');
 
 foreach ($DB->get_records('peerreview', null, 'id') as $p) {
     $cm = get_coursemodule_from_instance('peerreview', $p->id, $p->course, false, MUST_EXIST);
