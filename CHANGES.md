@@ -1,5 +1,9 @@
 # Changes
 
+## 0.9.1 (beta), 2026-10-01
+
+- Added the GPL v3 `LICENSE` file to the plugin root.
+
 ## 0.9.0 (beta), 2026-09-30
 
 First beta, for Moodle 5.0.
