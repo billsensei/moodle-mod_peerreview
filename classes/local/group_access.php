@@ -62,8 +62,8 @@ class group_access {
      * @return int[]|null Visible user ids, null for no restriction.
      */
     public static function visible_userids(\stdClass|\cm_info $cm, \context_module $context): ?array {
-        if ((int) groups_get_activity_groupmode($cm) !== SEPARATEGROUPS
-                || has_capability('moodle/site:accessallgroups', $context)) {
+        $separate = (int) groups_get_activity_groupmode($cm) === SEPARATEGROUPS;
+        if (!$separate || has_capability('moodle/site:accessallgroups', $context)) {
             return null;
         }
         $userids = [];
