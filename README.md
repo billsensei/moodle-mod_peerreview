@@ -1,6 +1,6 @@
 # Peer review (mod_peerreview)
 
-A lightweight peer assessment activity for Moodle 5.0, made for face-to-face and blended classes.
+A lightweight peer assessment activity for Moodle 5.0 and 5.1, made for face-to-face and blended classes.
 
 Students assess something that happened in the room — a presentation, a speaking task, a role-play, a contribution to group work. There are **no submissions and no phases**: the activity is simply open, optionally between an opening and a closing date. The teacher decides who reviews whom, students fill in a rubric or marking guide on their phones, the teacher watches progress live and releases the feedback when ready, and an aggregated grade goes to the gradebook.
 
@@ -22,8 +22,8 @@ Compared with the Workshop activity (`mod_workshop`), there is nothing to upload
 
 | | |
 |---|---|
-| Moodle | 5.0 (version 2025041400 or later). Not tested with 5.2+. |
-| PHP | 8.2 or 8.3 (what Moodle 5.0 supports) |
+| Moodle | 5.0 or 5.1 (version 2025041400 or later). Not tested with 5.2+. |
+| PHP | 8.2 or 8.3 (tested on both with Moodle 5.0 and 5.1) |
 | Database | MariaDB or PostgreSQL (tested on MariaDB 11 and PostgreSQL 17). MySQL should work, since the plugin only uses Moodle's database API, but it is not tested. |
 
 ## Installation
