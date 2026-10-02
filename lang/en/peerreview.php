@@ -89,6 +89,7 @@ $string['eventcoursemoduleinstancelistviewed'] = 'Course module instance list vi
 $string['eventcoursemoduleviewed'] = 'Course module viewed';
 $string['eventfeedback_released'] = 'Feedback released or hidden';
 $string['eventgrade_overridden'] = 'Received grade overridden';
+$string['eventreminders_sent'] = 'Review reminders sent';
 $string['eventreview_submitted'] = 'Review submitted';
 $string['eventreview_updated'] = 'Review updated';
 $string['exportreviews'] = 'Export all reviews';
@@ -110,6 +111,7 @@ $string['gradeparticipation_help'] = 'Optional second grade: the percentage of a
 $string['gradespushed'] = 'Grades were sent to the gradebook.';
 $string['hidefeedback'] = 'Hide feedback';
 $string['manualskipped'] = '{$a} pairs were skipped (not enrolled students, or a self-review that is not allowed).';
+$string['messageprovider:reminder'] = 'Reminder to finish peer reviews';
 $string['methodhelp_csv'] = 'Upload a CSV file with the columns reviewer and reviewee (usernames or email addresses). You will see a preview before anything is saved.';
 $string['methodhelp_group'] = 'Every member of a group reviews every other member of the same group. Good for assessing contribution in group work.';
 $string['methodhelp_manual'] = 'Choose a reviewer and the students they will review. Existing pairs are left alone.';
@@ -186,6 +188,17 @@ $string['receivedgrade'] = 'Received grade';
 $string['refreshnow'] = 'Refresh now';
 $string['releasefeedback'] = 'Release feedback';
 $string['remark'] = 'Remark';
+$string['reminderconfirm'] = 'Send a message to every student in this view who has reviews left to do?';
+$string['remindermessage'] = 'Hello {$a->firstname},
+
+You still have {$a->remaining} of {$a->total} peer reviews to finish in {$a->activity}.
+
+Open the activity: {$a->url}';
+$string['remindernotopen'] = 'Reminders can only be sent while the activity is open.';
+$string['remindersent'] = '{$a} students were sent a reminder.';
+$string['remindersmall'] = '{$a->remaining} peer reviews left in {$a->activity}';
+$string['remindersnone'] = 'Nobody in this view has reviews left to do, so no reminders were sent.';
+$string['remindersubject'] = 'Peer reviews to finish: {$a}';
 $string['replaceunstarted'] = 'Replace allocations that have not been started';
 $string['replaceunstarted_help'] = 'Removes allocations in scope where no review has been saved yet, then creates new ones. Allocations with a saved or submitted review are always kept.';
 $string['report'] = 'Report';
@@ -223,6 +236,7 @@ $string['score_help'] = 'Give a score from 0 up to the maximum for this activity
 $string['scorescale'] = 'Score';
 $string['scorescale_help'] = 'Choose the scale item that fits this work best. No rubric or marking guide has been set up, so a single scale item is used.';
 $string['selfreview'] = 'You (self-review)';
+$string['sendreminders'] = 'Remind students with reviews to do';
 $string['status'] = 'Status';
 $string['statusdraft'] = 'Draft saved';
 $string['statusnew'] = 'Not started';

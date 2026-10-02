@@ -163,7 +163,7 @@ else:
 On **Submit**: `grade = instance->submit_and_get_grade($data->advancedgrading, alloc.id)`; store `alloc.grade = grade`, `status = 2`, `timesubmitted`; fire `review_submitted` (first time) or `review_updated`; update completion. Fallback path stores the number and comment directly.
 On **Save draft**: form validation of the grading element is skipped; `status = 1`; `alloc.grade` stays NULL. **Spike in Phase 4:** confirm that `gradingform_rubric`/`guide` instances accept a partial `update()`; if not, drafts store only the fallback comment plus a note and the rubric is saved on submit.
 Edit after submit allowed until `timeclose`; the same instance is updated and `review_updated` fires. Rubric changed after reviews exist → core marks instances `NEEDUPDATE`; the form shows core's warning and the grade is recomputed on resubmit (same behaviour as assign).
-Max grade change in settings: stored `alloc.grade` and overrides are rescaled proportionally in `peerreview_update_instance`.
+Max grade change in settings: stored `alloc.grade` and overrides are rescaled proportionally in `peerreview_update_instance` (`grade_range::rescale_stored_grades()`, points to points only). Grades already in the gradebook are re-pushed; if nothing was pushed yet, nothing is.
 
 ### 5.3 Aggregation and gradebook
 ```

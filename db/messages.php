@@ -15,7 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version metadata for mod_peerreview.
+ * Message providers for mod_peerreview.
+ *
+ * Modelled on mod/assign/db/messages.php.
  *
  * @package    mod_peerreview
  * @copyright  2026 Bill <wrwjpn@gmail.com>
@@ -24,9 +26,13 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'mod_peerreview';
-$plugin->version = 2026100201;
-$plugin->requires = 2025041400; // Moodle 5.0.
-$plugin->supported = [500, 501]; // Tested on Moodle 5.0 and 5.1.
-$plugin->maturity = MATURITY_BETA;
-$plugin->release = '0.9.1';
+$messageproviders = [
+    // A teacher's reminder to students who have peer reviews left to do.
+    'reminder' => [
+        'defaults' => [
+            'popup' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
+            'email' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
+            'airnotifier' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
+        ],
+    ],
+];

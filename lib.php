@@ -88,9 +88,24 @@ function peerreview_update_instance(stdClass $data, ?mod_peerreview_mod_form $mf
     $data->id = $data->instance;
     $data->timemodified = time();
     $data->gradeparticipation = (int) ($data->gradeparticipation ?? 0);
+    $oldgrade = (int) $DB->get_field('peerreview', 'grade', ['id' => $data->id]);
     $DB->update_record('peerreview', $data);
 
+    // A new maximum rescales stored review grades and overrides proportionally (design 5.2).
+    $rescaled = isset($data->grade)
+        && (new grade_range($oldgrade))->rescale_stored_grades($data->id, new grade_range((int) $data->grade));
+
     peerreview_grade_item_update($data);
+    if ($rescaled) {
+        // Grades already in the gradebook would now exceed the new maximum; refresh them. Grades never pushed stay unpushed.
+        $item = grade_item::fetch([
+            'courseid' => $data->course, 'itemtype' => 'mod', 'itemmodule' => 'peerreview',
+            'iteminstance' => $data->id, 'itemnumber' => gradeitems::ITEM_RECEIVED,
+        ]);
+        if ($item && $DB->record_exists_select('grade_grades', 'itemid = ? AND finalgrade IS NOT NULL', [$item->id])) {
+            peerreview_update_grades($DB->get_record('peerreview', ['id' => $data->id], '*', MUST_EXIST));
+        }
+    }
 
     return true;
 }

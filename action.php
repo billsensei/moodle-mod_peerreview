@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * State-changing actions from the teacher pages: release or hide feedback, push grades, revert a grade override.
+ * State-changing actions from the teacher pages: release or hide feedback, push grades, revert a grade override, send reminders.
  *
  * @package    mod_peerreview
  * @copyright  2026 Bill <wrwjpn@gmail.com>
@@ -28,11 +28,14 @@ require_once(__DIR__ . '/lib.php');
 use core\output\notification;
 use mod_peerreview\local\feedback;
 use mod_peerreview\local\grade\override;
+use mod_peerreview\local\group_access;
+use mod_peerreview\local\reminder;
 
 $id = required_param('id', PARAM_INT); // Course module id.
 $action = required_param('action', PARAM_ALPHA);
 $returnto = optional_param('returnto', 'view', PARAM_ALPHA);
 $userid = optional_param('user', 0, PARAM_INT);
+$groupid = optional_param('group', 0, PARAM_INT);
 
 [$course, $cm] = get_course_and_cm_from_cmid($id, 'peerreview');
 $peerreview = $DB->get_record('peerreview', ['id' => $cm->instance], '*', MUST_EXIST);
@@ -46,6 +49,7 @@ $actioncaps = [
     'hide' => 'mod/peerreview:releasefeedback',
     'pushgrades' => 'mod/peerreview:overridegrade',
     'revertoverride' => 'mod/peerreview:overridegrade',
+    'sendreminders' => 'mod/peerreview:allocate',
 ];
 if (!isset($actioncaps[$action])) {
     throw new moodle_exception('invalidparameter', 'debug');
@@ -71,6 +75,11 @@ switch ($action) {
     case 'revertoverride':
         $reverted = (new override($peerreview, $context))->revert($userid); // Checks the capability.
         $message = get_string($reverted ? 'overridereverted' : 'nooverridetorevert', 'mod_peerreview');
+        break;
+    case 'sendreminders':
+        $sent = (new reminder($peerreview, $cm->get_course_module_record(), $context)) // Checks the capability.
+            ->send(group_access::resolve($cm, $context, $groupid), (int) $USER->id);
+        $message = $sent ? get_string('remindersent', 'mod_peerreview', $sent) : get_string('remindersnone', 'mod_peerreview');
         break;
     default:
         throw new moodle_exception('invalidparameter', 'debug');

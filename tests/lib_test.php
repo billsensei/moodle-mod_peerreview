@@ -39,6 +39,7 @@ use PHPUnit\Framework\Attributes\CoversFunction;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 #[CoversFunction('peerreview_reset_userdata')]
+#[CoversFunction('peerreview_update_instance')]
 #[CoversFunction('peerreview_get_coursemodule_info')]
 final class lib_test extends \advanced_testcase {
     use activity_trait;
@@ -121,6 +122,51 @@ final class lib_test extends \advanced_testcase {
         $this->assertSame(0, $DB->count_records('peerreview'));
         $this->assertSame(0, $DB->count_records('peerreview_alloc'));
         $this->assertSame(0, $DB->count_records('grade_items', ['itemmodule' => 'peerreview']));
+    }
+
+    /**
+     * Changing the maximum points rescales stored review grades and overrides, and refreshes grades already pushed to the
+     * gradebook; a grade type change is left alone.
+     */
+    public function test_update_instance_rescales_grades(): void {
+        $this->resetAfterTest();
+        global $DB;
+        $this->create_activity(3, ['grade' => 100]);
+        $alloc = $this->allocate(1, 2, manager::STATUS_SUBMITTED, 80);
+        $draft = $this->allocate(3, 2);
+        $DB->insert_record('peerreview_override', (object) [
+            'peerreviewid' => $this->peerreview->id,
+            'userid' => $this->students[3]->id,
+            'grade' => 60,
+            'overriddenby' => $this->teacher->id,
+            'timemodified' => time(),
+        ]);
+        peerreview_update_grades($this->peerreview);
+
+        $data = clone $this->peerreview;
+        $data->instance = $data->id;
+        $data->grade = 10;
+        $this->assertTrue(peerreview_update_instance($data));
+
+        $this->assertEqualsWithDelta(8, (float) $DB->get_field('peerreview_alloc', 'grade', ['id' => $alloc->id]), 0.0001);
+        $this->assertNull($DB->get_field('peerreview_alloc', 'grade', ['id' => $draft->id]));
+        $this->assertEqualsWithDelta(
+            6,
+            (float) $DB->get_field('peerreview_override', 'grade', ['userid' => $this->students[3]->id]),
+            0.0001
+        );
+        $gradeitem = \grade_item::fetch(['itemmodule' => 'peerreview', 'iteminstance' => $this->peerreview->id, 'itemnumber' => 0]);
+        $this->assertEqualsWithDelta(10, (float) $gradeitem->grademax, 0.0001);
+        $this->assertEqualsWithDelta(
+            8,
+            (float) $DB->get_field('grade_grades', 'finalgrade', ['itemid' => $gradeitem->id, 'userid' => $this->students[2]->id]),
+            0.0001
+        );
+
+        // The same maximum again changes nothing.
+        $data->grade = 10;
+        peerreview_update_instance($data);
+        $this->assertEqualsWithDelta(8, (float) $DB->get_field('peerreview_alloc', 'grade', ['id' => $alloc->id]), 0.0001);
     }
 
     /**

@@ -140,6 +140,18 @@ echo html_writer::start_div('d-flex flex-wrap gap-3 mt-3');
 if (has_capability('mod/peerreview:releasefeedback', $context)) {
     echo $OUTPUT->render(release_button::make($cm->id, (bool) $peerreview->feedbackreleased, 'report'));
 }
+if (has_capability('mod/peerreview:allocate', $context)) {
+    $remindbutton = new \single_button(
+        new moodle_url('/mod/peerreview/action.php', [
+            'id' => $cm->id, 'action' => 'sendreminders', 'returnto' => 'report', 'group' => max(0, $groupid),
+        ]),
+        get_string('sendreminders', 'mod_peerreview'),
+        'post',
+        \single_button::BUTTON_SECONDARY
+    );
+    $remindbutton->add_confirm_action(get_string('reminderconfirm', 'mod_peerreview'));
+    echo $OUTPUT->render($remindbutton);
+}
 if (has_capability('mod/peerreview:overridegrade', $context)) {
     echo $OUTPUT->render(new \single_button(
         new moodle_url('/mod/peerreview/action.php', ['id' => $cm->id, 'action' => 'pushgrades', 'returnto' => 'report']),

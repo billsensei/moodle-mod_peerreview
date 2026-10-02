@@ -45,6 +45,8 @@ Tell students to open the activity on their phones (see the [student how-to](STU
 
 To follow progress, open the activity and press **Report**. The table shows how many reviews each student has given and received, and it refreshes itself every 15 seconds. Click a student's name to read their reviews.
 
+To nudge students who are behind, press **Remind students with reviews to do** on the same page. Every student in the current group view who has reviews left gets a message (popup, email or the Moodle app, depending on their notification settings). It only works while the activity is open, and nothing is sent unless you press the button.
+
 ## 5. Release the feedback
 
 Students do not see the reviews they received until you allow it. On the **Report** page, press **Release feedback**. You can press **Hide feedback** later to hide it again.

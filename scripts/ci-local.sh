@@ -6,6 +6,7 @@
 #            --no-behat    skip Behat (needs `scripts/behat.sh start` and an initialised Behat site)
 # Environment: needs `source scripts/env.sh` first (moodle-plugin-ci, php, node on PATH), and the database running
 #              (`scripts/db.sh start`). PHPUnit needs an initialised PHPUnit site (see docs/COMMANDS.md).
+#              The full output of the last run is kept in $LOGDIR/ci-local-last.log (default ~/test/behat_dataroot/logs).
 # Warning: do not create or edit files in the plugin while this runs. The grunt check copies the plugin away and
 #          mirrors it back afterwards, deleting files that did not exist when it started.
 # Exit codes: 0 every check passed, 1 at least one check failed, 2 bad usage.
@@ -36,6 +37,11 @@ checks=(
 [ "$runphpunit" = 1 ] && checks+=("phpunit --fail-on-warning")
 [ "$runbehat" = 1 ] && checks+=("behat --profile default --auto-rerun 0")
 
+# Keep the whole output: a Behat stack trace ends in an error that hides the first (real) one.
+logfile="${LOGDIR:-$HOME/test/behat_dataroot/logs}/ci-local-last.log"
+mkdir -p "$(dirname "$logfile")"
+: > "$logfile"
+
 cd "$plugindir"
 summary=()
 failed=0
@@ -47,8 +53,8 @@ for check in "${checks[@]}"; do
     fi
     set +e
     # shellcheck disable=SC2086 # the check string carries its own options.
-    moodle-plugin-ci $check .
-    status=$?
+    moodle-plugin-ci $check . 2>&1 | tee -a "$logfile"
+    status=${PIPESTATUS[0]}
     set -e
     if [ "$status" -eq 0 ]; then
         summary+=("PASS  $check")

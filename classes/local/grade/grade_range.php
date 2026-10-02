@@ -166,6 +166,34 @@ class grade_range {
     }
 
     /**
+     * Scale the stored review grades and overrides of an activity when the maximum points change.
+     *
+     * Does nothing unless both ranges are points with different maximums. Modelled on assign_rescale_activity_grades()
+     * in mod/assign/lib.php, but proportional from zero because the minimum is always 0.
+     *
+     * @param int $peerreviewid Activity id.
+     * @param self $new The new range.
+     * @return bool Whether anything was rescaled.
+     */
+    public function rescale_stored_grades(int $peerreviewid, self $new): bool {
+        global $DB;
+
+        if ($this->is_scale() || $new->is_scale() || $this->max() <= 0 || $this->max() === $new->max()) {
+            return false;
+        }
+        $ratio = $new->max() / $this->max();
+        $transaction = $DB->start_delegated_transaction();
+        foreach (['peerreview_alloc' => 'grade IS NOT NULL AND ', 'peerreview_override' => ''] as $table => $extra) {
+            $DB->execute(
+                "UPDATE {{$table}} SET grade = grade * :ratio WHERE $extra peerreviewid = :id",
+                ['ratio' => $ratio, 'id' => $peerreviewid]
+            );
+        }
+        $transaction->allow_commit();
+        return true;
+    }
+
+    /**
      * Bring a value to what the gradebook stores: points unchanged, a scale position rounded to a whole item.
      *
      * @param float|null $value A grade in this range.

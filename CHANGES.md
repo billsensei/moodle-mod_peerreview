@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Reminders: on the **Report** page, **Remind students with reviews to do** sends a message (popup, email or the Moodle app, following each student's notification settings) to every student in the current group view who has submitted fewer reviews than assigned. Teachers press the button themselves; nothing is sent automatically. It works only while the activity is open and needs the capability to allocate reviews.
+
+- Changing the maximum grade (points to points) now rescales stored review grades and teacher overrides proportionally, and refreshes grades already in the gradebook. Before, old values stayed as they were and could exceed the new maximum.
+
 - The received grade can be a scale (for example Poor / Fair / Good / Excellent), not only points. Reviewers pick a scale item (or use a rubric or marking guide, which map onto the scale); the mean or median is rounded to the nearest item for the gradebook; reports and the student page show item names. The participation grade stays points only. Once reviews exist the grade cannot be switched between points and a scale.
 
 - A submitted review is now shown with the grading method it was written in (rubric, marking guide) after the teacher switches methods, with a note saying so.

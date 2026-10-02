@@ -342,3 +342,7 @@ Actual output (phase 9): PASS phplint, phpmd (38 advisory violations, 0 errors),
 If it fails: see the entries for Java, PostgreSQL and ci-local.sh above.
 - 2026-10-02: reviews written under an old grading method are shown with it (service::get_submitted_instance fallback, review.php notice)
 - 2026-10-02: scale grades: tests/local/grade/{grade_range,scale}_test.php, tests/behat/scale_grade.feature (run behat.sh init after adding a feature file)
+- 2026-10-02: PHPUnit lib_test + grade_range tests; ci-local.sh (rescale stored grades)
+- 2026-10-02: behat.sh stop/start/run x2, moodle-plugin-ci behat after lang touch; ci-local.sh --no-phpunit (log kept)
+- 2026-10-02: edited .github/workflows/ci.yml (add MOODLE_502_STABLE); not run
+- 2026-10-02: phpunit init (version bump), reminder_test.php; behat.sh init + ci-local.sh (reminders)
