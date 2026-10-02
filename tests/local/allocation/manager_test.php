@@ -293,46 +293,6 @@ final class manager_test extends \advanced_testcase {
     }
 
     /**
-     * CSV rows: usernames and emails work, bad rows are reported with their line, duplicates counted.
-     */
-    public function test_csv_proposal(): void {
-        $this->resetAfterTest();
-        [$manager, , , $s, $teacher] = $this->setup_course(4);
-        $manager->add_manual($s[1]->id, [$s[2]->id], $teacher->id);
-        $rows = [
-            2 => [$s[1]->username, $s[3]->username],
-            3 => [strtoupper($s[2]->email), $s[1]->username],
-            4 => [$s[1]->username, $s[2]->username],
-            5 => [$s[1]->username, 'ghost'],
-            6 => [$s[4]->username, $s[4]->username],
-            7 => [$s[3]->username, $s[4]->username],
-            8 => [$s[3]->username, $s[4]->username],
-        ];
-        [$proposal, $errors, $duplicates] = $manager->build_csv_proposal($rows);
-        $this->assertEqualsCanonicalizing(
-            [[$s[1]->id, $s[3]->id], [$s[2]->id, $s[1]->id], [$s[3]->id, $s[4]->id]],
-            $proposal->pairs
-        );
-        $this->assertSame(2, $duplicates, 'existing pair on line 4 and repeated pair on line 8');
-        $this->assertSame([5, 'csverrorunknown', 'ghost'], $errors[0]);
-        $this->assertSame([6, 'errorselfnotallowed', $s[4]->username], $errors[1]);
-    }
-
-    /**
-     * Export rows: reviewer, reviewee, status text.
-     */
-    public function test_export_rows(): void {
-        $this->resetAfterTest();
-        [$manager, , , $s, $teacher] = $this->setup_course(2);
-        $manager->add_manual($s[1]->id, [$s[2]->id], $teacher->id);
-        $rows = iterator_to_array($manager->export_rows(), false);
-        $this->assertCount(1, $rows);
-        $this->assertSame($s[1]->username, $rows[0]->reviewer);
-        $this->assertSame($s[2]->username, $rows[0]->reviewee);
-        $this->assertSame(get_string('statusnew', 'mod_peerreview'), $rows[0]->status);
-    }
-
-    /**
      * The self-assessment method proposes one self-review for each student who has none, and nothing the second time.
      */
     public function test_self_assessment_plan(): void {

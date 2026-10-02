@@ -32,6 +32,7 @@ require_once('../../config.php');
 require_once($CFG->libdir . '/csvlib.class.php');
 
 use mod_peerreview\form\allocate_form;
+use mod_peerreview\local\allocation\csv;
 use mod_peerreview\local\allocation\manager;
 use mod_peerreview\output\allocation_list;
 use mod_peerreview\output\allocation_preview;
@@ -46,6 +47,7 @@ $context = context_module::instance($cm->id);
 require_capability('mod/peerreview:allocate', $context);
 
 $manager = new manager($peerreview, $cm->get_course_module_record(), $context);
+$csv = new csv($peerreview, $manager);
 $students = $manager->get_students();
 $pageurl = new moodle_url('/mod/peerreview/allocate.php', ['id' => $cm->id]);
 $overviewurl = new moodle_url($pageurl, ['method' => 'overview']);
@@ -59,7 +61,7 @@ if ($method === 'csvexport') {
             'reviewee' => get_string('reviewee', 'mod_peerreview'),
             'status' => get_string('status', 'mod_peerreview'),
         ],
-        $manager->export_rows()
+        $csv->export_rows()
     );
     die();
 }
@@ -226,7 +228,7 @@ if ($method === 'csv' && ($iid = optional_param('iid', 0, PARAM_INT)) && optiona
     }
     $reader->close();
     $reader->cleanup(true);
-    [$proposal] = $manager->build_csv_proposal($rows);
+    [$proposal] = $csv->build_proposal($rows);
     $created = $manager->save($proposal, $USER->id);
     $finish(get_string('allocationssaved', 'mod_peerreview', (object) ['created' => $created, 'deleted' => 0]));
 }
@@ -264,7 +266,7 @@ if ($data = $form->get_data()) {
             $rows[count($rows) + 2] = [$line[0], $line[1] ?? ''];
         }
         $reader->close();
-        [$proposal, $errors, $duplicates] = $manager->build_csv_proposal($rows);
+        [$proposal, $errors, $duplicates] = $csv->build_proposal($rows);
         foreach ($errors as [$linenumber, $identifier, $a]) {
             $proposal->warn('csvlineerror', (object) [
                 'line' => $linenumber,
