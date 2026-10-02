@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Docs: Moodle 5.2 needs PHP 8.3 or later (checked in CI; Moodle 5.2's own dependencies require it). No code change.
+
 ## 0.11.1 (beta), 2026-10-02
 
 - Fixed: 0.11.0 could not be installed. Its `version.php` declared `$plugin->supported = [500, 501, 502]`, but Moodle expects a range of two values (`[500, 502]`), so the site install stopped with "Incorrect syntax in plugin supported declaration". Use 0.11.1 instead of 0.11.0.

@@ -3,7 +3,7 @@
 ## Requirements
 
 - Moodle **5.0** (version 2025041400 or later). This release is tested with 5.0 only.
-- PHP 8.2 or 8.3 and a database Moodle 5.0 supports (tested: MariaDB 11, PostgreSQL 17).
+- PHP 8.2 or 8.3 (Moodle 5.2 needs PHP 8.3 or later) and a database Moodle 5.0 supports (tested: MariaDB 11, PostgreSQL 17).
 - Command-line access to the server is recommended; the web installer works too.
 
 ## Before you start

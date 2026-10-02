@@ -23,7 +23,7 @@ Compared with the Workshop activity (`mod_workshop`), there is nothing to upload
 | | |
 |---|---|
 | Moodle | 5.0, 5.1 or 5.2 (version 2025041400 or later). Not tested with 5.3+. |
-| PHP | 8.2 or 8.3 (tested on both with Moodle 5.0 and 5.1; Moodle 5.2 is tested on PHP 8.3 only) |
+| PHP | 8.2 or 8.3 for Moodle 5.0 and 5.1 (tested on both); Moodle 5.2 itself needs PHP 8.3 or later |
 | Database | MariaDB or PostgreSQL (tested on MariaDB 11 and PostgreSQL 17). MySQL should work, since the plugin only uses Moodle's database API, but it is not tested. |
 
 ## Installation
