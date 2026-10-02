@@ -101,6 +101,9 @@ class allocate_form extends \moodleform {
                 $mform->setType('usernames', PARAM_RAW);
                 $this->add_replace();
                 break;
+            case 'self':
+                // Nothing to choose: every student reviews themselves.
+                break;
             case 'csv':
                 $mform->addElement('filepicker', 'csvfile', get_string('csvfile', 'mod_peerreview'), null, [
                     'accepted_types' => ['.csv', '.txt'],

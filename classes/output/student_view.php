@@ -45,6 +45,8 @@ class student_view implements \renderable, \templatable {
      * @param \stdClass[]|null $received From student_data::get_received(), null when feedback is not released.
      * @param float|null $grade The student's received grade.
      * @param string $window 'open', 'notopen' or 'closed'.
+     * @param \stdClass|null $comparison From student_data::get_self_comparison(), plus criteria from
+     *                                    criterion_stats::get_comparison(); null when there is nothing to compare.
      */
     public function __construct(
         /** @var \stdClass Activity record. */
@@ -60,7 +62,9 @@ class student_view implements \renderable, \templatable {
         /** @var float|null Received grade. */
         private readonly ?float $grade,
         /** @var string Window state. */
-        private readonly string $window
+        private readonly string $window,
+        /** @var \stdClass|null Self-assessment compared with the peers. */
+        private readonly ?\stdClass $comparison = null
     ) {
     }
 
@@ -127,6 +131,8 @@ class student_view implements \renderable, \templatable {
             }
         }
 
+        $comparison = $this->comparison ? $this->export_comparison($this->comparison, $range) : null;
+
         $total = count($cards);
         return (object) [
             'hascards' => $total > 0,
@@ -141,6 +147,46 @@ class student_view implements \renderable, \templatable {
             'hasreceived' => !empty($received),
             'hasgrade' => $this->grade !== null,
             'grade' => $this->grade === null ? '' : $range->format_with_max($this->grade),
+            'hascomparison' => $comparison !== null,
+            'comparison' => $comparison,
+        ];
+    }
+
+    /**
+     * The self-assessment compared with the peers, ready for the template.
+     *
+     * @param \stdClass $comparison Overall grades (self, peers) and, for a rubric or marking guide, criteria.
+     * @param grade_range $range Grade range of the activity.
+     * @return \stdClass
+     */
+    private function export_comparison(\stdClass $comparison, grade_range $range): \stdClass {
+        if ($range->is_scale()) {
+            // A scale has no meaningful distance, only the same item or not.
+            $same = $range->format($comparison->self) === $range->format($comparison->peers);
+            $summary = get_string($same ? 'selfcomparesame' : 'selfcomparedifferent', 'mod_peerreview');
+        } else {
+            $difference = round($comparison->self - $comparison->peers, 1);
+            $summary = match (true) {
+                $difference > 0 => get_string('selfcomparehigher', 'mod_peerreview', format_float($difference, 1, true, true)),
+                $difference < 0 => get_string('selfcomparelower', 'mod_peerreview', format_float(-$difference, 1, true, true)),
+                default => get_string('selfcomparesame', 'mod_peerreview'),
+            };
+        }
+        $criteria = [];
+        foreach ($comparison->criteria ?? [] as $criterion) {
+            $criteria[] = [
+                'name' => $criterion['name'],
+                'self' => format_float($criterion['self'], 2, true, true),
+                'peers' => format_float($criterion['peers'], 2, true, true),
+                'max' => format_float($criterion['max'], 2, true, true),
+            ];
+        }
+        return (object) [
+            'self' => $range->format_with_max($comparison->self),
+            'peers' => $range->format_with_max($comparison->peers),
+            'summary' => $summary,
+            'hascriteria' => !empty($criteria),
+            'criteria' => $criteria,
         ];
     }
 }

@@ -25,7 +25,7 @@
 namespace mod_peerreview\local\allocation;
 
 /**
- * Deterministic allocation methods: everyone reviews everyone in their group, and rotation by K.
+ * Deterministic allocation methods: everyone reviews everyone in their group, rotation by K, and self-assessment.
  *
  * @package    mod_peerreview
  * @copyright  2026 Bill <wrwjpn@gmail.com>
@@ -84,6 +84,24 @@ class group_allocator {
             $reviewee = $order[($position + $shift) % $size];
             if (!isset($existingset[$reviewer . '_' . $reviewee])) {
                 $proposal->add($reviewer, $reviewee);
+            }
+        }
+        return $proposal;
+    }
+
+    /**
+     * Self-assessment: every user reviews themselves.
+     *
+     * @param int[] $userids Users to give a self-review.
+     * @param int[][] $existing Existing pairs, each [reviewerid, revieweeid].
+     * @return proposal
+     */
+    public function self_assessment(array $userids, array $existing = []): proposal {
+        $proposal = new proposal();
+        $existingset = self::pair_set($existing);
+        foreach (array_values(array_unique($userids)) as $userid) {
+            if (!isset($existingset[$userid . '_' . $userid])) {
+                $proposal->add($userid, $userid);
             }
         }
         return $proposal;

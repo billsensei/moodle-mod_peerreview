@@ -331,4 +331,33 @@ final class manager_test extends \advanced_testcase {
         $this->assertSame($s[2]->username, $rows[0]->reviewee);
         $this->assertSame(get_string('statusnew', 'mod_peerreview'), $rows[0]->status);
     }
+
+    /**
+     * The self-assessment method proposes one self-review for each student who has none, and nothing the second time.
+     */
+    public function test_self_assessment_plan(): void {
+        $this->resetAfterTest();
+        [$manager, , , $s, $teacher] = $this->setup_course(3, ['allowselfreview' => 1]);
+        $manager->add_manual($s[2]->id, [$s[2]->id], $teacher->id); // Student 2 already has one.
+
+        $plan = $manager->plan('self', [], 1);
+        $this->assertCount(2, $plan->proposal->pairs);
+        foreach ($plan->proposal->pairs as [$reviewer, $reviewee]) {
+            $this->assertSame($reviewer, $reviewee);
+            $this->assertNotEquals($s[2]->id, $reviewer);
+        }
+        $this->assertSame(2, $manager->save($plan->proposal, $teacher->id));
+        $this->assertCount(0, $manager->plan('self', [], 1)->proposal->pairs);
+    }
+
+    /**
+     * Without "Allow self-review" the self-assessment method proposes nothing and says why.
+     */
+    public function test_self_assessment_needs_the_setting(): void {
+        $this->resetAfterTest();
+        [$manager] = $this->setup_course(3);
+        $plan = $manager->plan('self', [], 1);
+        $this->assertCount(0, $plan->proposal->pairs);
+        $this->assertSame('warnselfnotallowed', $plan->proposal->warnings[0][0]);
+    }
 }

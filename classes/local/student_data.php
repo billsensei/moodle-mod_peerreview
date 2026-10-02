@@ -115,4 +115,34 @@ class student_data {
     public function get_grade(int $userid): ?float {
         return (new aggregator($this->peerreview))->get_grades([$userid])[$userid]['grade'] ?? null;
     }
+
+    /**
+     * The user's self-assessment next to what their peers gave.
+     *
+     * @param int $userid The reviewee.
+     * @return \stdClass|null Null unless the user has a submitted self-review and at least one submitted peer review.
+     *                        Otherwise: self (grade), peers (grade, combined as the activity combines them), count (peer reviews).
+     */
+    public function get_self_comparison(int $userid): ?\stdClass {
+        global $DB;
+
+        $self = $DB->get_record('peerreview_alloc', [
+            'peerreviewid' => $this->peerreview->id,
+            'reviewerid' => $userid,
+            'revieweeid' => $userid,
+            'status' => manager::STATUS_SUBMITTED,
+        ]);
+        if (!$self || $self->grade === null) {
+            return null;
+        }
+        $peers = (new aggregator($this->peerreview))->get_received_grades([$userid])[$userid] ?? [];
+        if (!$peers) {
+            return null;
+        }
+        return (object) [
+            'self' => (float) $self->grade,
+            'peers' => aggregator::aggregate($peers, (int) $this->peerreview->aggregation),
+            'count' => count($peers),
+        ];
+    }
 }

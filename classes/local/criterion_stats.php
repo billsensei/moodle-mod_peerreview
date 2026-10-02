@@ -28,7 +28,8 @@ use mod_peerreview\local\allocation\manager;
 use mod_peerreview\local\review\service;
 
 /**
- * Averages per criterion over the submitted reviews, read the same way as the export (see export::get_criterion_values()).
+ * Averages per criterion over the submitted reviews of other students (self-reviews are left out, as in the grades), read
+ * the same way as the export (see export::get_criterion_values()). Also compares one student's self-review with their peers'.
  *
  * @package    mod_peerreview
  * @copyright  2026 Bill <wrwjpn@gmail.com>
@@ -107,7 +108,7 @@ class criterion_stats {
     }
 
     /**
-     * Average score per criterion over the submitted reviews.
+     * Average score per criterion over the submitted reviews of other students (self-reviews are not counted).
      *
      * Empty when the activity has no rubric or marking guide. A criterion nobody has scored yet has count 0 and no average.
      *
@@ -127,6 +128,9 @@ class criterion_stats {
             'status' => manager::STATUS_SUBMITTED,
         ], 'id');
         foreach ($rs as $alloc) {
+            if ((int) $alloc->reviewerid === (int) $alloc->revieweeid) {
+                continue;
+            }
             if ($this->visibleusers !== null && !in_array((int) $alloc->revieweeid, $this->visibleusers, true)) {
                 continue;
             }
@@ -147,5 +151,48 @@ class criterion_stats {
             ];
         }
         return $stats;
+    }
+
+    /**
+     * One student's self-review next to the average of their peers' reviews, per criterion.
+     *
+     * Only criteria scored in the self-review and by at least one peer are listed. Empty when the activity has no rubric or
+     * marking guide, or the student has no submitted self-review, or no peer has reviewed them yet.
+     *
+     * @param int $userid The student.
+     * @return array[] One per criterion: ['name' => string, 'max' => float, 'self' => float, 'peers' => float, 'count' => int].
+     */
+    public function get_comparison(int $userid): array {
+        global $DB;
+
+        $criteria = $this->get_criteria();
+        if (!$criteria) {
+            return [];
+        }
+        $self = [];
+        $sums = [];
+        $counts = [];
+        $allocs = $DB->get_records('peerreview_alloc', [
+            'peerreviewid' => $this->peerreview->id,
+            'revieweeid' => $userid,
+            'status' => manager::STATUS_SUBMITTED,
+        ], 'id');
+        foreach ($allocs as $alloc) {
+            if ((int) $alloc->reviewerid === $userid) {
+                $self = $this->get_scores($alloc);
+                continue;
+            }
+            foreach ($this->get_scores($alloc) as $id => $score) {
+                $sums[$id] = ($sums[$id] ?? 0.0) + $score;
+                $counts[$id] = ($counts[$id] ?? 0) + 1;
+            }
+        }
+        $rows = [];
+        foreach ($criteria as $id => $criterion) {
+            if (isset($self[$id], $counts[$id])) {
+                $rows[] = $criterion + ['self' => $self[$id], 'peers' => $sums[$id] / $counts[$id], 'count' => $counts[$id]];
+            }
+        }
+        return $rows;
     }
 }

@@ -8,7 +8,7 @@ Compared with the Workshop activity (`mod_workshop`), there is nothing to upload
 
 ## Features
 
-- **Allocation** of reviewers by the teacher: manual, random (N reviews per student, balanced, never yourself), all-to-all within groups, rotation (each student reviews the next one in a list), or CSV import. Every automatic method shows a preview before anything is saved; reviews that were already started are never replaced silently.
+- **Allocation** of reviewers by the teacher: manual, random (N reviews per student, balanced, never yourself), all-to-all within groups, rotation (each student reviews the next one in a list), self-assessment (every student reviews themselves; the feedback page shows it next to the peers' grade, per criterion with a rubric or marking guide), or CSV import. Every automatic method shows a preview before anything is saved; reviews that were already started are never replaced silently.
 - **Assessment forms**: Moodle's standard **rubric** or **marking guide** (advanced grading), or a simple points-and-comment form when no advanced method is set up. Students can save a draft and edit their review until the closing date.
 - **Anonymity**: by default reviewees see "Anonymous" instead of the reviewer's name. Teachers always see who wrote what.
 - **Live teacher report**: reviews given and received per student, received grade, participation; refreshes itself every 15 seconds; a button to remind students who still have reviews to do, and an optional automatic reminder 1, 2 or 3 days or a week before the close date; the class average on each rubric or marking guide criterion; drill down to every review; export to CSV, Excel and other formats.

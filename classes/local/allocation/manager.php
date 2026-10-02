@@ -290,6 +290,9 @@ class manager {
                 );
                 $pools = [0 => $order];
                 break;
+            case 'self':
+                $pools = [0 => array_keys($this->get_students())];
+                break;
             default:
                 throw new \coding_exception('Unknown allocation method ' . $method);
         }
@@ -311,6 +314,13 @@ class manager {
                 $proposal = $groupallocator->all_to_all($pools, $existing);
                 if (!$pools) {
                     $proposal->warn('errornogroups');
+                }
+                break;
+            case 'self':
+                $proposal = $groupallocator->self_assessment($pools[0], $existing);
+                if (empty($this->peerreview->allowselfreview)) {
+                    $proposal = new proposal();
+                    $proposal->warn('warnselfnotallowed');
                 }
                 break;
             default:

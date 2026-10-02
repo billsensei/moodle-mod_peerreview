@@ -164,4 +164,126 @@ final class student_data_test extends \advanced_testcase {
         $this->assertSame(['', ''], array_column($notopen->cards, 'url'));
         $this->assertTrue($notopen->notopen);
     }
+
+    /**
+     * The self-assessment comparison needs a submitted self-review and at least one submitted peer review, and combines the
+     * peers as the activity does.
+     */
+    public function test_self_comparison(): void {
+        $this->resetAfterTest();
+        $this->create_activity(4, ['allowselfreview' => 1]);
+        $data = new student_data($this->peerreview, $this->manager);
+        $uid = (int) $this->students[1]->id;
+        $this->assertNull($data->get_self_comparison($uid), 'no self-review');
+
+        $this->allocate(1, 1, manager::STATUS_DRAFT, 90);
+        $this->allocate(2, 1, manager::STATUS_SUBMITTED, 60);
+        $this->assertNull($data->get_self_comparison($uid), 'a draft self-review does not count');
+
+        $this->manager->add_manual($uid, [$uid], $this->teacher->id);
+        global $DB;
+        $DB->set_field('peerreview_alloc', 'status', manager::STATUS_SUBMITTED, ['reviewerid' => $uid, 'revieweeid' => $uid]);
+        $comparison = $data->get_self_comparison($uid);
+        $this->assertEquals(90.0, $comparison->self);
+        $this->assertEquals(60.0, $comparison->peers);
+        $this->assertSame(1, $comparison->count);
+
+        $this->allocate(3, 1, manager::STATUS_SUBMITTED, 70);
+        $this->allocate(4, 1, manager::STATUS_SUBMITTED, 100);
+        $this->assertEquals(76.6667, round($data->get_self_comparison($uid)->peers, 4), 'mean');
+        $DB->set_field('peerreview', 'aggregation', 1, ['id' => $this->peerreview->id]);
+        $this->peerreview->aggregation = 1;
+        $median = (new student_data($this->peerreview, $this->manager))->get_self_comparison($uid);
+        $this->assertEquals(70.0, $median->peers, 'median');
+        $this->assertEquals(3, $median->count);
+
+        $this->assertNull($data->get_self_comparison((int) $this->students[2]->id), 'student 2 has no self-review');
+    }
+
+    /**
+     * The student page words the comparison: how many points higher or lower, or that they agree.
+     */
+    public function test_comparison_text_for_points(): void {
+        $this->resetAfterTest();
+        $this->create_activity(2);
+        $this->setUser($this->students[1]);
+        $renderer = $this->get_renderer();
+        $export = function (float $self, float $peers) use ($renderer): \stdClass {
+            $comparison = (object) ['self' => $self, 'peers' => $peers, 'count' => 1, 'criteria' => [
+                ['name' => 'Delivery', 'self' => 4.0, 'peers' => 3.25, 'max' => 4.0, 'count' => 1],
+            ]];
+            return (new student_view($this->peerreview, $this->context, $this->cm->id, [], [], 50.0, 'open', $comparison))
+                ->export_for_template($renderer);
+        };
+
+        $higher = $export(90, 72.5);
+        $this->assertTrue($higher->hascomparison);
+        $this->assertSame('90 / 100', $higher->comparison->self);
+        $this->assertSame('72.5 / 100', $higher->comparison->peers);
+        $this->assertStringContainsString('17.5 points higher', $higher->comparison->summary);
+        $this->assertSame([['name' => 'Delivery', 'self' => '4', 'peers' => '3.25', 'max' => '4']], $higher->comparison->criteria);
+        $this->assertTrue($higher->comparison->hascriteria);
+        $this->assertStringContainsString('3 points lower', $export(60, 63)->comparison->summary);
+        $this->assertStringContainsString('agree', $export(70, 70.04)->comparison->summary);
+
+        $none = (new student_view($this->peerreview, $this->context, $this->cm->id, [], [], null, 'open'))
+            ->export_for_template($renderer);
+        $this->assertFalse($none->hascomparison);
+    }
+
+    /**
+     * With a scale only "same item or not" is said, never a distance.
+     */
+    public function test_comparison_text_for_a_scale(): void {
+        $this->resetAfterTest();
+        $scale = $this->getDataGenerator()->create_scale(['scale' => 'Poor,Fair,Good,Excellent']);
+        $this->create_activity(2, ['grade' => -$scale->id]);
+        $this->setUser($this->students[1]);
+        $renderer = $this->get_renderer();
+        $export = fn(float $self, float $peers) => (new student_view(
+            $this->peerreview,
+            $this->context,
+            $this->cm->id,
+            [],
+            [],
+            null,
+            'open',
+            (object) ['self' => $self, 'peers' => $peers, 'count' => 2]
+        ))->export_for_template($renderer)->comparison;
+
+        $same = $export(3, 3.2);
+        $this->assertSame('Good', $same->self);
+        $this->assertSame('Good', $same->peers);
+        $this->assertStringContainsString('agree', $same->summary);
+        $different = $export(4, 2);
+        $this->assertSame('Excellent', $different->self);
+        $this->assertSame('Fair', $different->peers);
+        $this->assertStringContainsString('different', $different->summary);
+        $this->assertFalse($different->hascriteria);
+    }
+
+    /**
+     * The template shows the comparison: the two grades, the sentence and the criteria table.
+     */
+    public function test_comparison_is_rendered(): void {
+        $this->resetAfterTest();
+        $this->create_activity(2);
+        $this->setUser($this->students[1]);
+        $renderer = $this->get_renderer();
+        $comparison = (object) ['self' => 90.0, 'peers' => 72.5, 'count' => 1, 'criteria' => [
+            ['name' => 'Delivery', 'self' => 4.0, 'peers' => 3.25, 'max' => 4.0, 'count' => 1],
+        ]];
+        $html = $renderer->render(
+            new student_view($this->peerreview, $this->context, $this->cm->id, [], [], 50.0, 'open', $comparison)
+        );
+        $this->assertStringContainsString('Your self-assessment', $html);
+        $this->assertStringContainsString('90 / 100', $html);
+        $this->assertStringContainsString('72.5 / 100', $html);
+        $this->assertStringContainsString('17.5 points higher', $html);
+        $this->assertStringContainsString('Delivery', $html);
+        $this->assertStringContainsString('3.25', $html);
+
+        $without = $renderer->render(new student_view($this->peerreview, $this->context, $this->cm->id, [], [], 50.0, 'open'));
+        $this->assertStringNotContainsString('Your self-assessment', $without);
+    }
 }

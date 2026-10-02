@@ -44,7 +44,7 @@ use Behat\Mink\Exception\ExpectationException;
  */
 class behat_mod_peerreview extends behat_base {
     /**
-     * Pages of an activity, found by its name: "View", "Report", "Allocate", "Allocate random".
+     * Pages of an activity, found by its name: "View", "Report", "Allocate", "Allocate random", "Allocate self".
      *
      * Example: I am on the "Talk review" "mod_peerreview > Report" page logged in as "teacher1"
      *
@@ -75,6 +75,7 @@ class behat_mod_peerreview extends behat_base {
             'view' => new moodle_url('/mod/peerreview/view.php', ['id' => $cm->id]),
             'report' => new moodle_url('/mod/peerreview/report.php', ['id' => $cm->id]),
             'allocate' => new moodle_url('/mod/peerreview/allocate.php', ['id' => $cm->id]),
+            'allocate self' => new moodle_url('/mod/peerreview/allocate.php', ['id' => $cm->id, 'method' => 'self']),
             'allocate random' => new moodle_url('/mod/peerreview/allocate.php', ['id' => $cm->id, 'method' => 'random']),
             default => throw new Exception('Unrecognised mod_peerreview page type "' . $type . '".'),
         };

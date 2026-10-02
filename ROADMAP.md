@@ -14,5 +14,4 @@ Ideas and known limitations for versions after 0.12.1. Nothing here is promised.
 
 - Native Moodle app support (`db/mobile.php`) for reviewing without a browser.
 - Weighting of reviews, or excluding outliers from the received grade.
-- Self-assessment compared with peer assessment on the student's feedback page.
 - Grade calibration: compare each reviewer's marks with the teacher's.

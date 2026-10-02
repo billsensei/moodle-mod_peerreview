@@ -27,6 +27,7 @@
 require_once('../../config.php');
 
 use mod_peerreview\local\allocation\manager;
+use mod_peerreview\local\criterion_stats;
 use mod_peerreview\local\progress;
 use mod_peerreview\local\review\service;
 use mod_peerreview\local\student_data;
@@ -97,6 +98,13 @@ if (has_capability('mod/peerreview:review', $context)) {
     $data = new student_data($peerreview, $manager);
     $received = $peerreview->feedbackreleased ? $data->get_received((int) $USER->id) : null;
     $grade = $peerreview->feedbackreleased ? $data->get_grade((int) $USER->id) : null;
+    $comparison = null;
+    if ($peerreview->feedbackreleased) {
+        $comparison = $data->get_self_comparison((int) $USER->id);
+        if ($comparison) {
+            $comparison->criteria = (new criterion_stats($peerreview, $context))->get_comparison((int) $USER->id);
+        }
+    }
     echo $renderer->render(new student_view(
         $peerreview,
         $context,
@@ -104,7 +112,8 @@ if (has_capability('mod/peerreview:review', $context)) {
         $data->get_todo((int) $USER->id),
         $received,
         $grade,
-        $window
+        $window,
+        $comparison
     ));
 }
 echo $OUTPUT->footer();

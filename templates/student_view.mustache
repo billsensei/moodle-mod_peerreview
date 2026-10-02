@@ -24,6 +24,8 @@
     * hascards, cards, done, total, progresstext - Reviews to do (cards: name, picture, statuslabel, statusclass, actionlabel, url)
     * showreceived, hasreceived, received - Feedback received (who, grade, hascomment, comment, url)
     * hasgrade, grade - The aggregated received grade
+    * hascomparison, comparison - The student's self-assessment next to their peers (self, peers, summary, hascriteria,
+      criteria: name, self, peers, max)
 
     Example context (json):
     {
@@ -41,6 +43,16 @@
         "hasreceived": true,
         "hasgrade": true,
         "grade": "75 / 100",
+        "hascomparison": true,
+        "comparison": {
+            "self": "90 / 100",
+            "peers": "75 / 100",
+            "summary": "You rated yourself 15 points higher than your peers did.",
+            "hascriteria": true,
+            "criteria": [
+                {"name": "Delivery", "self": "4", "peers": "3.25", "max": "4"}
+            ]
+        },
         "received": [
             {"who": "Anonymous", "grade": "80 / 100", "hascomment": true, "comment": "<p>Clear voice.</p>", "url": "https://example.org/mod/peerreview/feedback.php?id=5&alloc=2"}
         ]
@@ -73,6 +85,45 @@
     <section aria-labelledby="mod_peerreview-received-heading">
         <h3 id="mod_peerreview-received-heading" class="h4">{{#str}} feedbackreceived, mod_peerreview {{/str}}</h3>
         {{#hasgrade}}<p class="mod_peerreview-grade h5">{{#str}} yourgrade, mod_peerreview {{/str}} <strong>{{grade}}</strong></p>{{/hasgrade}}
+        {{#hascomparison}}
+        {{#comparison}}
+        <div class="mod_peerreview-comparison mb-4">
+            <h4 class="h5">{{#str}} selfcompareheading, mod_peerreview {{/str}}</h4>
+            <dl class="row mb-2">
+                <dt class="col-sm-4">{{#str}} selfcompareself, mod_peerreview {{/str}}</dt>
+                <dd class="col-sm-8">{{self}}</dd>
+                <dt class="col-sm-4">{{#str}} selfcomparepeers, mod_peerreview {{/str}}</dt>
+                <dd class="col-sm-8">{{peers}}</dd>
+            </dl>
+            <p role="status">{{summary}}</p>
+            {{#hascriteria}}
+            <div class="table-responsive">
+                <table class="table table-striped generaltable">
+                    <caption class="visually-hidden">{{#str}} selfcompareheading, mod_peerreview {{/str}}</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">{{#str}} criterion, mod_peerreview {{/str}}</th>
+                            <th scope="col">{{#str}} selfcompareyou, mod_peerreview {{/str}}</th>
+                            <th scope="col">{{#str}} selfcomparepeersaverage, mod_peerreview {{/str}}</th>
+                            <th scope="col">{{#str}} criterionmax, mod_peerreview {{/str}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#criteria}}
+                        <tr>
+                            <th scope="row">{{name}}</th>
+                            <td>{{self}}</td>
+                            <td>{{peers}}</td>
+                            <td>{{max}}</td>
+                        </tr>
+                        {{/criteria}}
+                    </tbody>
+                </table>
+            </div>
+            {{/hascriteria}}
+        </div>
+        {{/comparison}}
+        {{/hascomparison}}
         {{#hasreceived}}
         <ul class="mod_peerreview-cards list-unstyled">
             {{#received}}

@@ -41,6 +41,8 @@ Students who join the course later can be added with another **Random** allocati
 
 ## 4. Run it in class
 
+If you want students to compare their own view with their classmates', turn on **Allow self-review** in the activity settings, then open the **Self-assessment** tab on the allocation page and press **Preview** and **Confirm and save**. Every student gets a review of themselves. Self-reviews never count in the received grade. When you release the feedback, a student who has submitted their self-review and has at least one peer review sees a box with their self-assessment next to their peers' grade, and for a rubric or marking guide, the scores per criterion.
+
 Tell students to open the activity on their phones (see the [student how-to](STUDENT_HOWTO.md)). Each student sees a card for every classmate they must review.
 
 To follow progress, open the activity and press **Report**. The table shows how many reviews each student has given and received, and it refreshes itself every 15 seconds. Click a student's name to read their reviews. With a rubric or marking guide, the table **Average by criterion** below it shows the class average on each criterion (for example Delivery), so you can see where the class was strong or weak. It counts submitted reviews of the students in the group you are viewing.

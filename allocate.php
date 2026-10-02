@@ -17,7 +17,8 @@
 /**
  * Teacher page: allocate who reviews whom.
  *
- * Methods: manual, random (N per student), group (all-to-all), rotation, csv (import/export), plus deleting pairs.
+ * Methods: manual, random (N per student), group (all-to-all), rotation, self (self-assessment), csv (import/export),
+ * plus deleting pairs.
  * Automatic methods show a preview first and only write on confirmation.
  *
  * Modelled on mod/workshop/allocation.php (page structure) and admin/tool/uploaduser (CSV preview/confirm).
@@ -73,7 +74,7 @@ $printheader = function (string $current) use ($OUTPUT, $pageurl, $peerreview): 
     echo $OUTPUT->header();
     echo $OUTPUT->heading(format_string($peerreview->name) . ': ' . get_string('allocate', 'mod_peerreview'), 2);
     $tabs = [];
-    foreach (['overview', 'manual', 'random', 'group', 'rotation', 'csv'] as $tab) {
+    foreach (['overview', 'manual', 'random', 'group', 'rotation', 'self', 'csv'] as $tab) {
         $tabs[] = new tabobject(
             $tab,
             new moodle_url($pageurl, ['method' => $tab]),
@@ -162,7 +163,7 @@ if ($method === 'overview') {
     die();
 }
 
-if (!in_array($method, ['manual', 'random', 'group', 'rotation', 'csv'], true)) {
+if (!in_array($method, ['manual', 'random', 'group', 'rotation', 'self', 'csv'], true)) {
     throw new moodle_exception('invalidparameter', 'debug');
 }
 
@@ -196,7 +197,7 @@ $readparams = static function (array|stdClass|null $data) use ($method): array {
     };
 };
 
-if (in_array($method, ['random', 'group', 'rotation'], true) && optional_param('confirm', 0, PARAM_BOOL)) {
+if (in_array($method, ['random', 'group', 'rotation', 'self'], true) && optional_param('confirm', 0, PARAM_BOOL)) {
     require_sesskey();
     $params = $readparams([
         'n' => optional_param('n', 2, PARAM_INT),

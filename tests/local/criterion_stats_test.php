@@ -165,4 +165,39 @@ final class criterion_stats_test extends \advanced_testcase {
         $stats = (new criterion_stats($this->peerreview, $this->context, []))->get_statistics();
         $this->assertSame(0, $stats[0]['count']);
     }
+
+    /**
+     * Self-reviews are left out of the class averages, and the comparison puts the student's own scores next to their
+     * peers' average.
+     */
+    public function test_self_review_comparison(): void {
+        $this->resetAfterTest();
+        $this->create_activity(3, ['allowselfreview' => 1]);
+        $this->setAdminUser();
+        $controller = $this->getDataGenerator()->get_plugin_generator('gradingform_guide')
+            ->get_test_guide($this->context, 'mod_peerreview', 'received');
+        $this->submit_guide(1, 2, $controller, 20, 10);
+        $this->submit_guide(3, 2, $controller, 10, 0);
+        $this->submit_guide(2, 2, $controller, 25, 15); // The self-review.
+        $this->submit_guide(2, 1, $controller, 5, 5);
+
+        $stats = (new criterion_stats($this->peerreview, $this->context))->get_statistics();
+        $byname = array_column($stats, null, 'name');
+        $this->assertSame(3, $byname['Spelling mistakes']['count'], 'the self-review is not counted');
+        $this->assertEqualsWithDelta((20 + 10 + 5) / 3, $byname['Spelling mistakes']['average'], 0.001);
+
+        $comparison = (new criterion_stats($this->peerreview, $this->context))->get_comparison((int) $this->students[2]->id);
+        $byname = array_column($comparison, null, 'name');
+        $this->assertCount(2, $comparison);
+        $this->assertEqualsWithDelta(25.0, $byname['Spelling mistakes']['self'], 0.001);
+        $this->assertEqualsWithDelta(15.0, $byname['Spelling mistakes']['peers'], 0.001);
+        $this->assertEqualsWithDelta(15.0, $byname['Pictures']['self'], 0.001);
+        $this->assertEqualsWithDelta(5.0, $byname['Pictures']['peers'], 0.001);
+        $this->assertSame(2, $byname['Pictures']['count']);
+
+        // No self-review, or no peer review yet: nothing to compare.
+        $stats = new criterion_stats($this->peerreview, $this->context);
+        $this->assertSame([], $stats->get_comparison((int) $this->students[3]->id));
+        $this->assertSame([], $stats->get_comparison((int) $this->students[1]->id));
+    }
 }
