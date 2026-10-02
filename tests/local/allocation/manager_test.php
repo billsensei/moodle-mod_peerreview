@@ -36,6 +36,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 #[CoversClass(manager::class)]
+#[CoversClass(deleter::class)]
 final class manager_test extends \advanced_testcase {
     /**
      * Create a course with students and one activity.

@@ -439,17 +439,7 @@ class manager {
      * @return int
      */
     public function count_started(array $ids): int {
-        global $DB;
-
-        if (!$ids) {
-            return 0;
-        }
-        [$insql, $params] = $DB->get_in_or_equal($ids, SQL_PARAMS_NAMED);
-        return $DB->count_records_select(
-            'peerreview_alloc',
-            "peerreviewid = :pr AND status > :new AND id $insql",
-            $params + ['pr' => $this->peerreview->id, 'new' => self::STATUS_NEW]
-        );
+        return (new deleter($this->peerreview, $this->context))->count_started($ids);
     }
 
     /**
@@ -461,35 +451,6 @@ class manager {
      * @throws \moodle_exception If started reviews are included and not confirmed.
      */
     public function delete(array $ids, bool $confirmedstarted): int {
-        global $DB;
-
-        if (!$ids) {
-            return 0;
-        }
-        if (!$confirmedstarted && $this->count_started($ids) > 0) {
-            throw new \moodle_exception('errorstartedreviews', 'mod_peerreview');
-        }
-        [$insql, $params] = $DB->get_in_or_equal($ids, SQL_PARAMS_NAMED);
-        $records = $DB->get_records_select(
-            'peerreview_alloc',
-            "peerreviewid = :pr AND id $insql",
-            $params + ['pr' => $this->peerreview->id]
-        );
-        if ($records) {
-            // Remove the advanced grading instances (rubric/guide fillings) of these allocations.
-            \core_grading\privacy\provider::delete_data_for_instances($this->context, array_keys($records));
-        }
-        foreach ($records as $record) {
-            $DB->delete_records('peerreview_alloc', ['id' => $record->id]);
-            \mod_peerreview\event\allocation_deleted::create([
-                'objectid' => $record->id,
-                'context' => $this->context,
-                'relateduserid' => $record->revieweeid,
-                'other' => ['reviewerid' => $record->reviewerid],
-            ])->trigger();
-        }
-        // A reviewer whose remaining reviews are all submitted may now be complete (or has no work left at all).
-        \mod_peerreview\local\completion::update($this->peerreview, array_column((array) $records, 'reviewerid'));
-        return count($records);
+        return (new deleter($this->peerreview, $this->context))->delete($ids, $confirmedstarted);
     }
 }
