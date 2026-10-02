@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.13.0 (beta), 2026-10-03
+
 - Self-assessment: the allocation page has a new **Self-assessment** tab that gives every student a review of themselves (needs **Allow self-review** in the activity settings; students who already have one are left alone). When feedback is released, a student with a submitted self-review and at least one submitted peer review sees their self-assessment next to their peers' grade, with how many points higher or lower they rated themselves (for a scale only whether it is the same item), and, for a rubric or marking guide, their score and their peers' average on each criterion. Self-reviews still never count in the received grade.
 - Fixed: the **Average by criterion** table on the report counted self-reviews. It now leaves them out, like the grades do.
 ## 0.12.1 (beta), 2026-10-02
