@@ -120,6 +120,7 @@ class reminder {
 
         $rows = (new progress($this->peerreview, new manager($this->peerreview, $this->cm, $this->context)))->get_rows($groupid);
         $url = new \moodle_url('/mod/peerreview/view.php', ['id' => $this->cm->id]);
+        $strings = get_string_manager();
         $sent = 0;
         foreach ($rows as $row) {
             $remaining = $row->given_total - $row->given_done;
@@ -133,16 +134,19 @@ class reminder {
                 'total' => $row->given_total,
                 'url' => $url->out(false),
             ];
+            $to = $DB->get_record('user', ['id' => $row->userid], '*', MUST_EXIST);
+            // Each student gets the message in their own language (an empty value falls back to the current language).
+            $lang = $to->lang ?: null;
             $message = new message();
             $message->component = 'mod_peerreview';
             $message->name = 'reminder';
             $message->userfrom = $from;
-            $message->userto = $DB->get_record('user', ['id' => $row->userid], '*', MUST_EXIST);
-            $message->subject = get_string('remindersubject', 'mod_peerreview', $a->activity);
-            $message->fullmessage = get_string('remindermessage', 'mod_peerreview', $a);
+            $message->userto = $to;
+            $message->subject = $strings->get_string('remindersubject', 'mod_peerreview', $a->activity, $lang);
+            $message->fullmessage = $strings->get_string('remindermessage', 'mod_peerreview', $a, $lang);
             $message->fullmessageformat = FORMAT_PLAIN;
             $message->fullmessagehtml = text_to_html($message->fullmessage, false, false, true);
-            $message->smallmessage = get_string('remindersmall', 'mod_peerreview', $a);
+            $message->smallmessage = $strings->get_string('remindersmall', 'mod_peerreview', $a, $lang);
             $message->notification = 1;
             $message->contexturl = $url;
             $message->contexturlname = $a->activity;

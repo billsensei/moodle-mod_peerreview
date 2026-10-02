@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Reminders (the button on the report and the automatic one) are now written in each student's own language instead of the language of whoever or whatever sends them. Strings missing from a language pack fall back to English.
+
 ## 0.12.0 (beta), 2026-10-02
 
 - Automatic reminder: the new activity setting **Remind students before the close date** (off by default; 1, 2 or 3 days or 1 week) makes Moodle send one message to each student who still has reviews left when that time before the close date is reached. It needs a close date and the Moodle cron. It is sent once for each close date, from the no-reply user, only while the activity is open and visible; changing the close date or the lead time arms it again. The manual button on the report works as before. New scheduled task *Send automatic peer review reminders* (hourly), database fields `reminderlead` and `remindersentfor` (upgrade step), and `reminderlead` is part of backup and restore (the sent state is not).

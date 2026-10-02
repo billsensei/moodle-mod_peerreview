@@ -111,4 +111,52 @@ final class reminder_test extends \advanced_testcase {
         $this->expectException(\required_capability_exception::class);
         (new reminder($this->peerreview, $this->cm, $this->context))->send(0, (int) $this->students[1]->id);
     }
+
+    /**
+     * Each student is written to in their own language, whoever sends the reminder; a student whose language lacks the
+     * strings gets English.
+     */
+    public function test_message_is_in_the_students_language(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        $dir = $CFG->langlocalroot . '/xx';
+        make_writable_directory($dir);
+        file_put_contents(
+            $dir . '/langconfig.php',
+            "<?php\n\$string['thislanguage'] = 'Test';\n\$string['parentlanguage'] = 'en';\n"
+        );
+        file_put_contents($dir . '/peerreview.php', "<?php\n\$string['remindersubject'] = 'XX-SUBJECT {\$a}';\n"
+            . "\$string['remindermessage'] = 'XX-BODY {\$a->firstname} {\$a->remaining}/{\$a->total}';\n"
+            . "\$string['remindersmall'] = 'XX-SMALL {\$a->remaining}';\n");
+        get_string_manager(true);
+
+        try {
+            $this->create_activity(2);
+            $this->allocate(1, 2);
+            $this->allocate(2, 1);
+            $this->students[1]->lang = 'xx';
+            \core\di::get(\moodle_database::class)->set_field('user', 'lang', 'xx', ['id' => $this->students[1]->id]);
+
+            $sink = $this->redirectMessages();
+            $this->setUser($this->teacher);
+            (new reminder($this->peerreview, $this->cm, $this->context))->send(0, (int) $this->teacher->id);
+            $messages = [];
+            foreach ($sink->get_messages() as $message) {
+                $messages[(int) $message->useridto] = $message;
+            }
+            $this->assertCount(2, $messages);
+
+            $translated = $messages[(int) $this->students[1]->id];
+            $this->assertStringContainsString('XX-SUBJECT', $translated->subject);
+            $this->assertStringContainsString('XX-BODY First1 1/1', $translated->fullmessage);
+            $this->assertStringContainsString('XX-SMALL 1', $translated->smallmessage);
+
+            $english = $messages[(int) $this->students[2]->id];
+            $this->assertStringNotContainsString('XX-', $english->subject . $english->fullmessage . $english->smallmessage);
+            $this->assertStringContainsString('First2', $english->fullmessage);
+        } finally {
+            fulldelete($dir);
+            get_string_manager(true);
+        }
+    }
 }
