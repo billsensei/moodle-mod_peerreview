@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 0.10.0 (beta), 2026-10-02
 
 - Reminders: on the **Report** page, **Remind students with reviews to do** sends a message (popup, email or the Moodle app, following each student's notification settings) to every student in the current group view who has submitted fewer reviews than assigned. Teachers press the button themselves; nothing is sent automatically. It works only while the activity is open and needs the capability to allocate reviews.
 
