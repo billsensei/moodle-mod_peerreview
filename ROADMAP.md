@@ -1,8 +1,8 @@
 # Roadmap
 
-Ideas and known limitations for versions after 0.10.0. Nothing here is promised.
+Ideas and known limitations for versions after 0.11.0. Nothing here is promised.
 
-## Known limitations in 0.10.0
+## Known limitations in 0.11.0
 
 - **Only Moodle 5.0 is tested.** Moodle 5.1 moved the web root to `/public`; the plugin should work there, but it is not tested.
 - **No Moodle app support yet.** In the app the activity opens in the phone's browser; students can also use the browser directly.

@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 0.11.0 (beta), 2026-10-02
 
 - Report: **Average by criterion** table under the student list when the activity uses a rubric or marking guide. It shows, for each criterion, how many submitted reviews scored it, the average score and the highest possible score, for the students in the current group view. Scores are in the points of the rubric or guide.
 
