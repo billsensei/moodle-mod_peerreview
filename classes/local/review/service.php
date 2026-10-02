@@ -123,6 +123,54 @@ class service {
     }
 
     /**
+     * The grading method that was active when a review was stored, if it is no longer the active one.
+     *
+     * Core keeps one definition per method and area, and each grading instance belongs to a definition, so reviews
+     * written before the teacher switched methods still point at the old method's form.
+     *
+     * @param \stdClass $alloc Allocation record.
+     * @return \gradingform_instance|null The stored instance of the old method, null when there is none or its method
+     *         cannot be loaded any more.
+     */
+    private function get_instance_of_other_method(\stdClass $alloc): ?\gradingform_instance {
+        global $CFG, $DB;
+
+        $manager = $this->get_grading_manager();
+        require_once($CFG->dirroot . '/grade/grading/form/lib.php'); // Pages only load it with a controller.
+        $active = $manager->get_active_method();
+        $sql = "SELECT gi.*, gd.method
+                  FROM {grading_instances} gi
+                  JOIN {grading_definitions} gd ON gd.id = gi.definitionid
+                  JOIN {grading_areas} ga ON ga.id = gd.areaid
+                 WHERE gi.itemid = :itemid AND ga.contextid = :contextid AND ga.component = :component
+                       AND ga.areaname = :areaname AND gi.status IN (:active, :needupdate)
+              ORDER BY gi.timemodified DESC, gi.id DESC";
+        $records = $DB->get_records_sql($sql, [
+            'itemid' => $alloc->id,
+            'contextid' => $this->context->id,
+            'component' => 'mod_peerreview',
+            'areaname' => 'received',
+            'active' => \gradingform_instance::INSTANCE_STATUS_ACTIVE,
+            'needupdate' => \gradingform_instance::INSTANCE_STATUS_NEEDUPDATE,
+        ], 0, 5);
+        foreach ($records as $record) {
+            if ($record->method === $active) {
+                continue;
+            }
+            try {
+                $controller = $manager->get_controller($record->method);
+            } catch (\moodle_exception $e) {
+                continue; // The method plugin is disabled or gone.
+            }
+            if ($controller->is_form_available()) {
+                $controller->set_grade_range(make_grades_menu($this->peerreview->grade), true);
+                return $controller->get_current_instance($alloc->reviewerid, $alloc->id);
+            }
+        }
+        return null;
+    }
+
+    /**
      * Message explaining why the active grading method cannot be used (form still a draft), if that is the case.
      *
      * @return string Empty when there is no problem.
@@ -167,11 +215,29 @@ class service {
     /**
      * The submitted (active) instance of a review, for read-only display.
      *
+     * When the review was written with another grading method than the active one (the teacher switched afterwards),
+     * its stored instance of that method is returned, so it is shown as it was filled in.
+     *
      * @param \stdClass $alloc Allocation record.
      * @return \gradingform_instance|null
      */
     public function get_submitted_instance(\stdClass $alloc): ?\gradingform_instance {
-        return $this->get_controller()?->get_current_instance($alloc->reviewerid, $alloc->id);
+        return $this->get_controller()?->get_current_instance($alloc->reviewerid, $alloc->id)
+            ?? $this->get_instance_of_other_method($alloc);
+    }
+
+    /**
+     * The grading method (for example 'rubric') a stored instance was written with, when it is not the active one.
+     *
+     * @param \gradingform_instance $instance The instance.
+     * @return string|null Null when the instance belongs to the active method.
+     */
+    public function get_other_method(\gradingform_instance $instance): ?string {
+        // The method plugin name is part of the controller class name (gradingform_rubric_controller).
+        if (!preg_match('/^gradingform_(\w+)_controller$/', get_class($instance->get_controller()), $matches)) {
+            return null;
+        }
+        return $matches[1] !== $this->get_grading_manager()->get_active_method() ? $matches[1] : null;
     }
 
     /**

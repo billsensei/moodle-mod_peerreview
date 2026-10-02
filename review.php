@@ -69,6 +69,7 @@ $instance = $readonly
     ? $service->get_submitted_instance($alloc)
     : $service->get_instance($alloc, (int) $USER->id, optional_param('advancedgradinginstanceid', null, PARAM_INT));
 $unavailable = $readonly ? '' : $service->get_unavailable_message();
+$othermethod = $readonly && $instance ? $service->get_other_method($instance) : null;
 
 $submitted = (int) $alloc->status === manager::STATUS_SUBMITTED;
 $customdata = [
@@ -133,6 +134,10 @@ if ($notice) {
 }
 if ($unavailable) {
     echo $OUTPUT->notification($unavailable, notification::NOTIFY_WARNING);
+}
+if ($othermethod) {
+    $methodname = get_string('pluginname', 'gradingform_' . $othermethod);
+    echo $OUTPUT->notification(get_string('reviewoldmethod', 'mod_peerreview', $methodname), notification::NOTIFY_INFO);
 }
 $form->display();
 echo $OUTPUT->footer();

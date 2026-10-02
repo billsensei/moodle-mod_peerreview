@@ -490,4 +490,44 @@ final class service_test extends \advanced_testcase {
             'status' => \gradingform_instance::INSTANCE_STATUS_ACTIVE,
         ]));
     }
+
+    /**
+     * Switching the grading method after a review was submitted: the read-only view still returns the review as it was
+     * filled in, with its own method, and the stored grade is untouched.
+     */
+    public function test_review_shown_with_the_method_it_was_written_in(): void {
+        $this->resetAfterTest();
+        global $CFG;
+        require_once($CFG->dirroot . '/grade/grading/lib.php');
+        $alloc = $this->setup_activity();
+        $rubric = $this->use_rubric();
+        $service = $this->service();
+        $reviewer = $this->students[1]->id;
+        $service->submit($alloc, $reviewer, [
+            'advancedgrading' => $this->getDataGenerator()->get_plugin_generator('gradingform_rubric')
+                ->get_test_form_data($rubric, $alloc->id, 2, 'a', 1, 'b'),
+        ]);
+        $grade = $this->reload($alloc)->grade;
+        $this->assertNull($service->get_other_method($service->get_submitted_instance($alloc)));
+
+        // Switch to a marking guide: the old review keeps its rubric.
+        $this->use_guide();
+        $instance = $service->get_submitted_instance($this->reload($alloc));
+        $this->assertInstanceOf(\gradingform_rubric_instance::class, $instance);
+        $this->assertSame('rubric', $service->get_other_method($instance));
+        $this->assertEquals($grade, $this->reload($alloc)->grade);
+
+        // A review without stored data under the new method is still shown with the old one only if it has some.
+        $other = $this->reload($alloc);
+        $other->id = -1;
+        $this->assertNull($service->get_submitted_instance($other));
+
+        // Switch to the simple form (no method): the rubric is still shown.
+        $this->setAdminUser();
+        get_grading_manager($this->context, 'mod_peerreview', 'received')->set_active_method(null);
+        $this->setUser(0);
+        $instance = $service->get_submitted_instance($this->reload($alloc));
+        $this->assertInstanceOf(\gradingform_rubric_instance::class, $instance);
+        $this->assertSame('rubric', $service->get_other_method($instance));
+    }
 }

@@ -198,6 +198,7 @@ $string['reviewee'] = 'Reviewee';
 $string['reviewees'] = 'Reviewees';
 $string['reviewer'] = 'Reviewer';
 $string['reviewof'] = 'Review of {$a}';
+$string['reviewoldmethod'] = 'This review was written with the grading method "{$a}", which is no longer the active one. It is shown as it was filled in.';
 $string['reviewsdone'] = '{$a->done} of {$a->total} reviews done';
 $string['reviewsgiven'] = 'Reviews to give';
 $string['reviewsgivencol'] = 'Reviews given';

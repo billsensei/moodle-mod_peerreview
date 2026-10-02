@@ -1,5 +1,9 @@
 # Changes
 
+## Unreleased
+
+- A submitted review is now shown with the grading method it was written in (rubric, marking guide) after the teacher switches methods, with a note saying so.
+
 ## 0.9.1 (beta), 2026-10-01
 
 - Added the GPL v3 `LICENSE` file to the plugin root.
