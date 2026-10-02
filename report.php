@@ -30,6 +30,7 @@ use core\output\notification;
 use mod_peerreview\form\override_form;
 use mod_peerreview\local\allocation\manager;
 use mod_peerreview\local\grade\aggregator;
+use mod_peerreview\local\grade\grade_range;
 use mod_peerreview\local\grade\override;
 use mod_peerreview\local\group_access;
 use mod_peerreview\local\progress;
@@ -56,6 +57,7 @@ $manager = new manager($peerreview, $cm->get_course_module_record(), $context);
 $progress = new progress($peerreview, $manager);
 $groupid = group_access::resolve($cm, $context, (int) groups_get_activity_group($cm, true));
 $rows = $progress->get_rows($groupid);
+$range = grade_range::for_activity($peerreview);
 
 // The grade override form is processed before any output so it can redirect.
 $overrideform = null;
@@ -70,7 +72,7 @@ if ($userid && isset($rows[$userid]) && has_capability('mod/peerreview:overrideg
     $overrideform = new override_form($PAGE->url, [
         'cmid' => $cm->id,
         'userid' => $userid,
-        'maxgrade' => $peerreview->grade,
+        'range' => $range,
         'grade' => $overridecurrent ? $overridecurrent->grade : null,
         'note' => $overridecurrent ? $overridecurrent->note : '',
         'calculated' => $calculated,
@@ -104,7 +106,7 @@ if ($userid) {
         }
     }
     $names = $manager->get_students();
-    echo $renderer->render(new report_detail($cm->id, $rows[$userid]->user, $given, $received, $names));
+    echo $renderer->render(new report_detail($cm->id, $rows[$userid]->user, $given, $received, $names, $range));
     if ($overrideform) {
         $overrideform->display();
         if ($overridecurrent) {
@@ -131,7 +133,7 @@ echo $renderer->render(new report_table(
     max(0, $groupid),
     $rows,
     (bool) get_user_preferences('mod_peerreview_autorefresh', true),
-    (int) $peerreview->grade
+    $range
 ));
 
 echo html_writer::start_div('d-flex flex-wrap gap-3 mt-3');

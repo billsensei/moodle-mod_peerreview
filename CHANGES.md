@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The received grade can be a scale (for example Poor / Fair / Good / Excellent), not only points. Reviewers pick a scale item (or use a rubric or marking guide, which map onto the scale); the mean or median is rounded to the nearest item for the gradebook; reports and the student page show item names. The participation grade stays points only. Once reviews exist the grade cannot be switched between points and a scale.
+
 - A submitted review is now shown with the grading method it was written in (rubric, marking guide) after the teacher switches methods, with a note saying so.
 
 ## 0.9.1 (beta), 2026-10-01

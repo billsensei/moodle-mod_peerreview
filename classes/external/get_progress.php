@@ -32,6 +32,7 @@ use core_external\external_multiple_structure;
 use core_external\external_single_structure;
 use core_external\external_value;
 use mod_peerreview\local\allocation\manager;
+use mod_peerreview\local\grade\grade_range;
 use mod_peerreview\local\group_access;
 use mod_peerreview\local\progress;
 
@@ -78,6 +79,7 @@ class get_progress extends external_api {
         $manager = new manager($peerreview, $cm->get_course_module_record(), $context);
         $progress = new progress($peerreview, $manager);
         $rows = $progress->get_rows(group_access::resolve($cm, $context, $groupid));
+        $range = grade_range::for_activity($peerreview);
 
         $result = [];
         foreach ($rows as $row) {
@@ -87,7 +89,7 @@ class get_progress extends external_api {
                 'giventotal' => $row->given_total,
                 'receiveddone' => $row->received_done,
                 'receivedtotal' => $row->received_total,
-                'grade' => $row->grade === null ? '' : format_float($row->grade, 2),
+                'grade' => $row->grade === null ? '' : $range->format($row->grade),
                 'overridden' => (bool) $row->overridden,
                 'participation' => $row->participation ?? -1,
             ];

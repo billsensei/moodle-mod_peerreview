@@ -4,7 +4,6 @@ Ideas and known limitations for versions after 0.9.0. Nothing here is promised.
 
 ## Known limitations in 0.9.0
 
-- **Scales are not supported**, only points (a mean or median of scale items is not meaningful).
 - **Only Moodle 5.0 is tested.** Moodle 5.1 moved the web root to `/public`; the plugin should work there, but it is not tested.
 - **No Moodle app support yet.** In the app the activity opens in the phone's browser; students can also use the browser directly.
 - **No files** in comments (the overall comment editor accepts text only).

@@ -29,7 +29,8 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir . '/formslib.php');
 
 /**
- * Override form. Custom data: cmid, userid, maxgrade, grade (current override or null), note, calculated (the peer grade).
+ * Override form. Custom data: cmid, userid, range (grade_range), grade (current override or null), note, calculated
+ * (the peer grade).
  *
  * @package    mod_peerreview
  * @copyright  2026 Bill <wrwjpn@gmail.com>
@@ -51,16 +52,25 @@ class override_form extends \moodleform {
         $mform->addElement('header', 'overrideheader', get_string('overridegrade', 'mod_peerreview'));
         $calculated = $data['calculated'] === null
             ? get_string('nogradeyet', 'mod_peerreview')
-            : format_float($data['calculated'], 2);
+            : $data['range']->format($data['calculated']);
         $mform->addElement('static', 'calculated', get_string('calculatedgrade', 'mod_peerreview'), $calculated);
 
-        $mform->addElement('text', 'overridegrade', get_string('overridegradevalue', 'mod_peerreview', (int) $data['maxgrade']), [
-            'size' => 6,
-        ]);
-        $mform->setType('overridegrade', PARAM_LOCALISEDFLOAT);
-        $mform->addRule('overridegrade', null, 'required', null, 'client');
-        if ($data['grade'] !== null) {
-            $mform->setDefault('overridegrade', format_float((float) $data['grade'], -1));
+        if ($data['range']->is_scale()) {
+            $menu = ['' => get_string('choosedots')] + $data['range']->get_menu();
+            $mform->addElement('select', 'overridegrade', get_string('overridegradescale', 'mod_peerreview'), $menu);
+            $mform->setType('overridegrade', PARAM_RAW);
+            $mform->addRule('overridegrade', null, 'required', null, 'client');
+            if ($data['grade'] !== null) {
+                $mform->setDefault('overridegrade', (string) (int) round((float) $data['grade']));
+            }
+        } else {
+            $label = get_string('overridegradevalue', 'mod_peerreview', $data['range']->max());
+            $mform->addElement('text', 'overridegrade', $label, ['size' => 6]);
+            $mform->setType('overridegrade', PARAM_LOCALISEDFLOAT);
+            $mform->addRule('overridegrade', null, 'required', null, 'client');
+            if ($data['grade'] !== null) {
+                $mform->setDefault('overridegrade', format_float((float) $data['grade'], -1));
+            }
         }
 
         $mform->addElement('textarea', 'overridenote', get_string('overridenote', 'mod_peerreview'), ['rows' => 3, 'cols' => 40]);
@@ -80,8 +90,8 @@ class override_form extends \moodleform {
     public function validation($data, $files): array {
         $errors = parent::validation($data, $files);
         $grade = $data['overridegrade'] ?? '';
-        if (!is_numeric($grade) || $grade < 0 || $grade > $this->_customdata['maxgrade']) {
-            $errors['overridegrade'] = get_string('errorscorerange', 'mod_peerreview', (int) $this->_customdata['maxgrade']);
+        if (!$this->_customdata['range']->accepts($grade)) {
+            $errors['overridegrade'] = $this->_customdata['range']->get_error();
         }
         return $errors;
     }

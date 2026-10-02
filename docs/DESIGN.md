@@ -11,7 +11,7 @@ Core files this design was checked against (all under `~/test/moodle`):
 |---|---|---|---|
 | D1 | Implement `peerreview_grading_areas_list()` | `grading_manager::available_areas()` only calls that callback when the component has no `advancedgrading_mapping`, and then emits a `DEBUG_DEVELOPER` deprecation notice. | Do **not** write the callback. `classes/grades/gradeitems.php` implements `itemnumber_mapping`, `fieldname_mapping` and `advancedgrading_mapping`; lang string `gradeitem:received`. |
 | D2 | "Each allocation row is the grading itemid" with area `peer` while grade items are 0=received, 1=participation | **Corrected in Phase 4.** The area name must be one of the grade item names: `gradingform_guide_controller::get_min_max_score()` calls `component_gradeitems::get_field_name_for_itemname($component, $area, 'grade')`, which throws "Unknown itemnumber mapping" for a name that is not in the mapping. | Area is `received` (= grade item 0); `get_advancedgrading_itemnames()` returns `['received']`. Each allocation row is still the grading `itemid`. |
-| D3 | Grade "the standard modgrade element" | modgrade also allows scales. Scales do not work with mean/median of rubric points. | Points only in v1 (`grade > 0`); the form restricts the type to points. |
+| D3 | Grade "the standard modgrade element" | modgrade also allows scales. Scales do not work with mean/median of rubric points. | v1: points only. Since 0.10.0 the received grade may also be a scale (`grade < 0`, minus the scale id), see D8; the participation grade stays points only. |
 | D4 | Grade item 1 is "participation" | mod form fields come from `fieldname_mapping`. | Field names: item 0 → `grade`, item 1 → `gradeparticipation`. |
 
 ## 1. Final DB schema (XMLDB)
@@ -23,7 +23,7 @@ Core files this design was checked against (all under `~/test/moodle`):
 | course | int(10) NN | index |
 | name | char(255) NN | |
 | intro / introformat | text / int(4) | |
-| grade | int(10) NN default 100 | max of received grade, points only (D3) |
+| grade | int(10) NN default 100 | max of received grade in points, or minus the scale id (D8) |
 | gradeparticipation | int(10) NN default 0 | 0 = no participation item |
 | aggregation | int(4) NN default 0 | 0 mean, 1 median |
 | anonymous | int(2) NN default 1 | 1 = reviewer shown as "Anonymous" to reviewee |
@@ -196,7 +196,8 @@ Please confirm or change each; my default is what I will build.
 |---|---|---|
 | D5 | Gradebook visibility vs feedback release | Grades reach the gradebook only via the manual "Push grades" button. |
 | D6 | Are self-reviews (manual, allowed by setting) in the received grade? | Stored and shown, **excluded** from the aggregate. |
-| D7 | Points-only grade (no scales) | Yes (D3). |
+| D7 | Points-only grade (no scales) | Superseded by D8 in 0.10.0. |
+| D8 | Scale as the received grade | Yes. Everything is stored as a number in the range of `local\grade\grade_range`: points 0..max, or scale item positions 1..N. Reviews (simple form: a dropdown; rubric and guide map onto 1..N through `set_grade_range()`), overrides and the mean/median stay numbers; the gradebook gets the nearest whole item and the pages show the item name. Switching between points and a scale, or to a scale with another number of items, is refused once reviews or overrides exist. |
 | D8 | Random top-up balance | Heuristic with tests (see §4.2), not min-cost flow. |
 | D9 | Students in several groups (random per-group pools) | Lowest group id wins. |
 | D10 | `requires` value | `2025041400` (branch-date release for 5.0), verified against core in Phase 2. |

@@ -341,3 +341,4 @@ Expected output (summary): every check PASS
 Actual output (phase 9): PASS phplint, phpmd (38 advisory violations, 0 errors), phpcs (0 warnings), phpdoc (0 warnings), validate, savepoints, mustache (7/7 templates), grunt (0 lint warnings), phpunit (OK, 130 tests, 30351 assertions, MariaDB), behat (1 scenario, 63 steps passed). PHPUnit also OK on PostgreSQL 17.11 (see above).
 If it fails: see the entries for Java, PostgreSQL and ci-local.sh above.
 - 2026-10-02: reviews written under an old grading method are shown with it (service::get_submitted_instance fallback, review.php notice)
+- 2026-10-02: scale grades: tests/local/grade/{grade_range,scale}_test.php, tests/behat/scale_grade.feature (run behat.sh init after adding a feature file)

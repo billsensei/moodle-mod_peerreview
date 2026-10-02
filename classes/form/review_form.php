@@ -33,7 +33,7 @@ require_once($CFG->libdir . '/formslib.php');
 /**
  * The review form.
  *
- * Custom data: cmid, allocid, instance (gradingform_instance|null), maxgrade, context, candraft, submitted, readonly,
+ * Custom data: cmid, allocid, instance (gradingform_instance|null), range (grade_range), context, candraft, submitted, readonly,
  * score, feedback, feedbackformat.
  *
  * @package    mod_peerreview
@@ -67,10 +67,18 @@ class review_form extends \moodleform {
             $mform->setType('advancedgradinginstanceid', PARAM_INT);
             $mform->addElement('grading', 'advancedgrading', '', ['gradinginstance' => $data['instance']]);
         } else {
-            $mform->addElement('text', 'score', get_string('score', 'mod_peerreview'), ['size' => 6]);
-            $mform->setType('score', PARAM_LOCALISEDFLOAT);
-            $mform->addHelpButton('score', 'score', 'mod_peerreview');
-            $mform->setDefault('score', $data['score'] === null ? '' : format_float((float) $data['score'], -1));
+            if ($data['range']->is_scale()) {
+                $mform->addElement('select', 'score', get_string('score', 'mod_peerreview'), ['' => get_string('choosedots')]
+                    + $data['range']->get_menu());
+                $mform->setType('score', PARAM_RAW);
+                $mform->addHelpButton('score', 'scorescale', 'mod_peerreview');
+                $mform->setDefault('score', $data['score'] === null ? '' : (string) (int) round((float) $data['score']));
+            } else {
+                $mform->addElement('text', 'score', get_string('score', 'mod_peerreview'), ['size' => 6]);
+                $mform->setType('score', PARAM_LOCALISEDFLOAT);
+                $mform->addHelpButton('score', 'score', 'mod_peerreview');
+                $mform->setDefault('score', $data['score'] === null ? '' : format_float((float) $data['score'], -1));
+            }
         }
 
         $mform->addElement('editor', 'feedback_editor', get_string('overallcomment', 'mod_peerreview'), null, [
@@ -132,8 +140,8 @@ class review_form extends \moodleform {
                 if (!$draft) {
                     $errors['score'] = get_string('required');
                 }
-            } else if (!is_numeric($score) || $score < 0 || $score > $this->_customdata['maxgrade']) {
-                $errors['score'] = get_string('errorscorerange', 'mod_peerreview', (int) $this->_customdata['maxgrade']);
+            } else if (!$this->_customdata['range']->accepts($score)) {
+                $errors['score'] = $this->_customdata['range']->get_error();
             }
         }
         return $errors;

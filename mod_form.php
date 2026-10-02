@@ -28,6 +28,8 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot . '/course/moodleform_mod.php');
 
+use mod_peerreview\local\grade\grade_range;
+
 /**
  * Module settings form.
  *
@@ -105,7 +107,9 @@ class mod_peerreview_mod_form extends moodleform_mod {
     }
 
     /**
-     * Validate the submitted data. Grades are points only in v1 (no scales).
+     * Validate the submitted data. The received grade may be points or a scale; the participation grade is points only.
+     * Once reviews or overrides exist the received grade cannot change between points and a scale, nor to a scale with
+     * another number of items, because the stored values would no longer fit.
      *
      * @param array $data Submitted data.
      * @param array $files Submitted files.
@@ -113,11 +117,37 @@ class mod_peerreview_mod_form extends moodleform_mod {
      */
     public function validation($data, $files): array {
         $errors = parent::validation($data, $files);
-        foreach (['grade', 'gradeparticipation'] as $field) {
-            if (isset($data[$field]) && (int) $data[$field] < 0) {
-                $errors[$field] = get_string('pointsonly', 'mod_peerreview');
+        if (isset($data['gradeparticipation']) && (int) $data['gradeparticipation'] < 0) {
+            $errors['gradeparticipation'] = get_string('pointsonly', 'mod_peerreview');
+        }
+        if (!$errors && !empty($data['instance']) && isset($data['grade'])) {
+            $error = $this->get_grade_change_error((int) $data['instance'], (int) $data['grade']);
+            if ($error) {
+                $errors['grade'] = $error;
             }
         }
         return $errors;
+    }
+
+    /**
+     * Why the received grade cannot become the new setting, if it cannot.
+     *
+     * @param int $instanceid Activity id.
+     * @param int $newgrade New grade setting (points, or minus a scale id).
+     * @return string Empty when the change is allowed.
+     */
+    private function get_grade_change_error(int $instanceid, int $newgrade): string {
+        global $DB;
+
+        $old = $DB->get_record('peerreview', ['id' => $instanceid], 'id, grade');
+        if (!$old || (int) $old->grade === $newgrade) {
+            return '';
+        }
+        if ((new grade_range((int) $old->grade))->fits(new grade_range($newgrade))) {
+            return '';
+        }
+        $hasdata = $DB->record_exists_select('peerreview_alloc', 'peerreviewid = ? AND grade IS NOT NULL', [$instanceid])
+            || $DB->record_exists('peerreview_override', ['peerreviewid' => $instanceid]);
+        return $hasdata ? get_string('errorgradetypelocked', 'mod_peerreview') : '';
     }
 }

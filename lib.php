@@ -27,6 +27,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 use mod_peerreview\grades\gradeitems;
+use mod_peerreview\local\grade\grade_range;
 
 require_once($CFG->libdir . '/gradelib.php');
 
@@ -127,10 +128,7 @@ function peerreview_delete_instance($id): bool {
 function peerreview_grade_item_update(stdClass $peerreview, $grades = null): int {
     $received = [
         'itemname' => clean_param($peerreview->name, PARAM_NOTAGS),
-        'gradetype' => GRADE_TYPE_VALUE,
-        'grademax' => $peerreview->grade,
-        'grademin' => 0,
-    ];
+    ] + grade_range::for_activity($peerreview)->get_item_params();
     if (isset($peerreview->cmidnumber)) {
         $received['idnumber'] = $peerreview->cmidnumber;
     }
@@ -211,6 +209,31 @@ function peerreview_grade_item_delete(stdClass $peerreview): int {
         ['deleted' => 1]
     );
     return $result;
+}
+
+/**
+ * Whether a scale is used by a peer review (so core refuses to delete it).
+ *
+ * Modelled on assign_scale_used_anywhere() in mod/assign/lib.php.
+ *
+ * @param int $scaleid Scale id.
+ * @return bool
+ */
+function peerreview_scale_used_anywhere($scaleid): bool {
+    global $DB;
+    return $scaleid && $DB->record_exists('peerreview', ['grade' => -(int) $scaleid]);
+}
+
+/**
+ * Whether a scale is used by one peer review.
+ *
+ * @param int $peerreviewid Activity id.
+ * @param int $scaleid Scale id.
+ * @return bool
+ */
+function peerreview_scale_used($peerreviewid, $scaleid): bool {
+    global $DB;
+    return $scaleid && $DB->record_exists('peerreview', ['id' => $peerreviewid, 'grade' => -(int) $scaleid]);
 }
 
 /**

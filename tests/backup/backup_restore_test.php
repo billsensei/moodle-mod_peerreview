@@ -224,4 +224,33 @@ final class backup_restore_test extends \advanced_testcase {
         );
         $this->assertTrue($DB->record_exists('grading_definitions', ['areaid' => $area->id, 'method' => 'rubric']));
     }
+
+    /**
+     * An activity graded with a scale keeps a scale grade after restore, for a site scale and for a course scale.
+     */
+    public function test_scale_survives_restore(): void {
+        global $CFG, $DB;
+        require_once($CFG->dirroot . '/mod/peerreview/lib.php');
+        $this->resetAfterTest();
+        $CFG->keeptempdirectoriesonbackup = true;
+        $this->setAdminUser();
+        foreach (['site', 'course'] as $kind) {
+            $this->create_activity(2);
+            $scale = $this->getDataGenerator()->create_scale([
+                'scale' => 'Poor, Fair, Good, Excellent',
+                'courseid' => $kind === 'course' ? $this->course->id : 0,
+            ]);
+            $DB->set_field('peerreview', 'grade', -$scale->id, ['id' => $this->peerreview->id]);
+            $this->peerreview->grade = -$scale->id;
+            peerreview_grade_item_update($this->peerreview);
+            $this->allocate(1, 2, \mod_peerreview\local\allocation\manager::STATUS_SUBMITTED, 2);
+
+            [$restored] = $this->backup_and_restore(true);
+
+            $this->assertLessThan(0, $restored->grade, "$kind scale: still a scale");
+            $range = new \mod_peerreview\local\grade\grade_range((int) $restored->grade);
+            $this->assertSame(4, $range->max(), "$kind scale: its items are available");
+            $this->assertEquals(2, $DB->get_field('peerreview_alloc', 'grade', ['peerreviewid' => $restored->id]));
+        }
+    }
 }

@@ -25,6 +25,7 @@
 namespace mod_peerreview\output;
 
 use mod_peerreview\local\allocation\manager;
+use mod_peerreview\local\grade\grade_range;
 
 /**
  * Student page: cards for the reviews to do and, when released, the feedback received.
@@ -70,6 +71,7 @@ class student_view implements \renderable, \templatable {
      * @return \stdClass
      */
     public function export_for_template(\renderer_base $output): \stdClass {
+        $range = grade_range::for_activity($this->peerreview);
         $statuses = [
             manager::STATUS_NEW => [get_string('statusnew', 'mod_peerreview'), 'bg-secondary'],
             manager::STATUS_DRAFT => [get_string('statusdraft', 'mod_peerreview'), 'bg-warning text-dark'],
@@ -114,10 +116,7 @@ class student_view implements \renderable, \templatable {
                 }
                 $received[] = [
                     'who' => $who,
-                    'grade' => get_string('gradeoutof', 'mod_peerreview', (object) [
-                        'grade' => format_float((float) $review->grade, 2, true, true),
-                        'max' => (int) $this->peerreview->grade,
-                    ]),
+                    'grade' => $range->format_with_max((float) $review->grade),
                     'hascomment' => trim((string) $review->feedback) !== '',
                     'comment' => format_text($review->feedback ?? '', $review->feedbackformat, ['context' => $this->context]),
                     'url' => (new \moodle_url('/mod/peerreview/feedback.php', [
@@ -141,10 +140,7 @@ class student_view implements \renderable, \templatable {
             'received' => $received,
             'hasreceived' => !empty($received),
             'hasgrade' => $this->grade !== null,
-            'grade' => $this->grade === null ? '' : get_string('gradeoutof', 'mod_peerreview', (object) [
-                'grade' => format_float($this->grade, 2, true, true),
-                'max' => (int) $this->peerreview->grade,
-            ]),
+            'grade' => $this->grade === null ? '' : $range->format_with_max($this->grade),
         ];
     }
 }

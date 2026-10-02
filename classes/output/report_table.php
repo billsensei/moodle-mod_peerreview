@@ -24,6 +24,8 @@
 
 namespace mod_peerreview\output;
 
+use mod_peerreview\local\grade\grade_range;
+
 /**
  * The progress table.
  *
@@ -42,7 +44,7 @@ class report_table implements \renderable, \templatable {
      * @param int $groupid Group shown (0 all).
      * @param \stdClass[] $rows From progress::get_rows().
      * @param bool $autorefresh Whether automatic refresh is on for this user.
-     * @param int $maxgrade Activity maximum grade.
+     * @param grade_range $range Range of the received grade.
      */
     public function __construct(
         /** @var int Course module id. */
@@ -53,8 +55,8 @@ class report_table implements \renderable, \templatable {
         private readonly array $rows,
         /** @var bool Auto refresh preference. */
         private readonly bool $autorefresh,
-        /** @var int Maximum grade. */
-        private readonly int $maxgrade
+        /** @var grade_range Range of the received grade. */
+        private readonly grade_range $range
     ) {
     }
 
@@ -73,7 +75,7 @@ class report_table implements \renderable, \templatable {
                 'url' => (new \moodle_url('/mod/peerreview/report.php', ['id' => $this->cmid, 'user' => $row->userid]))->out(false),
                 'given' => $row->given_done . ' / ' . $row->given_total,
                 'received' => $row->received_done . ' / ' . $row->received_total,
-                'grade' => $row->grade === null ? '' : format_float($row->grade, 2),
+                'grade' => $row->grade === null ? '' : $this->range->format($row->grade),
                 'overridden' => (bool) $row->overridden,
                 'participation' => $row->participation === null ? '' : $row->participation . '%',
             ];
@@ -85,7 +87,7 @@ class report_table implements \renderable, \templatable {
             'hasrows' => !empty($rows),
             'autorefresh' => $this->autorefresh,
             'interval' => self::REFRESH_SECONDS,
-            'maxgrade' => $this->maxgrade,
+            'maxgrade' => $this->range->max(),
         ];
     }
 }

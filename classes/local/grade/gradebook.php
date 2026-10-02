@@ -63,7 +63,7 @@ class gradebook {
         foreach ((new aggregator($this->peerreview))->get_grades($userids) as $userid => $result) {
             $grades[$userid] = (object) [
                 'userid' => $userid,
-                'rawgrade' => $result['grade'],
+                'rawgrade' => grade_range::for_activity($this->peerreview)->for_gradebook($result['grade']),
                 'dategraded' => time(),
             ];
         }
@@ -123,14 +123,22 @@ class gradebook {
             // Everyone we were asked about gets an entry, so a grade that no longer applies is cleared.
             $received[$id] ??= (object) ['userid' => $id, 'rawgrade' => null, 'dategraded' => time()];
         }
-        $this->send(gradeitems::ITEM_RECEIVED, $received, $this->peerreview->grade);
+        $this->send(
+            gradeitems::ITEM_RECEIVED,
+            $received,
+            grade_range::for_activity($this->peerreview)->get_item_params()
+        );
 
         if ($this->peerreview->gradeparticipation > 0) {
             $participation = $this->get_participation_grades($userids);
             foreach ($userids as $id) {
                 $participation[$id] ??= (object) ['userid' => $id, 'rawgrade' => null, 'dategraded' => time()];
             }
-            $this->send(gradeitems::ITEM_PARTICIPATION, $participation, $this->peerreview->gradeparticipation);
+            $this->send(gradeitems::ITEM_PARTICIPATION, $participation, [
+                'gradetype' => GRADE_TYPE_VALUE,
+                'grademax' => $this->peerreview->gradeparticipation,
+                'grademin' => 0,
+            ]);
         }
     }
 
@@ -150,9 +158,9 @@ class gradebook {
      *
      * @param int $itemnumber Grade item number.
      * @param \stdClass[] $grades Grade objects.
-     * @param int $grademax Maximum of the item.
+     * @param array $params Grade item settings (type and range).
      */
-    private function send(int $itemnumber, array $grades, int $grademax): void {
+    private function send(int $itemnumber, array $grades, array $params): void {
         grade_update(
             'mod/peerreview',
             $this->peerreview->course,
@@ -161,7 +169,7 @@ class gradebook {
             $this->peerreview->id,
             $itemnumber,
             $grades,
-            ['gradetype' => GRADE_TYPE_VALUE, 'grademax' => $grademax, 'grademin' => 0]
+            $params
         );
     }
 }

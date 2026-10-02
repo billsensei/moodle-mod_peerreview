@@ -67,10 +67,7 @@ echo $OUTPUT->header();
 echo $OUTPUT->heading(format_string($peerreview->name), 2);
 echo $OUTPUT->heading(get_string('feedbackfrom', 'mod_peerreview', $who), 3);
 
-$gradetext = get_string('gradeoutof', 'mod_peerreview', (object) [
-    'grade' => format_float((float) $alloc->grade, 2, true, true),
-    'max' => (int) $peerreview->grade,
-]);
+$gradetext = $service->get_range()->format_with_max((float) $alloc->grade);
 $controller = $service->get_controller();
 $details = $controller ? $controller->render_grade($PAGE, $alloc->id, null, $gradetext, false) : $gradetext;
 echo $OUTPUT->box($OUTPUT->heading($gradetext, 4) . ($controller ? $details : ''), 'mod_peerreview-feedback-detail mb-3');

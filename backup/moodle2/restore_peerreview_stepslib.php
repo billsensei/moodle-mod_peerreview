@@ -61,6 +61,10 @@ class restore_peerreview_activity_structure_step extends restore_activity_struct
         $data->course = $this->get_courseid();
         $data->timeopen = $this->apply_date_offset($data->timeopen);
         $data->timeclose = $this->apply_date_offset($data->timeclose);
+        if ($data->grade < 0) {
+            // A scale: the grade setting is minus the scale id, which may have a new id in the target course.
+            $data->grade = -($this->get_mappingid('scale', abs($data->grade)));
+        }
         if (!$this->get_setting_value('userinfo')) {
             // No reviews come with the activity, so there is nothing released.
             $data->feedbackreleased = 0;

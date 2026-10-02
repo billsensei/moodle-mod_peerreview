@@ -27,6 +27,7 @@
 namespace mod_peerreview\local\review;
 
 use mod_peerreview\local\allocation\manager;
+use mod_peerreview\local\grade\grade_range;
 
 /**
  * Review service for one peer review activity.
@@ -118,7 +119,7 @@ class service {
         if (!$controller->is_form_available()) {
             return null;
         }
-        $controller->set_grade_range(make_grades_menu($this->peerreview->grade), true);
+        $controller->set_grade_range($this->get_range()->get_menu(), true);
         return $controller;
     }
 
@@ -163,7 +164,7 @@ class service {
                 continue; // The method plugin is disabled or gone.
             }
             if ($controller->is_form_available()) {
-                $controller->set_grade_range(make_grades_menu($this->peerreview->grade), true);
+                $controller->set_grade_range($this->get_range()->get_menu(), true);
                 return $controller->get_current_instance($alloc->reviewerid, $alloc->id);
             }
         }
@@ -332,10 +333,20 @@ class service {
      * @throws \moodle_exception
      */
     public function check_score($score): float {
-        if (!is_numeric($score) || $score < 0 || $score > $this->peerreview->grade) {
-            throw new \moodle_exception('errorscorerange', 'mod_peerreview', '', (int) $this->peerreview->grade);
+        $range = $this->get_range();
+        if (!$range->accepts($score)) {
+            throw new \moodle_exception($range->get_error_code(), 'mod_peerreview', '', $range->max());
         }
         return (float) $score;
+    }
+
+    /**
+     * The range of the grade: points or a scale.
+     *
+     * @return grade_range
+     */
+    public function get_range(): grade_range {
+        return grade_range::for_activity($this->peerreview);
     }
 
     /**

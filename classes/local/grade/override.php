@@ -51,7 +51,7 @@ class override {
      * Set or change an override. Requires mod/peerreview:overridegrade.
      *
      * @param int $userid The student.
-     * @param float $grade New received grade, from 0 to the activity maximum.
+     * @param float $grade New received grade: from 0 to the activity maximum, or the position of a scale item.
      * @param string $note Why (shown to teachers).
      * @param int $byuserid Teacher making the change.
      * @throws \moodle_exception When the grade is outside the range.
@@ -60,8 +60,9 @@ class override {
         global $DB;
 
         require_capability('mod/peerreview:overridegrade', $this->context);
-        if ($grade < 0 || $grade > $this->peerreview->grade) {
-            throw new \moodle_exception('errorscorerange', 'mod_peerreview', '', (int) $this->peerreview->grade);
+        $range = grade_range::for_activity($this->peerreview);
+        if (!$range->accepts($grade)) {
+            throw new \moodle_exception($range->get_error_code(), 'mod_peerreview', '', $range->max());
         }
         $existing = $DB->get_record('peerreview_override', ['peerreviewid' => $this->peerreview->id, 'userid' => $userid]);
         $record = (object) [

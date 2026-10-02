@@ -25,6 +25,7 @@
 namespace mod_peerreview\output;
 
 use mod_peerreview\local\allocation\manager;
+use mod_peerreview\local\grade\grade_range;
 
 /**
  * Drill-down for one student: teachers see real names and can open each review read-only.
@@ -42,6 +43,7 @@ class report_detail implements \renderable, \templatable {
      * @param \stdClass[] $given Allocations where the student reviews.
      * @param \stdClass[] $received Allocations where the student is reviewed.
      * @param \stdClass[] $users userid => name fields, for both sides.
+     * @param grade_range $range Range of the received grade.
      */
     public function __construct(
         /** @var int Course module id. */
@@ -53,7 +55,9 @@ class report_detail implements \renderable, \templatable {
         /** @var \stdClass[] Received. */
         private readonly array $received,
         /** @var \stdClass[] Users. */
-        private readonly array $users
+        private readonly array $users,
+        /** @var grade_range Range of the received grade. */
+        private readonly grade_range $range
     ) {
     }
 
@@ -77,7 +81,7 @@ class report_detail implements \renderable, \templatable {
                     'name' => $other ? fullname($other) : get_string('unknownuser', 'mod_peerreview'),
                     'status' => $statuses[$alloc->status],
                     'grade' => $alloc->grade === null || (int) $alloc->status !== manager::STATUS_SUBMITTED
-                        ? '' : format_float((float) $alloc->grade, 2),
+                        ? '' : $this->range->format((float) $alloc->grade),
                     'url' => (new \moodle_url('/mod/peerreview/review.php', [
                         'id' => $this->cmid,
                         'alloc' => $alloc->id,

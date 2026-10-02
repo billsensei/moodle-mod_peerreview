@@ -12,6 +12,7 @@ Students give each other marks and comments on something that happened in class,
    - **Open date / Close date** (optional): students can only review between these times. Without dates, it is always open.
 4. Under **Grade**:
    - **Maximum grade**: the grade a student gets from their peers, 100 by default.
+     Instead of points you can choose a **scale** (for example Poor / Fair / Good / Excellent). Reviewers then pick one item; the peers' marks are averaged and rounded to the nearest item. You cannot switch between points and a scale once reviews exist. The participation grade is always points.
    - **Grading method**: choose **Rubric** or **Marking guide** if you want students to use one. Leave **Simple direct grading** for a plain score and a comment.
    - **Participation grade** (optional): a second grade for *doing* the reviews. A student who completes all their reviews gets full marks.
 5. Save.
