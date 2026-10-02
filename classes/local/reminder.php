@@ -28,7 +28,8 @@ use core\message\message;
 use mod_peerreview\local\allocation\manager;
 
 /**
- * Sends the reminders. Manual only: a teacher presses the button on the report, so nothing is sent behind their back.
+ * Sends the reminders: by a teacher pressing the button on the report, or automatically shortly before the close date
+ * when the activity has a reminder lead time (see \mod_peerreview\task\send_reminders).
  *
  * Modelled on how mod/assign sends notifications (assign::send_notification() with message_send()).
  *
@@ -74,14 +75,50 @@ class reminder {
      * @throws \moodle_exception When the activity is not open.
      */
     public function send(int $groupid, int $fromuserid): int {
-        global $DB;
-
         require_capability('mod/peerreview:allocate', $this->context);
         if (!$this->is_open()) {
             throw new \moodle_exception('remindernotopen', 'mod_peerreview');
         }
+        $sent = $this->notify($groupid, \core_user::get_user($fromuserid, '*', MUST_EXIST));
+        \mod_peerreview\event\reminders_sent::create([
+            'objectid' => $this->peerreview->id,
+            'context' => $this->context,
+            'other' => ['count' => $sent, 'groupid' => $groupid],
+        ])->trigger();
+        return $sent;
+    }
+
+    /**
+     * The automatic reminder before the close date: everyone with reviews left, from the no-reply user. Called by the
+     * scheduled task, so there is no capability check; the task decides when an activity is due.
+     *
+     * @return int How many students were sent a message (0 when the activity is not open).
+     */
+    public function send_automatic(): int {
+        if (!$this->is_open()) {
+            return 0;
+        }
+        $sent = $this->notify(0, \core_user::get_noreply_user());
+        \mod_peerreview\event\reminders_sent::create([
+            'objectid' => $this->peerreview->id,
+            'context' => $this->context,
+            'userid' => 0,
+            'other' => ['count' => $sent, 'groupid' => 0, 'automatic' => true],
+        ])->trigger();
+        return $sent;
+    }
+
+    /**
+     * Send the message to each student in scope who has reviews left.
+     *
+     * @param int $groupid Only members of this group (0 for everyone, -1 for nobody).
+     * @param \stdClass $from The user the messages come from.
+     * @return int How many students were sent a message.
+     */
+    private function notify(int $groupid, \stdClass $from): int {
+        global $DB;
+
         $rows = (new progress($this->peerreview, new manager($this->peerreview, $this->cm, $this->context)))->get_rows($groupid);
-        $from = \core_user::get_user($fromuserid, '*', MUST_EXIST);
         $url = new \moodle_url('/mod/peerreview/view.php', ['id' => $this->cm->id]);
         $sent = 0;
         foreach ($rows as $row) {
@@ -114,11 +151,6 @@ class reminder {
                 $sent++;
             }
         }
-        \mod_peerreview\event\reminders_sent::create([
-            'objectid' => $this->peerreview->id,
-            'context' => $this->context,
-            'other' => ['count' => $sent, 'groupid' => $groupid],
-        ])->trigger();
         return $sent;
     }
 }

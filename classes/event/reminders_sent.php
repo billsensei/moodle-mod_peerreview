@@ -25,7 +25,8 @@
 namespace mod_peerreview\event;
 
 /**
- * A teacher sent reminders to students with reviews left to do. other['count'] is how many students got one.
+ * Reminders were sent to students with reviews left to do, by a teacher or (other['automatic']) by the scheduled task before
+ * the close date. other['count'] is how many students got one.
  *
  * @package    mod_peerreview
  * @copyright  2026 Bill <wrwjpn@gmail.com>
@@ -56,6 +57,10 @@ class reminders_sent extends \core\event\base {
      * @return string
      */
     public function get_description(): string {
+        if (!empty($this->other['automatic'])) {
+            return "Automatic review reminders were sent to {$this->other['count']} students in the peer review with " .
+                "course module id '{$this->contextinstanceid}'.";
+        }
         return "The user with id '{$this->userid}' sent review reminders to {$this->other['count']} students in the peer " .
             "review with course module id '{$this->contextinstanceid}'.";
     }

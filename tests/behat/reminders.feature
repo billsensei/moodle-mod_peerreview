@@ -30,3 +30,14 @@ Feature: Reminders for students with reviews left to do
     When I press "Remind students with reviews to do"
     And I click on "Yes" "button" in the "Confirmation" "dialogue"
     Then I should see "1 students were sent a reminder."
+
+  Scenario: A teacher turns on the automatic reminder, which needs a close date
+    Given I am on the "Talk review" "peerreview activity editing" page logged in as "teacher1"
+    Then the "Remind students before the close date" "select" should be disabled
+    When I set the following fields to these values:
+      | timeclose[enabled]                    | 1             |
+      | timeclose[year]                       | 2035          |
+      | Remind students before the close date | 2 days before |
+    And I press "Save and display"
+    And I am on the "Talk review" "peerreview activity editing" page
+    Then the field "Remind students before the close date" matches value "2 days before"

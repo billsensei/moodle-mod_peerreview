@@ -45,7 +45,9 @@ Tell students to open the activity on their phones (see the [student how-to](STU
 
 To follow progress, open the activity and press **Report**. The table shows how many reviews each student has given and received, and it refreshes itself every 15 seconds. Click a student's name to read their reviews. With a rubric or marking guide, the table **Average by criterion** below it shows the class average on each criterion (for example Delivery), so you can see where the class was strong or weak. It counts submitted reviews of the students in the group you are viewing.
 
-To nudge students who are behind, press **Remind students with reviews to do** on the same page. Every student in the current group view who has reviews left gets a message (popup, email or the Moodle app, depending on their notification settings). It only works while the activity is open, and nothing is sent unless you press the button.
+To nudge students who are behind, press **Remind students with reviews to do** on the same page. Every student in the current group view who has reviews left gets a message (popup, email or the Moodle app, depending on their notification settings). It only works while the activity is open.
+
+To have Moodle do it for you, set a close date and choose **Remind students before the close date** in the activity settings (1, 2 or 3 days, or 1 week). Moodle then sends one message to every student who still has reviews left when that time is reached, from the site's no-reply address. It is sent once for each close date; if you change the close date or the lead time it is armed again. It is off by default, and it needs the Moodle cron to be running (ask your administrator).
 
 ## 5. Release the feedback
 

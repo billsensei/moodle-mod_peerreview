@@ -65,6 +65,8 @@ final class backup_restore_test extends \advanced_testcase {
             'anonymous' => 0,
             'timeopen' => 1767225600,
             'timeclose' => 1798761600,
+            'reminderlead' => 3 * DAYSECS,
+            'remindersentfor' => 1798761600,
             'intro' => 'See <a href="https://example.com/mod/peerreview/view.php?id=1">it</a>',
         ]);
         $this->setAdminUser();
@@ -147,11 +149,12 @@ final class backup_restore_test extends \advanced_testcase {
 
         foreach (
             ['name', 'grade', 'gradeparticipation', 'aggregation', 'anonymous', 'allowselfreview',
-                'timeopen', 'timeclose', 'completionallreviews', 'intro'] as $field
+                'timeopen', 'timeclose', 'reminderlead', 'completionallreviews', 'intro'] as $field
         ) {
             $this->assertEquals($this->peerreview->$field, $restored->$field, $field);
         }
         $this->assertEquals(1, $restored->feedbackreleased);
+        $this->assertEquals(0, $restored->remindersentfor, 'a restored activity has not sent its automatic reminder yet');
 
         $allocs = $DB->get_records('peerreview_alloc', ['peerreviewid' => $restored->id], 'id');
         $this->assertCount(2, $allocs);

@@ -15,18 +15,26 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version metadata for mod_peerreview.
+ * Scheduled tasks for mod_peerreview.
+ *
+ * Modelled on mod/assign/db/tasks.php.
  *
  * @package    mod_peerreview
+ * @category   task
  * @copyright  2026 Bill <wrwjpn@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'mod_peerreview';
-$plugin->version = 2026100204;
-$plugin->requires = 2025041400; // Moodle 5.0.
-$plugin->supported = [500, 502]; // Tested on Moodle 5.0, 5.1 and 5.2 (range: first and last supported branch).
-$plugin->maturity = MATURITY_BETA;
-$plugin->release = '0.12.0';
+$tasks = [
+    [
+        'classname' => '\mod_peerreview\task\send_reminders',
+        'blocking' => 0,
+        'minute' => 'R',
+        'hour' => '*',
+        'day' => '*',
+        'month' => '*',
+        'dayofweek' => '*',
+    ],
+];

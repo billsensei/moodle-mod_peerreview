@@ -52,6 +52,7 @@ class mod_peerreview_generator extends testing_module_generator {
             'feedbackreleased' => 0,
             'timeopen' => 0,
             'timeclose' => 0,
+            'reminderlead' => 0,
         ];
         foreach ($defaults as $name => $value) {
             if (!isset($record->$name)) {

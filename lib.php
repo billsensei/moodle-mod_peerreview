@@ -88,7 +88,14 @@ function peerreview_update_instance(stdClass $data, ?mod_peerreview_mod_form $mf
     $data->id = $data->instance;
     $data->timemodified = time();
     $data->gradeparticipation = (int) ($data->gradeparticipation ?? 0);
-    $oldgrade = (int) $DB->get_field('peerreview', 'grade', ['id' => $data->id]);
+    $old = $DB->get_record('peerreview', ['id' => $data->id], 'grade, timeclose, reminderlead', MUST_EXIST);
+    $oldgrade = (int) $old->grade;
+    // A new close date or lead time arms the automatic reminder again.
+    $closechanged = (int) ($data->timeclose ?? $old->timeclose) !== (int) $old->timeclose;
+    $leadchanged = (int) ($data->reminderlead ?? $old->reminderlead) !== (int) $old->reminderlead;
+    if ($closechanged || $leadchanged) {
+        $data->remindersentfor = 0;
+    }
     $DB->update_record('peerreview', $data);
 
     // A new maximum rescales stored review grades and overrides proportionally (design 5.2).

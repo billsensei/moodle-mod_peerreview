@@ -44,7 +44,7 @@ class backup_peerreview_activity_structure_step extends backup_activity_structur
 
         $peerreview = new backup_nested_element('peerreview', ['id'], [
             'name', 'intro', 'introformat', 'grade', 'gradeparticipation', 'aggregation', 'anonymous',
-            'allowselfreview', 'feedbackreleased', 'timeopen', 'timeclose', 'completionallreviews',
+            'allowselfreview', 'feedbackreleased', 'timeopen', 'timeclose', 'reminderlead', 'completionallreviews',
             'timecreated', 'timemodified',
         ]);
 

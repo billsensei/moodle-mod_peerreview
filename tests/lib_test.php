@@ -170,6 +170,31 @@ final class lib_test extends \advanced_testcase {
     }
 
     /**
+     * A new close date or lead time arms the automatic reminder again; saving the same values does not.
+     */
+    public function test_update_instance_rearms_the_automatic_reminder(): void {
+        $this->resetAfterTest();
+        global $DB;
+        $close = time() + 5 * DAYSECS;
+        $this->create_activity(1, ['timeclose' => $close, 'reminderlead' => DAYSECS, 'remindersentfor' => $close]);
+
+        $data = clone $this->peerreview;
+        $data->instance = $data->id;
+        unset($data->remindersentfor); // The form never carries it.
+        peerreview_update_instance($data);
+        $this->assertEquals($close, $DB->get_field('peerreview', 'remindersentfor', ['id' => $this->peerreview->id]));
+
+        $data->timeclose = $close + DAYSECS;
+        peerreview_update_instance($data);
+        $this->assertEquals(0, $DB->get_field('peerreview', 'remindersentfor', ['id' => $this->peerreview->id]));
+
+        $DB->set_field('peerreview', 'remindersentfor', $data->timeclose, ['id' => $this->peerreview->id]);
+        $data->reminderlead = 2 * DAYSECS;
+        peerreview_update_instance($data);
+        $this->assertEquals(0, $DB->get_field('peerreview', 'remindersentfor', ['id' => $this->peerreview->id]));
+    }
+
+    /**
      * Course module info carries the custom completion rule only when completion is tracked automatically.
      */
     public function test_coursemodule_info_exposes_the_rule(): void {

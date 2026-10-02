@@ -69,6 +69,16 @@ class mod_peerreview_mod_form extends moodleform_mod {
         $mform->addElement('advcheckbox', 'feedbackreleased', get_string('feedbackreleased', 'mod_peerreview'));
         $mform->addElement('date_time_selector', 'timeopen', get_string('timeopen', 'mod_peerreview'), ['optional' => true]);
         $mform->addElement('date_time_selector', 'timeclose', get_string('timeclose', 'mod_peerreview'), ['optional' => true]);
+        $mform->addElement('select', 'reminderlead', get_string('reminderlead', 'mod_peerreview'), [
+            0 => get_string('reminderleadoff', 'mod_peerreview'),
+            DAYSECS => get_string('reminderleadday', 'mod_peerreview'),
+            2 * DAYSECS => get_string('reminderleaddays', 'mod_peerreview', 2),
+            3 * DAYSECS => get_string('reminderleaddays', 'mod_peerreview', 3),
+            WEEKSECS => get_string('reminderleadweek', 'mod_peerreview'),
+        ]);
+        $mform->addHelpButton('reminderlead', 'reminderlead', 'mod_peerreview');
+        $mform->setDefault('reminderlead', 0);
+        $mform->disabledIf('reminderlead', 'timeclose[enabled]', 'notchecked');
 
         // The received grade (item 0) and the grading method selector are added by core.
         $this->standard_grading_coursemodule_elements();

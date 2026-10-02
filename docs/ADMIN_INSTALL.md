@@ -4,6 +4,7 @@
 
 - Moodle **5.0** (version 2025041400 or later). This release is tested with 5.0 only.
 - PHP 8.2 or 8.3 (Moodle 5.2 needs PHP 8.3 or later) and a database Moodle 5.0 supports (tested: MariaDB 11, PostgreSQL 17).
+- The Moodle cron must run for the optional automatic reminder before the close date (scheduled task *Send automatic peer review reminders*, hourly).
 - Command-line access to the server is recommended; the web installer works too.
 
 ## Before you start
@@ -45,7 +46,7 @@
 
    No output means success.
 
-4. Check: *Site administration → Plugins → Plugins overview* lists **Peer review** (mod_peerreview) with version 2026100203 and release 0.11.1.
+4. Check: *Site administration → Plugins → Plugins overview* lists **Peer review** (mod_peerreview) with version 2026100204 and release 0.12.0.
 
 ## Upgrade to a newer release
 

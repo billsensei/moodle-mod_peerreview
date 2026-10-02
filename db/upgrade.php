@@ -26,12 +26,29 @@
 /**
  * Upgrade the mod_peerreview database structure and data.
  *
- * The schema has not changed since the first release, so there are no steps yet.
  * Add each new step below with its own upgrade_mod_savepoint() call.
  *
  * @param int $oldversion The version we are upgrading from.
  * @return bool Always true.
  */
 function xmldb_peerreview_upgrade($oldversion) {
+    global $DB;
+
+    $dbman = $DB->get_manager();
+
+    if ($oldversion < 2026100204) {
+        // Automatic reminders before the close date (release 0.12.0).
+        $table = new xmldb_table('peerreview');
+        $field = new xmldb_field('reminderlead', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'timeclose');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        $field = new xmldb_field('remindersentfor', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'reminderlead');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        upgrade_mod_savepoint(true, 2026100204, 'peerreview');
+    }
+
     return true;
 }
