@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.12.1 (beta), 2026-10-02
+
 - Reminders (the button on the report and the automatic one) are now written in each student's own language instead of the language of whoever or whatever sends them. Strings missing from a language pack fall back to English.
 
 ## 0.12.0 (beta), 2026-10-02
