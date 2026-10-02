@@ -43,7 +43,7 @@ Students who join the course later can be added with another **Random** allocati
 
 Tell students to open the activity on their phones (see the [student how-to](STUDENT_HOWTO.md)). Each student sees a card for every classmate they must review.
 
-To follow progress, open the activity and press **Report**. The table shows how many reviews each student has given and received, and it refreshes itself every 15 seconds. Click a student's name to read their reviews.
+To follow progress, open the activity and press **Report**. The table shows how many reviews each student has given and received, and it refreshes itself every 15 seconds. Click a student's name to read their reviews. With a rubric or marking guide, the table **Average by criterion** below it shows the class average on each criterion (for example Delivery), so you can see where the class was strong or weak. It counts submitted reviews of the students in the group you are viewing.
 
 To nudge students who are behind, press **Remind students with reviews to do** on the same page. Every student in the current group view who has reviews left gets a message (popup, email or the Moodle app, depending on their notification settings). It only works while the activity is open, and nothing is sent unless you press the button.
 

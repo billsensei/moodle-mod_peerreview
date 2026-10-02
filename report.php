@@ -29,11 +29,13 @@ require_once('../../config.php');
 use core\output\notification;
 use mod_peerreview\form\override_form;
 use mod_peerreview\local\allocation\manager;
+use mod_peerreview\local\criterion_stats;
 use mod_peerreview\local\grade\aggregator;
 use mod_peerreview\local\grade\grade_range;
 use mod_peerreview\local\grade\override;
 use mod_peerreview\local\group_access;
 use mod_peerreview\local\progress;
+use mod_peerreview\output\criterion_table;
 use mod_peerreview\output\release_button;
 use mod_peerreview\output\report_detail;
 use mod_peerreview\output\report_table;
@@ -134,6 +136,10 @@ echo $renderer->render(new report_table(
     $rows,
     (bool) get_user_preferences('mod_peerreview_autorefresh', true),
     $range
+));
+
+echo $renderer->render(new criterion_table(
+    (new criterion_stats($peerreview, $context, array_map('intval', array_keys($rows))))->get_statistics()
 ));
 
 echo html_writer::start_div('d-flex flex-wrap gap-3 mt-3');

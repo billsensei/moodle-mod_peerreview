@@ -1,5 +1,9 @@
 # Changes
 
+## Unreleased
+
+- Report: **Average by criterion** table under the student list when the activity uses a rubric or marking guide. It shows, for each criterion, how many submitted reviews scored it, the average score and the highest possible score, for the students in the current group view. Scores are in the points of the rubric or guide.
+
 ## 0.10.0 (beta), 2026-10-02
 
 - Reminders: on the **Report** page, **Remind students with reviews to do** sends a message (popup, email or the Moodle app, following each student's notification settings) to every student in the current group view who has submitted fewer reviews than assigned. Teachers press the button themselves; nothing is sent automatically. It works only while the activity is open and needs the capability to allocate reviews.

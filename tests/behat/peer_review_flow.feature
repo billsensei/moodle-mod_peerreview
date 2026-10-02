@@ -82,6 +82,10 @@ Feature: A whole peer review, from a rubric to the gradebook
     And I should see "66.67" in the "Sam Ahn" "table_row"
     And I should see "1 / 1" in the "Bea Lee" "table_row"
     And I should see "83.33" in the "Bea Lee" "table_row"
+    # The class average per rubric criterion (3 and 2 on Content, 2 and 2 on Delivery, out of 3).
+    And I should see "Average by criterion"
+    And I should see "2.50" in the "Content" "table_row"
+    And I should see "2.00" in the "Delivery" "table_row"
     When I press "Release feedback"
     Then I should see "Feedback is now visible to students."
     And I press "Push grades to gradebook"

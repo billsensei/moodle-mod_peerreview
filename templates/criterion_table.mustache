@@ -1,0 +1,63 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+{{!
+    @template mod_peerreview/criterion_table
+
+    Average score per rubric or marking guide criterion over the submitted reviews.
+
+    Context variables required for this template:
+    * hasrows, rows - Rows: name, count, average, max, percent, hasaverage
+
+    Example context (json):
+    {
+        "hasrows": true,
+        "rows": [
+            {"name": "Delivery", "count": 12, "average": "3.25", "max": "4", "percent": 81, "hasaverage": true},
+            {"name": "Content", "count": 0, "average": "–", "max": "4", "percent": 0, "hasaverage": false}
+        ]
+    }
+}}
+{{#hasrows}}
+<div class="mod_peerreview-criterionstats mt-4">
+    <h3 class="h4">{{#str}} criterionstats, mod_peerreview {{/str}}</h3>
+    <p class="text-muted small">{{#str}} criterionstats_desc, mod_peerreview {{/str}}</p>
+    <div class="table-responsive">
+        <table class="table table-striped generaltable">
+            <thead>
+                <tr>
+                    <th scope="col">{{#str}} criterion, mod_peerreview {{/str}}</th>
+                    <th scope="col">{{#str}} criterionscored, mod_peerreview {{/str}}</th>
+                    <th scope="col">{{#str}} criterionaverage, mod_peerreview {{/str}}</th>
+                    <th scope="col">{{#str}} criterionmax, mod_peerreview {{/str}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#rows}}
+                <tr>
+                    <th scope="row">{{name}}</th>
+                    <td>{{count}}</td>
+                    <td>
+                        {{average}}
+                        {{#hasaverage}}<progress class="mod_peerreview-progress ms-2" max="100" value="{{percent}}" aria-label="{{percent}}%"></progress>{{/hasaverage}}
+                    </td>
+                    <td>{{max}}</td>
+                </tr>
+                {{/rows}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{/hasrows}}

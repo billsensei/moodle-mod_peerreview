@@ -73,6 +73,16 @@ class renderer extends \plugin_renderer_base {
     }
 
     /**
+     * Render the criterion statistics.
+     *
+     * @param criterion_table $table
+     * @return string
+     */
+    protected function render_criterion_table(criterion_table $table): string {
+        return $this->render_from_template('mod_peerreview/criterion_table', $table->export_for_template($this));
+    }
+
+    /**
      * Render the report table.
      *
      * @param report_table $table
