@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.11.1 (beta), 2026-10-02
+
+- Fixed: 0.11.0 could not be installed. Its `version.php` declared `$plugin->supported = [500, 501, 502]`, but Moodle expects a range of two values (`[500, 502]`), so the site install stopped with "Incorrect syntax in plugin supported declaration". Use 0.11.1 instead of 0.11.0.
 - Moodle 5.2 is now listed as supported (tested in GitHub CI on PHP 8.3 with PostgreSQL and MariaDB), as well as 5.0 and 5.1.
 
 ## 0.11.0 (beta), 2026-10-02

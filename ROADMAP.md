@@ -1,8 +1,8 @@
 # Roadmap
 
-Ideas and known limitations for versions after 0.11.0. Nothing here is promised.
+Ideas and known limitations for versions after 0.11.1. Nothing here is promised.
 
-## Known limitations in 0.11.0
+## Known limitations in 0.11.1
 
 - **Moodle 5.2 is tested on PHP 8.3 only** (in GitHub CI). Whether it also runs on PHP 8.2 is not checked.
 - **No Moodle app support yet.** In the app the activity opens in the phone's browser; students can also use the browser directly.
