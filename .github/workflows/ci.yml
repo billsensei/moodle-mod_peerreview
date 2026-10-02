@@ -1,4 +1,4 @@
-# CI for mod_peerreview: Moodle 5.0, 5.1 and 5.2 (PHP 8.2 and 8.3; 5.2 on 8.3 only), with PostgreSQL and MariaDB.
+# CI for mod_peerreview: Moodle 5.0, 5.1 and 5.2 (PHP 8.2 and 8.3), with PostgreSQL and MariaDB.
 # Based on moodle-plugin-ci's gha.dist.yml (4.5.11). Run the same checks locally with scripts/ci-local.sh.
 name: Moodle Plugin CI
 
@@ -37,10 +37,6 @@ jobs:
         php: ['8.2', '8.3']
         moodle-branch: ['MOODLE_500_STABLE', 'MOODLE_501_STABLE', 'MOODLE_502_STABLE']
         database: [pgsql, mariadb]
-        exclude:
-          # Assumption, not checked against 5.2's requirements: 5.2 needs PHP 8.3 or later. Remove this if 5.2 runs on 8.2.
-          - php: '8.2'
-            moodle-branch: 'MOODLE_502_STABLE'
 
     steps:
       - name: Check out repository code
