@@ -60,7 +60,30 @@ class progress {
      *                     overridden, participation (percent or null).
      */
     public function get_rows(int $groupid = 0): array {
+        if ($groupid < 0) {
+            return [];
+        }
         $students = $this->manager->get_students();
+        $counts = $this->count_reviews($students);
+        $inscope = $this->users_in_scope(array_keys($students), $groupid);
+        $grades = (new aggregator($this->peerreview))->get_grades($inscope);
+
+        $rows = [];
+        foreach ($inscope as $userid) {
+            $rows[$userid] = $this->build_row($userid, $students[$userid], $counts[$userid], $grades[$userid] ?? []);
+        }
+        return $rows;
+    }
+
+    /**
+     * Reviews given and received by each student, counting only pairs of eligible students.
+     *
+     * A self-review counts as work given and done, but is not "received".
+     *
+     * @param \stdClass[] $students Eligible students, userid => user record.
+     * @return int[][] userid => ['gd' given done, 'gt' given total, 'rd' received done, 'rt' received total].
+     */
+    private function count_reviews(array $students): array {
         $counts = [];
         foreach (array_keys($students) as $userid) {
             $counts[$userid] = ['gd' => 0, 'gt' => 0, 'rd' => 0, 'rt' => 0];
@@ -77,33 +100,45 @@ class progress {
                 $counts[$alloc->revieweeid]['rd'] += $done;
             }
         }
+        return $counts;
+    }
 
-        $inscope = array_keys($students);
-        if ($groupid < 0) {
-            return [];
+    /**
+     * The students a report covers.
+     *
+     * @param int[] $studentids Ids of all eligible students.
+     * @param int $groupid Only members of this group, 0 for everyone.
+     * @return int[]
+     */
+    private function users_in_scope(array $studentids, int $groupid): array {
+        if (!$groupid) {
+            return $studentids;
         }
-        if ($groupid) {
-            $members = array_keys(groups_get_members($groupid, 'u.id'));
-            $inscope = array_values(array_intersect($inscope, $members));
-        }
-        $grades = (new aggregator($this->peerreview))->get_grades($inscope);
+        $members = array_keys(groups_get_members($groupid, 'u.id'));
+        return array_values(array_intersect($studentids, $members));
+    }
 
-        $rows = [];
-        foreach ($inscope as $userid) {
-            $c = $counts[$userid];
-            $rows[$userid] = (object) [
-                'userid' => $userid,
-                'user' => $students[$userid],
-                'given_done' => $c['gd'],
-                'given_total' => $c['gt'],
-                'received_done' => $c['rd'],
-                'received_total' => $c['rt'],
-                'grade' => $grades[$userid]['grade'] ?? null,
-                'overridden' => $grades[$userid]['overridden'] ?? false,
-                'participation' => $c['gt'] ? (int) round(100 * $c['gd'] / $c['gt']) : null,
-            ];
-        }
-        return $rows;
+    /**
+     * One row of the report.
+     *
+     * @param int $userid The student.
+     * @param \stdClass $user The student's user record.
+     * @param int[] $count Counts from count_reviews() for this student.
+     * @param array $grade Aggregated grade of this student: 'grade' and 'overridden' (empty when there is none).
+     * @return \stdClass
+     */
+    private function build_row(int $userid, \stdClass $user, array $count, array $grade): \stdClass {
+        return (object) [
+            'userid' => $userid,
+            'user' => $user,
+            'given_done' => $count['gd'],
+            'given_total' => $count['gt'],
+            'received_done' => $count['rd'],
+            'received_total' => $count['rt'],
+            'grade' => $grade['grade'] ?? null,
+            'overridden' => $grade['overridden'] ?? false,
+            'participation' => $count['gt'] ? (int) round(100 * $count['gd'] / $count['gt']) : null,
+        ];
     }
 
     /**
