@@ -29,6 +29,7 @@ namespace mod_peerreview\backup;
 
 use mod_peerreview\local\allocation\manager;
 use mod_peerreview\local\grade\override;
+use mod_peerreview\local\reminder_schedule;
 use mod_peerreview\local\review\service;
 use PHPUnit\Framework\Attributes\CoversClass;
 
@@ -65,7 +66,7 @@ final class backup_restore_test extends \advanced_testcase {
             'anonymous' => 0,
             'timeopen' => 1767225600,
             'timeclose' => 1798761600,
-            'reminderlead' => 3 * DAYSECS,
+            'reminderlead' => [3 * DAYSECS, DAYSECS],
             'remindersentfor' => 1798761600,
             'intro' => 'See <a href="https://example.com/mod/peerreview/view.php?id=1">it</a>',
         ]);
@@ -94,10 +95,11 @@ final class backup_restore_test extends \advanced_testcase {
      * Back up the activity and restore it into a new course.
      *
      * @param bool $userinfo Include user data.
+     * @param callable|null $beforerestore Called with the path of the activity's peerreview.xml between backup and restore.
      * @return array [peerreview record, module context] of the restored copy.
      */
-    private function backup_and_restore(bool $userinfo): array {
-        global $DB, $USER;
+    private function backup_and_restore(bool $userinfo, ?callable $beforerestore = null): array {
+        global $CFG, $DB, $USER;
 
         $bc = new \backup_controller(
             \backup::TYPE_1ACTIVITY,
@@ -111,6 +113,10 @@ final class backup_restore_test extends \advanced_testcase {
         $backupid = $bc->get_backupid();
         $bc->execute_plan();
         $bc->destroy();
+
+        if ($beforerestore) {
+            $beforerestore($CFG->tempdir . '/backup/' . $backupid . '/activities/peerreview_' . $this->cm->id . '/peerreview.xml');
+        }
 
         $target = $this->getDataGenerator()->create_course();
         foreach ($this->students as $student) {
@@ -149,12 +155,21 @@ final class backup_restore_test extends \advanced_testcase {
 
         foreach (
             ['name', 'grade', 'gradeparticipation', 'aggregation', 'anonymous', 'allowselfreview',
-                'timeopen', 'timeclose', 'reminderlead', 'completionallreviews', 'intro'] as $field
+                'timeopen', 'timeclose', 'completionallreviews', 'intro'] as $field
         ) {
             $this->assertEquals($this->peerreview->$field, $restored->$field, $field);
         }
         $this->assertEquals(1, $restored->feedbackreleased);
-        $this->assertEquals(0, $restored->remindersentfor, 'a restored activity has not sent its automatic reminder yet');
+        $this->assertSame(
+            [3 * DAYSECS, DAYSECS],
+            (new reminder_schedule($restored->id))->get_leads(),
+            'the automatic reminders come along'
+        );
+        $this->assertEquals(
+            0,
+            $DB->count_records_select('peerreview_reminder', 'peerreviewid = ? AND sentfor <> 0', [$restored->id]),
+            'a restored activity has not sent its automatic reminders yet'
+        );
 
         $allocs = $DB->get_records('peerreview_alloc', ['peerreviewid' => $restored->id], 'id');
         $this->assertCount(2, $allocs);
@@ -202,6 +217,41 @@ final class backup_restore_test extends \advanced_testcase {
 
         // The original is untouched.
         $this->assertEquals(2, $DB->count_records('peerreview_alloc', ['peerreviewid' => $this->peerreview->id]));
+    }
+
+    /**
+     * The automatic reminders are settings, so they come along without user data too.
+     */
+    public function test_reminders_are_restored_without_user_data(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        $CFG->keeptempdirectoriesonbackup = true;
+        $this->setup_data();
+
+        [$restored] = $this->backup_and_restore(false);
+
+        $this->assertSame([3 * DAYSECS, DAYSECS], (new reminder_schedule($restored->id))->get_leads());
+    }
+
+    /**
+     * A backup made before several reminders existed (0.12 and 0.13 keep one lead time in the activity itself) still
+     * restores its reminder.
+     */
+    public function test_backup_with_the_single_reminder_of_older_versions(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        $CFG->keeptempdirectoriesonbackup = true;
+        $this->setup_data();
+
+        [$restored] = $this->backup_and_restore(true, function (string $xmlfile): void {
+            $xml = file_get_contents($xmlfile);
+            $xml = preg_replace('~<reminders>.*?</reminders>\s*~s', '', $xml);
+            $xml = str_replace('<timeclose>', '<reminderlead>' . (2 * DAYSECS) . '</reminderlead><timeclose>', $xml);
+            $this->assertStringContainsString('<reminderlead>', $xml);
+            file_put_contents($xmlfile, $xml);
+        });
+
+        $this->assertSame([2 * DAYSECS], (new reminder_schedule($restored->id))->get_leads());
     }
 
     /**

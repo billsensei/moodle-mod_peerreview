@@ -52,6 +52,9 @@ Indexes: unique `(peerreviewid, reviewerid, revieweeid)`; `reviewerid`; `reviewe
 ### `peerreview_override`
 `id, peerreviewid, userid, grade number(10,5) NN, note text NULL, overriddenby, timemodified`. Unique `(peerreviewid, userid)`.
 
+### `peerreview_reminder` (added in 0.14: several automatic reminders per activity)
+`id, peerreviewid, leadtime int(10) NN, sentfor int(10) NN default 0`. Unique `(peerreviewid, leadtime)`. One row per reminder: `leadtime` is how many seconds before `peerreview.timeclose` it is sent (1 hour to 52 weeks, at most 5 per activity), `sentfor` is the close date it was already sent for (0 = not sent). Rules (`local/reminder_schedule.php`): saving the list keeps the rows whose lead time did not change (so a sent reminder is not sent again), adds new lead times unsent and removes the rest; a new close date sets every `sentfor` to 0. The scheduled task sends one message per activity however many of its reminders are due in the same run. It replaces the columns `reminderlead` and `remindersentfor` that 0.12 and 0.13 had on `peerreview` (the upgrade step moves the values). The rows are settings, not personal data, so they are in backups with and without user data and not in the privacy metadata.
+
 No database foreign keys beyond XMLDB key declarations (Moodle convention). Rows of deleted users are handled by the privacy provider; see section 7 for enrolment removal.
 
 ## 2. Capability matrix

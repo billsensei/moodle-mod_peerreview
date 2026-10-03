@@ -26,7 +26,8 @@ namespace mod_peerreview\event;
 
 /**
  * Reminders were sent to students with reviews left to do, by a teacher or (other['automatic']) by the scheduled task before
- * the close date. other['count'] is how many students got one.
+ * the close date. other['count'] is how many students got one; for an automatic one other['due'] is how many of the
+ * activity's reminders it covered (several can fall due in the same run, and the students get a single message).
  *
  * @package    mod_peerreview
  * @copyright  2026 Bill <wrwjpn@gmail.com>

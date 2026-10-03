@@ -41,7 +41,10 @@ class restore_peerreview_activity_structure_step extends restore_activity_struct
      * @return restore_path_element[]
      */
     protected function define_structure() {
-        $paths = [new restore_path_element('peerreview', '/activity/peerreview')];
+        $paths = [
+            new restore_path_element('peerreview', '/activity/peerreview'),
+            new restore_path_element('peerreview_reminder', '/activity/peerreview/reminders/reminder'),
+        ];
         if ($this->get_setting_value('userinfo')) {
             $paths[] = new restore_path_element('peerreview_alloc', '/activity/peerreview/allocations/allocation');
             $paths[] = new restore_path_element('peerreview_override', '/activity/peerreview/overrides/override');
@@ -69,8 +72,25 @@ class restore_peerreview_activity_structure_step extends restore_activity_struct
             // No reviews come with the activity, so there is nothing released.
             $data->feedbackreleased = 0;
         }
+        // Backups from 0.12 and 0.13 hold the one reminder in the activity itself (reminderlead, in seconds).
+        $legacylead = (int) ($data->reminderlead ?? 0);
+        unset($data->reminderlead, $data->remindersentfor);
         $newitemid = $DB->insert_record('peerreview', $data);
+        if ($legacylead > 0) {
+            (new \mod_peerreview\local\reminder_schedule($newitemid))->save([$legacylead]);
+        }
         $this->apply_activity_instance($newitemid);
+    }
+
+    /**
+     * Restore one automatic reminder. A restored activity has not sent it yet.
+     *
+     * @param array $data Parsed data.
+     */
+    protected function process_peerreview_reminder($data) {
+        $data = (object) $data;
+        $schedule = new \mod_peerreview\local\reminder_schedule($this->get_new_parentid('peerreview'));
+        $schedule->save(array_merge($schedule->get_leads(), [(int) $data->leadtime]));
     }
 
     /**

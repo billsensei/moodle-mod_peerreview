@@ -29,6 +29,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot . '/course/moodleform_mod.php');
 
 use mod_peerreview\local\grade\grade_range;
+use mod_peerreview\local\reminder_schedule;
 
 /**
  * Module settings form.
@@ -69,15 +70,22 @@ class mod_peerreview_mod_form extends moodleform_mod {
         $mform->addElement('advcheckbox', 'feedbackreleased', get_string('feedbackreleased', 'mod_peerreview'));
         $mform->addElement('date_time_selector', 'timeopen', get_string('timeopen', 'mod_peerreview'), ['optional' => true]);
         $mform->addElement('date_time_selector', 'timeclose', get_string('timeclose', 'mod_peerreview'), ['optional' => true]);
-        // Any lead time from one hour (the reminder task runs hourly) up to 52 weeks; unticked means no reminder (0).
-        $mform->addElement('duration', 'reminderlead', get_string('reminderlead', 'mod_peerreview'), [
+        // Up to five reminders, each any time from one hour (the reminder task runs hourly) to 52 weeks before the close date;
+        // a row that is unticked (0) is not used. The rows are added with a button, one more than the saved reminders.
+        $saved = $this->_instance ? (new reminder_schedule((int) $this->_instance))->get_leads() : [];
+        $row = [$mform->createElement('duration', 'reminderlead', get_string('reminderleadn', 'mod_peerreview', '{no}'), [
             'optional' => true,
             'defaultunit' => DAYSECS,
             'units' => [HOURSECS, DAYSECS, WEEKSECS],
-        ]);
-        $mform->addHelpButton('reminderlead', 'reminderlead', 'mod_peerreview');
-        $mform->setDefault('reminderlead', 0);
-        $mform->disabledIf('reminderlead', 'timeclose[enabled]', 'notchecked');
+        ])];
+        $rows = $this->repeat_elements($row, max(1, count($saved)), [
+            'reminderlead' => ['default' => 0, 'helpbutton' => ['reminderlead', 'mod_peerreview']],
+        ], 'reminder_repeats', 'reminder_add_fields', 1, get_string('addreminder', 'mod_peerreview'), true);
+        // The reminders need a close date. This is not done with repeat_elements' own 'disabledif' option: it drops the
+        // "[enabled]" of a dependency that is not itself a repeated field, so the rule would point at nothing.
+        for ($position = 0; $position < $rows; $position++) {
+            $mform->disabledIf("reminderlead[$position]", 'timeclose[enabled]', 'notchecked');
+        }
 
         // The received grade (item 0) and the grading method selector are added by core.
         $this->standard_grading_coursemodule_elements();
@@ -89,6 +97,20 @@ class mod_peerreview_mod_form extends moodleform_mod {
 
         $this->standard_coursemodule_elements();
         $this->add_action_buttons();
+    }
+
+    /**
+     * Show the saved reminders in the repeated fields.
+     *
+     * @param array $defaultvalues Form defaults, changed in place.
+     */
+    public function data_preprocessing(&$defaultvalues): void {
+        parent::data_preprocessing($defaultvalues);
+        if ($this->_instance) {
+            foreach ((new reminder_schedule((int) $this->_instance))->get_leads() as $position => $lead) {
+                $defaultvalues["reminderlead[$position]"] = $lead;
+            }
+        }
     }
 
     /**
@@ -129,12 +151,8 @@ class mod_peerreview_mod_form extends moodleform_mod {
         if (isset($data['gradeparticipation']) && (int) $data['gradeparticipation'] < 0) {
             $errors['gradeparticipation'] = get_string('pointsonly', 'mod_peerreview');
         }
-        if (!empty($data['reminderlead'])) {
-            if ($data['reminderlead'] < HOURSECS) {
-                $errors['reminderlead'] = get_string('reminderleadtoosmall', 'mod_peerreview');
-            } else if ($data['reminderlead'] > 52 * WEEKSECS) {
-                $errors['reminderlead'] = get_string('reminderleadtoolarge', 'mod_peerreview');
-            }
+        foreach (reminder_schedule::check((array) ($data['reminderlead'] ?? [])) as $position => $identifier) {
+            $errors["reminderlead[$position]"] = get_string($identifier, 'mod_peerreview', reminder_schedule::MAX);
         }
         if (!$errors && !empty($data['instance']) && isset($data['grade'])) {
             $error = $this->get_grade_change_error((int) $data['instance'], (int) $data['grade']);

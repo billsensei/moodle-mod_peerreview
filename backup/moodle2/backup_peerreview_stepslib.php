@@ -26,7 +26,8 @@
  */
 
 /**
- * Structure: peerreview -> allocations/allocation, overrides/override (both only with user data).
+ * Structure: peerreview -> reminders/reminder, allocations/allocation and overrides/override (the last two only with user
+ * data).
  *
  * @package    mod_peerreview
  * @category   backup
@@ -44,9 +45,13 @@ class backup_peerreview_activity_structure_step extends backup_activity_structur
 
         $peerreview = new backup_nested_element('peerreview', ['id'], [
             'name', 'intro', 'introformat', 'grade', 'gradeparticipation', 'aggregation', 'anonymous',
-            'allowselfreview', 'feedbackreleased', 'timeopen', 'timeclose', 'reminderlead', 'completionallreviews',
+            'allowselfreview', 'feedbackreleased', 'timeopen', 'timeclose', 'completionallreviews',
             'timecreated', 'timemodified',
         ]);
+
+        // The automatic reminders are settings: they are saved with and without user data.
+        $reminders = new backup_nested_element('reminders');
+        $reminder = new backup_nested_element('reminder', ['id'], ['leadtime']);
 
         $allocations = new backup_nested_element('allocations');
         $allocation = new backup_nested_element('allocation', ['id'], [
@@ -59,12 +64,15 @@ class backup_peerreview_activity_structure_step extends backup_activity_structur
             'userid', 'grade', 'note', 'overriddenby', 'timemodified',
         ]);
 
+        $peerreview->add_child($reminders);
+        $reminders->add_child($reminder);
         $peerreview->add_child($allocations);
         $allocations->add_child($allocation);
         $peerreview->add_child($overrides);
         $overrides->add_child($override);
 
         $peerreview->set_source_table('peerreview', ['id' => backup::VAR_ACTIVITYID]);
+        $reminder->set_source_table('peerreview_reminder', ['peerreviewid' => backup::VAR_PARENTID], 'leadtime DESC');
         if ($userinfo) {
             $allocation->set_source_table('peerreview_alloc', ['peerreviewid' => backup::VAR_PARENTID], 'id ASC');
             $override->set_source_table('peerreview_override', ['peerreviewid' => backup::VAR_PARENTID], 'id ASC');

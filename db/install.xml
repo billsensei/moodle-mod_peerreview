@@ -19,8 +19,6 @@
         <FIELD NAME="feedbackreleased" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timeopen" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timeclose" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="reminderlead" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Seconds before the close date to remind students automatically, 0 = off"/>
-        <FIELD NAME="remindersentfor" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The close date the automatic reminders were already sent for, 0 = not sent"/>
         <FIELD NAME="completionallreviews" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
@@ -75,6 +73,21 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="peerreview_user" UNIQUE="true" FIELDS="peerreviewid, userid"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="peerreview_reminder" COMMENT="Automatic reminders of an activity: how long before the close date, and the close date each was sent for">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="peerreviewid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="leadtime" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Seconds before the close date to remind the students"/>
+        <FIELD NAME="sentfor" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The close date this reminder was already sent for, 0 = not sent"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="peerreviewid" TYPE="foreign" FIELDS="peerreviewid" REFTABLE="peerreview" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="peerreview_leadtime" UNIQUE="true" FIELDS="peerreviewid, leadtime"/>
       </INDEXES>
     </TABLE>
   </TABLES>

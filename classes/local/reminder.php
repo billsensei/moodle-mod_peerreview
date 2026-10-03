@@ -92,9 +92,10 @@ class reminder {
      * The automatic reminder before the close date: everyone with reviews left, from the no-reply user. Called by the
      * scheduled task, so there is no capability check; the task decides when an activity is due.
      *
+     * @param int $due How many of the activity's reminders were due and are covered by this message.
      * @return int How many students were sent a message (0 when the activity is not open).
      */
-    public function send_automatic(): int {
+    public function send_automatic(int $due = 1): int {
         if (!$this->is_open()) {
             return 0;
         }
@@ -103,7 +104,7 @@ class reminder {
             'objectid' => $this->peerreview->id,
             'context' => $this->context,
             'userid' => 0,
-            'other' => ['count' => $sent, 'groupid' => 0, 'automatic' => true],
+            'other' => ['count' => $sent, 'groupid' => 0, 'automatic' => true, 'due' => $due],
         ])->trigger();
         return $sent;
     }

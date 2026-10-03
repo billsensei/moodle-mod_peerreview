@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_peerreview';
-$plugin->version = 2026100300;
+$plugin->version = 2026100301;
 $plugin->requires = 2025041400; // Moodle 5.0.
 $plugin->supported = [500, 502]; // Tested on Moodle 5.0, 5.1 and 5.2 (range: first and last supported branch).
 $plugin->maturity = MATURITY_BETA;

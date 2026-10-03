@@ -28,6 +28,7 @@ defined('MOODLE_INTERNAL') || die();
 
 use mod_peerreview\grades\gradeitems;
 use mod_peerreview\local\grade\grade_range;
+use mod_peerreview\local\reminder_schedule;
 
 require_once($CFG->libdir . '/gradelib.php');
 
@@ -68,8 +69,10 @@ function peerreview_add_instance(stdClass $data, ?mod_peerreview_mod_form $mform
     $data->timecreated = time();
     $data->timemodified = $data->timecreated;
     $data->gradeparticipation = (int) ($data->gradeparticipation ?? 0);
-    $data->reminderlead = (int) round($data->reminderlead ?? 0); // The duration field can give fractions of a second.
+    $leads = (array) ($data->reminderlead ?? []); // The lead times of the automatic reminders (seconds), one or several.
+    unset($data->reminderlead);
     $data->id = $DB->insert_record('peerreview', $data);
+    (new reminder_schedule($data->id))->save($leads);
 
     peerreview_grade_item_update($data);
 
@@ -89,18 +92,21 @@ function peerreview_update_instance(stdClass $data, ?mod_peerreview_mod_form $mf
     $data->id = $data->instance;
     $data->timemodified = time();
     $data->gradeparticipation = (int) ($data->gradeparticipation ?? 0);
-    if (isset($data->reminderlead)) {
-        $data->reminderlead = (int) round($data->reminderlead); // The duration field can give fractions of a second.
-    }
-    $old = $DB->get_record('peerreview', ['id' => $data->id], 'grade, timeclose, reminderlead', MUST_EXIST);
+    $old = $DB->get_record('peerreview', ['id' => $data->id], 'grade, timeclose', MUST_EXIST);
     $oldgrade = (int) $old->grade;
-    // A new close date or lead time arms the automatic reminder again.
-    $closechanged = (int) ($data->timeclose ?? $old->timeclose) !== (int) $old->timeclose;
-    $leadchanged = (int) ($data->reminderlead ?? $old->reminderlead) !== (int) $old->reminderlead;
-    if ($closechanged || $leadchanged) {
-        $data->remindersentfor = 0;
-    }
+    // Without the field (the form leaves it out when there is no close date) the reminders stay as they are.
+    $leads = isset($data->reminderlead) ? (array) $data->reminderlead : null;
+    unset($data->reminderlead);
     $DB->update_record('peerreview', $data);
+
+    // The lead times that are new are armed; a new close date arms every reminder again.
+    $schedule = new reminder_schedule($data->id);
+    if ($leads !== null) {
+        $schedule->save($leads);
+    }
+    if ((int) ($data->timeclose ?? $old->timeclose) !== (int) $old->timeclose) {
+        $schedule->rearm();
+    }
 
     // A new maximum rescales stored review grades and overrides proportionally (design 5.2).
     $rescaled = isset($data->grade)
@@ -135,6 +141,7 @@ function peerreview_delete_instance($id): bool {
         return false;
     }
 
+    (new reminder_schedule($id))->delete();
     $DB->delete_records('peerreview_override', ['peerreviewid' => $id]);
     $DB->delete_records('peerreview_alloc', ['peerreviewid' => $id]);
     $DB->delete_records('peerreview', ['id' => $id]);

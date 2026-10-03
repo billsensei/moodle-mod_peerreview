@@ -170,62 +170,103 @@ final class lib_test extends \advanced_testcase {
     }
 
     /**
-     * A new close date or lead time arms the automatic reminder again; saving the same values does not.
+     * The sent state of an activity's reminders, lead time => the close date it was sent for.
+     *
+     * @param int $id Activity id.
+     * @return int[]
      */
-    public function test_update_instance_rearms_the_automatic_reminder(): void {
+    private function sent_state(int $id): array {
+        global $DB;
+        $state = [];
+        foreach ($DB->get_records('peerreview_reminder', ['peerreviewid' => $id], 'leadtime DESC') as $row) {
+            $state[(int) $row->leadtime] = (int) $row->sentfor;
+        }
+        return $state;
+    }
+
+    /**
+     * A new close date arms every reminder again, a new lead time arms that reminder, and saving the same values does
+     * not arm anything.
+     */
+    public function test_update_instance_rearms_the_automatic_reminders(): void {
         $this->resetAfterTest();
         global $DB;
         $close = time() + 5 * DAYSECS;
         $this->create_activity(1, ['timeclose' => $close, 'reminderlead' => DAYSECS, 'remindersentfor' => $close]);
+        $id = $this->peerreview->id;
 
         $data = clone $this->peerreview;
         $data->instance = $data->id;
-        unset($data->remindersentfor); // The form never carries it.
+        $data->reminderlead = [DAYSECS];
         peerreview_update_instance($data);
-        $this->assertEquals($close, $DB->get_field('peerreview', 'remindersentfor', ['id' => $this->peerreview->id]));
+        $this->assertSame([DAYSECS => $close], $this->sent_state($id), 'the same values change nothing');
 
+        // The close date moves: armed again.
         $data->timeclose = $close + DAYSECS;
         peerreview_update_instance($data);
-        $this->assertEquals(0, $DB->get_field('peerreview', 'remindersentfor', ['id' => $this->peerreview->id]));
+        $this->assertSame([DAYSECS => 0], $this->sent_state($id));
 
-        $DB->set_field('peerreview', 'remindersentfor', $data->timeclose, ['id' => $this->peerreview->id]);
-        $data->reminderlead = 2 * DAYSECS;
+        // A second lead time is added to a reminder that was sent: only the new one is armed.
+        $DB->set_field('peerreview_reminder', 'sentfor', $data->timeclose, ['peerreviewid' => $id]);
+        $data->reminderlead = [2 * DAYSECS, DAYSECS];
         peerreview_update_instance($data);
-        $this->assertEquals(0, $DB->get_field('peerreview', 'remindersentfor', ['id' => $this->peerreview->id]));
+        $this->assertSame([2 * DAYSECS => 0, DAYSECS => (int) $data->timeclose], $this->sent_state($id));
+
+        // A lead time that is replaced by another one starts unsent; the one that is gone is removed.
+        $data->reminderlead = [3 * DAYSECS, DAYSECS];
+        peerreview_update_instance($data);
+        $this->assertSame([3 * DAYSECS => 0, DAYSECS => (int) $data->timeclose], $this->sent_state($id));
+
+        // A form without the field (it is disabled while there is no close date) leaves the reminders alone.
+        unset($data->reminderlead);
+        peerreview_update_instance($data);
+        $this->assertSame([3 * DAYSECS => 0, DAYSECS => (int) $data->timeclose], $this->sent_state($id));
+
+        // Clearing the list removes them all.
+        $data->reminderlead = [0, 0];
+        peerreview_update_instance($data);
+        $this->assertSame([], $this->sent_state($id));
     }
 
     /**
-     * The duration field can deliver fractions of a second: the lead time is stored in whole seconds, and a value that
-     * rounds to the stored one does not arm the reminder again.
+     * The duration field can deliver fractions of a second: lead times are stored in whole seconds, and a value that
+     * rounds to the stored one keeps that reminder as it was.
      */
     public function test_reminder_lead_is_stored_in_whole_seconds(): void {
         $this->resetAfterTest();
-        global $DB;
         $close = time() + 5 * DAYSECS;
         $this->create_activity(1, ['timeclose' => $close, 'reminderlead' => 2 * HOURSECS, 'remindersentfor' => $close]);
         $id = $this->peerreview->id;
 
         $data = clone $this->peerreview;
         $data->instance = $data->id;
-        unset($data->remindersentfor);
-        $data->reminderlead = 2 * HOURSECS + 0.4;
+        $data->reminderlead = [2 * HOURSECS + 0.4];
         peerreview_update_instance($data);
-        $this->assertSame(2 * HOURSECS, (int) $DB->get_field('peerreview', 'reminderlead', ['id' => $id]));
-        $this->assertEquals($close, $DB->get_field('peerreview', 'remindersentfor', ['id' => $id]), 'still armed as it was');
+        $this->assertSame([2 * HOURSECS => $close], $this->sent_state($id), 'still the same reminder, still sent');
 
-        // 7200.6 is stored as 7201: that is a new lead time, so it arms the reminder again. Comparing the unrounded
-        // value with a plain (int) cast would call it unchanged.
-        $data->reminderlead = 2 * HOURSECS + 0.6;
+        $data->reminderlead = [2 * HOURSECS + 0.6]; // Rounds to 7201: a new lead time, so unsent.
         peerreview_update_instance($data);
-        $this->assertSame(2 * HOURSECS + 1, (int) $DB->get_field('peerreview', 'reminderlead', ['id' => $id]));
-        $this->assertEquals(0, $DB->get_field('peerreview', 'remindersentfor', ['id' => $id]), 'a new lead time arms it');
+        $this->assertSame([2 * HOURSECS + 1 => 0], $this->sent_state($id));
 
         $new = (object) [
             'course' => $this->course->id, 'name' => 'Rounded', 'intro' => '', 'introformat' => FORMAT_HTML,
             'grade' => 100, 'reminderlead' => 5400.4, 'timeclose' => $close,
         ];
         $newid = peerreview_add_instance($new);
-        $this->assertSame(5400, (int) $DB->get_field('peerreview', 'reminderlead', ['id' => $newid]));
+        $this->assertSame([5400 => 0], $this->sent_state($newid));
+    }
+
+    /**
+     * Deleting the activity deletes its reminders.
+     */
+    public function test_delete_instance_removes_the_reminders(): void {
+        $this->resetAfterTest();
+        global $DB;
+        $this->create_activity(1, ['timeclose' => time() + DAYSECS, 'reminderlead' => [HOURSECS, 2 * HOURSECS]]);
+        $this->assertCount(2, $DB->get_records('peerreview_reminder', ['peerreviewid' => $this->peerreview->id]));
+
+        peerreview_delete_instance($this->peerreview->id);
+        $this->assertSame(0, $DB->count_records('peerreview_reminder'));
     }
 
     /**

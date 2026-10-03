@@ -17,6 +17,7 @@
 namespace mod_peerreview\task;
 
 use mod_peerreview\local\allocation\manager;
+use mod_peerreview\local\reminder_schedule;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
@@ -65,7 +66,7 @@ final class send_reminders_test extends \advanced_testcase {
         $this->assertSame((int) $this->students[2]->id, (int) $messages[0]->useridto);
         $this->assertSame((int) \core_user::get_noreply_user()->id, (int) $messages[0]->useridfrom);
         $this->assertStringContainsString('/mod/peerreview/view.php?id=' . $this->cm->id, $messages[0]->fullmessage);
-        $this->assertEquals($close, $DB->get_field('peerreview', 'remindersentfor', ['id' => $this->peerreview->id]));
+        $this->assertEquals($close, $DB->get_field('peerreview_reminder', 'sentfor', ['peerreviewid' => $this->peerreview->id]));
 
         $events = array_values(array_filter(
             $eventsink->get_events(),
@@ -91,12 +92,14 @@ final class send_reminders_test extends \advanced_testcase {
         $id = $this->peerreview->id;
 
         $this->assertCount(0, $this->run_task(), 'too early');
-        $this->assertEquals(0, $DB->get_field('peerreview', 'remindersentfor', ['id' => $id]));
+        $this->assertEquals(0, $DB->get_field('peerreview_reminder', 'sentfor', ['peerreviewid' => $id]));
 
-        $DB->update_record('peerreview', (object) ['id' => $id, 'timeclose' => time() + HOURSECS, 'reminderlead' => 0]);
+        $DB->set_field('peerreview', 'timeclose', time() + HOURSECS, ['id' => $id]);
+        (new reminder_schedule($id))->save([]);
         $this->assertCount(0, $this->run_task(), 'lead time off');
 
-        $DB->update_record('peerreview', (object) ['id' => $id, 'timeclose' => 0, 'reminderlead' => DAYSECS]);
+        $DB->set_field('peerreview', 'timeclose', 0, ['id' => $id]);
+        (new reminder_schedule($id))->save([DAYSECS]);
         $this->assertCount(0, $this->run_task(), 'no close date');
 
         $DB->update_record('peerreview', (object) ['id' => $id, 'timeclose' => time() - HOURSECS]);
@@ -106,7 +109,7 @@ final class send_reminders_test extends \advanced_testcase {
             'id' => $id, 'timeclose' => time() + HOURSECS, 'timeopen' => time() + 30 * MINSECS,
         ]);
         $this->assertCount(0, $this->run_task(), 'not open yet');
-        $this->assertEquals(0, $DB->get_field('peerreview', 'remindersentfor', ['id' => $id]));
+        $this->assertEquals(0, $DB->get_field('peerreview_reminder', 'sentfor', ['peerreviewid' => $id]));
     }
 
     /**
@@ -123,12 +126,81 @@ final class send_reminders_test extends \advanced_testcase {
         $DB->set_field('peerreview', 'timeclose', time() + 5 * HOURSECS, ['id' => $id]);
         $this->assertCount(1, $this->run_task(), 'five hours away is inside it');
 
-        $DB->update_record('peerreview', (object) [
-            'id' => $id, 'timeclose' => time() + 22 * DAYSECS, 'reminderlead' => 3 * WEEKSECS, 'remindersentfor' => 0,
-        ]);
+        $DB->set_field('peerreview', 'timeclose', time() + 22 * DAYSECS, ['id' => $id]);
+        (new reminder_schedule($id))->save([3 * WEEKSECS]);
         $this->assertCount(0, $this->run_task(), '22 days away is outside a three week lead time');
         $DB->set_field('peerreview', 'timeclose', time() + 20 * DAYSECS, ['id' => $id]);
         $this->assertCount(1, $this->run_task(), '20 days away is inside it');
+    }
+
+    /**
+     * Several reminders that fall due in the same run give the students one message, and all of them count as sent.
+     */
+    public function test_reminders_due_together_send_one_message(): void {
+        $this->resetAfterTest();
+        global $DB;
+        $close = time() + 36 * HOURSECS;
+        $this->create_activity(2, ['timeclose' => $close, 'reminderlead' => [8 * DAYSECS, 2 * DAYSECS, DAYSECS]]);
+        $this->allocate(1, 2);
+
+        $eventsink = $this->redirectEvents();
+        $messages = $this->run_task();
+        $this->assertCount(1, $messages, 'one message for the three reminders that are due');
+        $events = array_values(array_filter(
+            $eventsink->get_events(),
+            fn($e) => $e instanceof \mod_peerreview\event\reminders_sent
+        ));
+        $this->assertCount(1, $events);
+        $this->assertSame(2, $events[0]->other['due'], 'the 8 day and the 2 day reminder were due, the 1 day one was not');
+
+        $state = $DB->get_records_menu('peerreview_reminder', ['peerreviewid' => $this->peerreview->id], '', 'leadtime, sentfor');
+        $this->assertEquals([8 * DAYSECS => $close, 2 * DAYSECS => $close, DAYSECS => 0], $state);
+    }
+
+    /**
+     * Reminders fall due one after the other, each once.
+     *
+     * The clock cannot move in a test, so time passing is simulated by lengthening the lead time of the reminder that
+     * has not been sent yet.
+     */
+    public function test_reminders_fall_due_in_turn(): void {
+        $this->resetAfterTest();
+        global $DB;
+        $close = time() + 2 * DAYSECS;
+        $this->create_activity(2, ['timeclose' => $close, 'reminderlead' => [8 * DAYSECS, DAYSECS]]);
+        $this->allocate(1, 2);
+
+        $this->assertCount(1, $this->run_task(), 'the 8 day reminder');
+        $this->assertCount(0, $this->run_task(), 'the 1 day reminder is not due yet');
+
+        $DB->set_field(
+            'peerreview_reminder',
+            'leadtime',
+            3 * DAYSECS,
+            ['peerreviewid' => $this->peerreview->id, 'leadtime' => DAYSECS]
+        );
+        $this->assertCount(1, $this->run_task(), 'the second reminder');
+        $this->assertCount(0, $this->run_task(), 'and nothing more');
+    }
+
+    /**
+     * A new close date arms every reminder again, and they are sent as one message when they are all due.
+     */
+    public function test_new_close_date_rearms_all_reminders(): void {
+        $this->resetAfterTest();
+        global $CFG;
+        require_once($CFG->dirroot . '/mod/peerreview/lib.php');
+        $close = time() + HOURSECS;
+        $this->create_activity(2, ['timeclose' => $close, 'reminderlead' => [DAYSECS, 2 * DAYSECS], 'remindersentfor' => $close]);
+        $this->allocate(1, 2);
+        $this->assertCount(0, $this->run_task(), 'both were sent for this close date');
+
+        $data = clone $this->peerreview;
+        $data->instance = $data->id;
+        $data->timeclose = time() + 2 * HOURSECS;
+        peerreview_update_instance($data);
+        $this->assertCount(1, $this->run_task(), 'armed again: one message for the two');
+        $this->assertCount(0, $this->run_task());
     }
 
     /**
@@ -142,7 +214,7 @@ final class send_reminders_test extends \advanced_testcase {
         set_coursemodule_visible($this->cm->id, 0);
 
         $this->assertCount(0, $this->run_task());
-        $this->assertEquals(0, $DB->get_field('peerreview', 'remindersentfor', ['id' => $this->peerreview->id]));
+        $this->assertEquals(0, $DB->get_field('peerreview_reminder', 'sentfor', ['peerreviewid' => $this->peerreview->id]));
 
         set_coursemodule_visible($this->cm->id, 1);
         $this->assertCount(1, $this->run_task());
@@ -162,7 +234,6 @@ final class send_reminders_test extends \advanced_testcase {
 
         $data = clone $this->peerreview;
         $data->instance = $data->id;
-        unset($data->remindersentfor);
         $data->timeclose = time() + 2 * HOURSECS;
         peerreview_update_instance($data);
         $this->assertCount(1, $this->run_task());

@@ -42,6 +42,8 @@ class mod_peerreview_generator extends testing_module_generator {
      * @return stdClass Activity record with cmid.
      */
     public function create_instance($record = null, ?array $options = null) {
+        global $DB;
+
         $record = (object) (array) $record;
         $defaults = [
             'grade' => 100,
@@ -59,6 +61,13 @@ class mod_peerreview_generator extends testing_module_generator {
                 $record->$name = $value;
             }
         }
-        return parent::create_instance($record, (array) $options);
+        // Test convenience: remindersentfor marks the activity's automatic reminders as already sent for that close date.
+        $sentfor = (int) ($record->remindersentfor ?? 0);
+        unset($record->remindersentfor);
+        $instance = parent::create_instance($record, (array) $options);
+        if ($sentfor) {
+            $DB->set_field('peerreview_reminder', 'sentfor', $sentfor, ['peerreviewid' => $instance->id]);
+        }
+        return $instance;
     }
 }
