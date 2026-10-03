@@ -17,15 +17,19 @@
 namespace mod_peerreview\output;
 
 use mod_peerreview\local\allocation\manager;
+use mod_peerreview\local\group_access;
+use mod_peerreview\local\progress;
 use mod_peerreview\local\review\service;
 use mod_peerreview\local\student_data;
 
 /**
- * What the Moodle app shows for a peer review activity: reviews to do, the simple review form and received feedback.
+ * What the Moodle app shows for a peer review activity: reviews to do, the simple review form and received feedback for
+ * students; the class progress and the feedback release switch for teachers.
  *
  * The app asks for the content with core_course_get_module-style args (cmid, courseid) and renders the returned
  * template with Angular. All text is produced here in the user's language, so the template needs no language strings.
- * Reviews that use a rubric or marking guide, the self-assessment comparison and every teacher tool open in the browser.
+ * Reviews that use a rubric or marking guide, the self-assessment comparison, the full report and the allocation open in the
+ * browser.
  *
  * @package    mod_peerreview
  * @copyright  2026 Bill <wrwjpn@gmail.com>
@@ -96,6 +100,7 @@ class mobile {
                 default => '',
             },
             'canreview' => has_capability('mod/peerreview:review', $context),
+            'teacher' => null,
             'webview' => $webview,
             'strings' => self::strings(),
             'todo' => [],
@@ -105,11 +110,12 @@ class mobile {
             'received' => [],
             'grade' => '',
         ];
+        $manager = new manager($peerreview, $cm->get_course_module_record(), $context);
+        $state['teacher'] = self::export_teacher($peerreview, $cm, $context, $manager);
         if (!$state['canreview']) {
             return $state;
         }
 
-        $manager = new manager($peerreview, $cm->get_course_module_record(), $context);
         $data = new student_data($peerreview, $manager);
         [$state['todo'], $state['progress']] = self::export_todo($data->get_todo($userid), $window, $cm->id);
         if ($peerreview->feedbackreleased) {
@@ -119,6 +125,62 @@ class mobile {
             $state['grade'] = $grade === null ? '' : $service->get_range()->format_with_max($grade);
         }
         return $state;
+    }
+
+    /**
+     * The teacher's part of the page: how far the class is, who is behind, and the feedback release switch.
+     *
+     * Same figures and the same group rules as the report page ({@see progress}, {@see group_access}).
+     *
+     * @param \stdClass $peerreview Activity record.
+     * @param \cm_info $cm Course module.
+     * @param \context_module $context Module context.
+     * @param manager $manager Allocation manager.
+     * @return array|null Null when the user has no teacher capability here.
+     */
+    private static function export_teacher(
+        \stdClass $peerreview,
+        \cm_info $cm,
+        \context_module $context,
+        manager $manager
+    ): ?array {
+        $canreport = has_capability('mod/peerreview:viewallreviews', $context);
+        $canallocate = has_capability('mod/peerreview:allocate', $context);
+        $canrelease = has_capability('mod/peerreview:releasefeedback', $context);
+        if (!$canreport && !$canallocate && !$canrelease) {
+            return null;
+        }
+        $progress = new progress($peerreview, $manager);
+        $rows = $canreport ? $progress->get_rows(group_access::resolve($cm, $context, 0)) : [];
+        $summary = $progress->summarise($rows);
+        $range = $canreport ? (new service($peerreview, $context))->get_range() : null;
+
+        usort($rows, static fn($a, $b) => [$a->user->lastname, $a->user->firstname] <=> [$b->user->lastname, $b->user->firstname]);
+        $students = [];
+        foreach ($rows as $row) {
+            $students[] = [
+                'name' => fullname($row->user),
+                'given' => $row->given_done . ' / ' . $row->given_total,
+                'received' => $row->received_done . ' / ' . $row->received_total,
+                'grade' => $row->grade === null ? '' : $range->format($row->grade),
+                'participation' => $row->participation === null ? '' : $row->participation . '%',
+                'behind' => $row->given_done < $row->given_total,
+            ];
+        }
+        $params = ['id' => $cm->id];
+        return [
+            'students' => $students,
+            'nstudents' => $summary->students,
+            'progress' => get_string('reviewsdone', 'mod_peerreview', (object) [
+                'done' => $summary->submitted,
+                'total' => $summary->allocations,
+            ]),
+            'canreport' => $canreport,
+            'canrelease' => $canrelease,
+            'released' => (bool) $peerreview->feedbackreleased,
+            'reporturl' => $canreport ? (new \moodle_url('/mod/peerreview/report.php', $params))->out(false) : '',
+            'allocateurl' => $canallocate ? (new \moodle_url('/mod/peerreview/allocate.php', $params))->out(false) : '',
+        ];
     }
 
     /**
@@ -209,6 +271,20 @@ class mobile {
             'openbrowser' => get_string('mobileopenbrowser', 'mod_peerreview'),
             'advancedhint' => get_string('errormobileadvanced', 'mod_peerreview'),
             'teacherhint' => get_string('mobileteacherhint', 'mod_peerreview'),
+            'feedbackreleased' => get_string('feedbackisreleased', 'mod_peerreview'),
+            'feedbackhidden' => get_string('feedbackishidden', 'mod_peerreview'),
+            'release' => get_string('releasefeedback', 'mod_peerreview'),
+            'hide' => get_string('hidefeedback', 'mod_peerreview'),
+            'report' => get_string('report', 'mod_peerreview'),
+            'allocate' => get_string('allocate', 'mod_peerreview'),
+            'given' => get_string('reviewsgivencol', 'mod_peerreview'),
+            'received' => get_string('reviewsreceivedcol', 'mod_peerreview'),
+            'gradecol' => get_string('gradecol', 'mod_peerreview'),
+            'nostudents' => get_string('nostudentsshown', 'mod_peerreview'),
+            'statussubmitted' => get_string('statussubmitted', 'mod_peerreview'),
+            'reviewedit' => get_string('review2', 'mod_peerreview'),
+            // Placeholders {done} and {total} are filled in by the script.
+            'reviewsdone' => get_string('reviewsdone', 'mod_peerreview', (object) ['done' => '{done}', 'total' => '{total}']),
             'details' => get_string('mobiledetails', 'mod_peerreview'),
         ];
     }

@@ -4,10 +4,35 @@
     <ion-item *ngIf="state.dates" lines="none"><ion-label class="ion-text-wrap"><p>{{ state.dates }}</p></ion-label></ion-item>
     <ion-item *ngIf="state.windowtext" lines="none"><ion-label class="ion-text-wrap"><p><strong>{{ state.windowtext }}</strong></p></ion-label></ion-item>
 
-    <!-- A person without the review capability (a teacher): the tools are in the browser. -->
-    <ng-container *ngIf="!state.canreview">
-        <ion-item lines="none"><ion-label class="ion-text-wrap">{{ state.strings.teacherhint }}</ion-label></ion-item>
-        <ion-item><ion-button core-link capture="false" [href]="state.webview">{{ state.strings.openbrowser }}</ion-button></ion-item>
+    <!-- Teacher part: how far the class is, who is behind, the release switch; the report and allocation open in the browser. -->
+    <ng-container *ngIf="state.teacher && !review">
+        <ion-item-divider><ion-label>{{ state.strings.report }}</ion-label></ion-item-divider>
+        <ion-item *ngIf="state.teacher.canreport" lines="none"><ion-label><h2>{{ state.teacher.progress }}</h2></ion-label></ion-item>
+        <ion-item lines="none">
+            <ion-label class="ion-text-wrap">
+                <p *ngIf="state.teacher.released">{{ state.strings.feedbackreleased }}</p>
+                <p *ngIf="!state.teacher.released">{{ state.strings.feedbackhidden }}</p>
+            </ion-label>
+            <ng-container *ngIf="state.teacher.canrelease">
+                <ion-button *ngIf="!state.teacher.released" slot="end" [disabled]="busy" (click)="setRelease(true)">{{ state.strings.release }}</ion-button>
+                <ion-button *ngIf="state.teacher.released" slot="end" fill="outline" [disabled]="busy" (click)="setRelease(false)">{{ state.strings.hide }}</ion-button>
+            </ng-container>
+        </ion-item>
+        <ng-container *ngIf="state.teacher.canreport">
+            <ion-item *ngIf="state.teacher.students.length == 0" lines="none"><ion-label class="ion-text-wrap">{{ state.strings.nostudents }}</ion-label></ion-item>
+            <ion-item *ngFor="let student of state.teacher.students">
+                <ion-label class="ion-text-wrap">
+                    <h2>{{ student.name }}</h2>
+                    <p>{{ state.strings.given }}: {{ student.given }}<span *ngIf="student.participation"> ({{ student.participation }})</span> &middot; {{ state.strings.received }}: {{ student.received }}</p>
+                    <p *ngIf="student.grade">{{ state.strings.gradecol }}: {{ student.grade }}</p>
+                </ion-label>
+            </ion-item>
+        </ng-container>
+        <ion-item lines="none"><ion-label class="ion-text-wrap"><p>{{ state.strings.teacherhint }}</p></ion-label></ion-item>
+        <ion-item lines="none">
+            <ion-button *ngIf="state.teacher.reporturl" core-link capture="false" [href]="state.teacher.reporturl">{{ state.strings.report }}</ion-button>
+            <ion-button *ngIf="state.teacher.allocateurl" core-link capture="false" [href]="state.teacher.allocateurl">{{ state.strings.allocate }}</ion-button>
+        </ion-item>
     </ng-container>
 
     <!-- The review form (simple points or scale form only). -->

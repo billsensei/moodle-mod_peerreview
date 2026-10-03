@@ -11,6 +11,19 @@ const site = () => this.CoreSitesProvider.getCurrentSite();
 // Log the view, like view.php does. A failure here must not stop the page.
 site().write('mod_peerreview_view_peerreview', {cmid: this.state.cmid}).catch(() => null);
 
+// The teacher's switch: release the feedback to the students, or hide it again.
+this.setRelease = async (released) => {
+    this.busy = true;
+    try {
+        const result = await site().write('mod_peerreview_set_feedback_release', {cmid: this.state.cmid, released: released});
+        this.state.teacher.released = result.released;
+    } catch (error) {
+        this.CoreDomUtilsProvider.showErrorModal(error);
+    } finally {
+        this.busy = false;
+    }
+};
+
 // Open the simple review form for one card of the list.
 this.openReview = async (card) => {
     this.busy = true;
@@ -33,6 +46,19 @@ this.closeReview = () => {
     this.review = null;
 };
 
+// Show a card as submitted without waiting for the page to be fetched again.
+this.markSubmitted = (allocid) => {
+    const cards = this.state.todo;
+    const card = cards.find((item) => item.allocid === allocid);
+    if (card) {
+        card.submitted = true;
+        card.status = this.state.strings.statussubmitted;
+        card.action = this.state.strings.reviewedit;
+    }
+    const done = cards.filter((item) => item.submitted).length;
+    this.state.progress = this.state.strings.reviewsdone.replace('{done}', done).replace('{total}', cards.length);
+};
+
 // Submit the review. The server checks everything again (reviewer, open window, score range).
 this.submitReview = async () => {
     const review = this.review;
@@ -49,6 +75,7 @@ this.submitReview = async () => {
             feedback: review.feedback || '',
         });
         this.review = null;
+        this.markSubmitted(review.allocid);
         this.CoreDomUtilsProvider.showToast(this.state.strings.submitted, false, 3000);
         await this.refreshContent(false);
     } catch (error) {

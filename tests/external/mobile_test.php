@@ -32,6 +32,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
  */
 #[CoversClass(get_review::class)]
 #[CoversClass(save_review::class)]
+#[CoversClass(set_feedback_release::class)]
 #[CoversClass(view_peerreview::class)]
 #[CoversClass(mobile::class)]
 final class mobile_test extends \advanced_testcase {
@@ -250,18 +251,90 @@ final class mobile_test extends \advanced_testcase {
     }
 
     /**
-     * A teacher gets no review lists in the app, only the way to the browser.
+     * A teacher gets the class progress, the release state and the browser links, and no review lists of their own.
      */
     public function test_page_data_for_a_teacher(): void {
         $this->resetAfterTest();
-        $this->create_activity(2);
-        $this->allocate(1, 2);
+        $this->create_activity(3, ['grade' => 50]);
+        $this->allocate(1, 2, manager::STATUS_SUBMITTED, 40);
+        $this->allocate(1, 3);
         $this->setUser($this->teacher);
 
         $state = $this->state($this->teacher);
         $this->assertFalse($state['canreview']);
         $this->assertSame([], $state['todo']);
-        $this->assertStringContainsString('/mod/peerreview/view.php?id=' . $this->cm->id, $state['webview']);
+        $teacher = $state['teacher'];
+        $this->assertSame(3, $teacher['nstudents']);
+        $this->assertSame(get_string('reviewsdone', 'mod_peerreview', (object) ['done' => 1, 'total' => 2]), $teacher['progress']);
+        $this->assertTrue($teacher['canrelease']);
+        $this->assertFalse($teacher['released']);
+        $this->assertSame(
+            [fullname($this->students[1]), fullname($this->students[2]), fullname($this->students[3])],
+            array_column($teacher['students'], 'name')
+        );
+        $rows = array_column($teacher['students'], null, 'name');
+        $first = $rows[fullname($this->students[1])];
+        $this->assertSame('1 / 2', $first['given']);
+        $this->assertTrue($first['behind']);
+        $this->assertSame('50%', $first['participation']);
+        $second = $rows[fullname($this->students[2])];
+        $this->assertSame('0 / 0', $second['given']);
+        $this->assertFalse($second['behind'], 'nothing assigned to give');
+        $this->assertSame('1 / 1', $second['received']);
+        $this->assertNotSame('', $second['grade']);
+        $this->assertStringContainsString('/mod/peerreview/report.php?id=' . $this->cm->id, $teacher['reporturl']);
+        $this->assertStringContainsString('/mod/peerreview/allocate.php?id=' . $this->cm->id, $teacher['allocateurl']);
+
+        // A student has no teacher part, and the figures of the class are not sent to them.
+        $state = $this->state($this->students[1]);
+        $this->assertNull($state['teacher']);
+        $this->assertStringNotContainsString('"behind"', json_encode($state), 'no class figures in a student page');
+    }
+
+    /**
+     * A teacher limited to their own group sees only that group in the app, as on the report page.
+     */
+    public function test_page_data_for_a_group_limited_teacher(): void {
+        $this->resetAfterTest();
+        $this->create_activity(4, [], SEPARATEGROUPS);
+        $generator = $this->getDataGenerator();
+        $mine = $generator->create_group(['courseid' => $this->course->id]);
+        $other = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_group_member(['groupid' => $mine->id, 'userid' => $this->students[1]->id]);
+        $generator->create_group_member(['groupid' => $other->id, 'userid' => $this->students[2]->id]);
+        $limited = $this->create_group_limited_teacher();
+        $generator->create_group_member(['groupid' => $mine->id, 'userid' => $limited->id]);
+        $this->setUser($limited);
+
+        $teacher = $this->state($limited)['teacher'];
+        $names = array_column($teacher['students'], 'name');
+        $this->assertContains(fullname($this->students[1]), $names);
+        $this->assertNotContains(fullname($this->students[2]), $names);
+        $this->assertFalse($teacher['canrelease'], 'this role cannot release feedback');
+    }
+
+    /**
+     * The release switch of the app is the same web service as the website's: it changes the state and logs the event.
+     */
+    public function test_release_from_the_app(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->create_activity(2);
+        $this->setUser($this->teacher);
+        $sink = $this->redirectEvents();
+
+        $result = external_api::clean_returnvalue(
+            set_feedback_release::execute_returns(),
+            set_feedback_release::execute($this->cm->id, true)
+        );
+        $this->assertTrue($result['released']);
+        $this->assertSame(1, (int) $DB->get_field('peerreview', 'feedbackreleased', ['id' => $this->peerreview->id]));
+        $this->assertTrue($this->state($this->teacher)['teacher']['released']);
+        $this->assertCount(1, array_filter($sink->get_events(), fn($e) => $e instanceof \mod_peerreview\event\feedback_released));
+
+        $this->setUser($this->students[1]);
+        $this->expectException(\required_capability_exception::class);
+        set_feedback_release::execute($this->cm->id, false);
     }
 
     /**
@@ -323,17 +396,19 @@ final class mobile_test extends \advanced_testcase {
         foreach (['view_peerreview', 'get_review', 'save_review'] as $name) {
             $this->assertContains(MOODLE_OFFICIAL_MOBILE_SERVICE, $functions["mod_peerreview_$name"]['services']);
         }
-        $this->assertArrayNotHasKey('services', $functions['mod_peerreview_get_progress'], 'teacher tools stay web only');
+        $this->assertContains(MOODLE_OFFICIAL_MOBILE_SERVICE, $functions['mod_peerreview_set_feedback_release']['services']);
+        $this->assertArrayNotHasKey('services', $functions['mod_peerreview_get_progress'], 'the page builds the list');
     }
 
     /**
-     * The page data for a user.
+     * The page data for a user (who is logged in for the call, as capabilities are checked for the current user).
      *
      * @param \stdClass $user The viewer.
      * @return array
      */
     private function state(\stdClass $user): array {
         global $DB;
+        $this->setUser($user);
         $peerreview = $DB->get_record('peerreview', ['id' => $this->peerreview->id], '*', MUST_EXIST);
         $cm = get_fast_modinfo($this->course->id, $user->id)->get_cm($this->cm->id);
         return mobile::build_state($peerreview, $cm, $this->context, (int) $user->id);

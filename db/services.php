@@ -40,6 +40,7 @@ $functions = [
         'type' => 'write',
         'ajax' => true,
         'capabilities' => 'mod/peerreview:releasefeedback',
+        'services' => [MOODLE_OFFICIAL_MOBILE_SERVICE],
     ],
     'mod_peerreview_view_peerreview' => [
         'classname' => 'mod_peerreview\external\view_peerreview',
