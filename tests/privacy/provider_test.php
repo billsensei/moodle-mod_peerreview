@@ -250,6 +250,41 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
     }
 
     /**
+     * The grading filling of a draft is the reviewer's own work: the reviewee gets the status of a received draft but
+     * not the rubric, while the reviewer gets both.
+     */
+    public function test_received_draft_rubric_is_not_exported(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setup_data();
+
+        $service = new service($this->peerreview, $this->context);
+        $alloc = $this->allocate(4, 1);
+        $instance = $service->get_instance($alloc, $this->students[4]->id);
+        $data = $this->getDataGenerator()->get_plugin_generator('gradingform_rubric')
+            ->get_test_form_data($service->get_controller(), $alloc->id, 2, 'half done', 1, 'maybe');
+        $service->save_draft($alloc, $this->students[4]->id, [
+            'advancedgrading' => $data,
+            'advancedgradinginstanceid' => $instance->get_id(),
+            'feedback' => 'not final',
+            'feedbackformat' => FORMAT_HTML,
+        ]);
+        $instanceid = $DB->get_field('grading_instances', 'id', ['itemid' => $alloc->id], MUST_EXIST);
+        $filling = [get_string('rubric', 'gradingform_rubric'), $instanceid];
+        $given = [get_string('privacy:reviewsgiven', 'mod_peerreview'), $alloc->id];
+        $received = [get_string('privacy:reviewsreceived', 'mod_peerreview'), $alloc->id];
+
+        $this->export_context_data_for_user($this->students[4]->id, $this->context, 'mod_peerreview');
+        $this->assertNotEmpty((array) writer::with_context($this->context)->get_data(array_merge($given, $filling)));
+
+        writer::reset();
+        $this->export_context_data_for_user($this->students[1]->id, $this->context, 'mod_peerreview');
+        $writer = writer::with_context($this->context);
+        $this->assertEquals(get_string('statusdraft', 'mod_peerreview'), $writer->get_data($received)->status);
+        $this->assertEmpty((array) $writer->get_data(array_merge($received, $filling)));
+    }
+
+    /**
      * The teacher gets the overrides they set (without student names), the allocation count and the preference.
      */
     public function test_export_teacher(): void {

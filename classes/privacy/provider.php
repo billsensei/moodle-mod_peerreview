@@ -31,11 +31,9 @@ use core_privacy\local\metadata\collection;
 use core_privacy\local\request\approved_contextlist;
 use core_privacy\local\request\approved_userlist;
 use core_privacy\local\request\contextlist;
-use core_privacy\local\request\helper;
 use core_privacy\local\request\transform;
 use core_privacy\local\request\userlist;
 use core_privacy\local\request\writer;
-use mod_peerreview\local\allocation\manager;
 
 /**
  * Privacy provider.
@@ -147,84 +145,12 @@ class provider implements
      * @param approved_contextlist $contextlist The approved contexts.
      */
     public static function export_user_data(approved_contextlist $contextlist): void {
-        global $DB;
-
         $user = $contextlist->get_user();
         foreach ($contextlist->get_contexts() as $context) {
             $peerreview = self::get_instance($context);
-            if (!$peerreview) {
-                continue;
+            if ($peerreview) {
+                (new user_exporter($peerreview, $context, $user))->export();
             }
-            $writer = writer::with_context($context);
-            $general = helper::get_context_data($context, $user);
-            helper::export_context_files($context, $user);
-
-            // Reviews the user wrote: everything, including drafts, with the rubric or guide filling.
-            $given = $DB->get_records(
-                'peerreview_alloc',
-                ['peerreviewid' => $peerreview->id, 'reviewerid' => $user->id],
-                'id'
-            );
-            foreach ($given as $alloc) {
-                $subcontext = [get_string('privacy:reviewsgiven', 'mod_peerreview'), $alloc->id];
-                $data = self::review_data($alloc, $context, true);
-                $data->reviewee = fullname(\core_user::get_user($alloc->revieweeid) ?: (object) ['firstname' => '',
-                    'lastname' => '']);
-                $writer->export_data($subcontext, $data);
-                \core_grading\privacy\provider::export_item_data($context, (int) $alloc->id, $subcontext);
-            }
-
-            // Reviews the user received: submitted ones only (a draft is still the reviewer's own work). The
-            // reviewer is named only when the activity is not anonymous.
-            $received = $DB->get_records('peerreview_alloc', ['peerreviewid' => $peerreview->id,
-                'revieweeid' => $user->id], 'id');
-            foreach ($received as $alloc) {
-                if ($alloc->reviewerid == $user->id) {
-                    continue; // A self-review is already exported above.
-                }
-                $subcontext = [get_string('privacy:reviewsreceived', 'mod_peerreview'), $alloc->id];
-                $submitted = (int) $alloc->status === manager::STATUS_SUBMITTED;
-                $data = self::review_data($alloc, $context, $submitted);
-                if (!$peerreview->anonymous) {
-                    $reviewer = \core_user::get_user($alloc->reviewerid);
-                    $data->reviewer = $reviewer ? fullname($reviewer) : '';
-                }
-                $writer->export_data($subcontext, $data);
-                if ($submitted) {
-                    \core_grading\privacy\provider::export_item_data($context, (int) $alloc->id, $subcontext);
-                }
-            }
-
-            // The user's own grade override.
-            $override = $DB->get_record('peerreview_override', ['peerreviewid' => $peerreview->id, 'userid' => $user->id]);
-            if ($override) {
-                $writer->export_data([get_string('privacy:override', 'mod_peerreview')], (object) [
-                    'grade' => format_float($override->grade, 2),
-                    'note' => $override->note,
-                    'timemodified' => transform::datetime($override->timemodified),
-                ]);
-            }
-
-            // Overrides the user set as a teacher, without naming the students.
-            $overrides = $DB->get_records('peerreview_override', ['peerreviewid' => $peerreview->id,
-                'overriddenby' => $user->id], 'id');
-            if ($overrides) {
-                $writer->export_data([get_string('privacy:overridesgiven', 'mod_peerreview')], (object) [
-                    'overrides' => array_values(array_map(fn($o) => (object) [
-                        'grade' => format_float($o->grade, 2),
-                        'note' => $o->note,
-                        'timemodified' => transform::datetime($o->timemodified),
-                    ], $overrides)),
-                ]);
-            }
-
-            // Allocations the user made as a teacher, as a count only.
-            $allocated = $DB->count_records('peerreview_alloc', ['peerreviewid' => $peerreview->id,
-                'allocatedby' => $user->id]);
-            if ($allocated) {
-                $general->allocationsmade = $allocated;
-            }
-            $writer->export_data([], $general);
         }
     }
 
@@ -343,36 +269,5 @@ class provider implements
             return null;
         }
         return $DB->get_record('peerreview', ['id' => $cm->instance]) ?: null;
-    }
-
-    /**
-     * The exportable fields of one review.
-     *
-     * @param \stdClass $alloc Allocation row.
-     * @param \context $context Module context.
-     * @param bool $withcontent Include grade and comment.
-     * @return \stdClass
-     */
-    private static function review_data(\stdClass $alloc, \context $context, bool $withcontent): \stdClass {
-        $statuses = [
-            manager::STATUS_NEW => 'statusnew',
-            manager::STATUS_DRAFT => 'statusdraft',
-            manager::STATUS_SUBMITTED => 'statussubmitted',
-        ];
-        $data = (object) [
-            'status' => get_string($statuses[(int) $alloc->status] ?? 'statusnew', 'mod_peerreview'),
-            'timecreated' => transform::datetime($alloc->timecreated),
-            'timemodified' => transform::datetime($alloc->timemodified),
-            'timesubmitted' => $alloc->timesubmitted ? transform::datetime($alloc->timesubmitted) : null,
-        ];
-        if ($withcontent) {
-            $data->grade = $alloc->grade === null ? null : format_float($alloc->grade, 2);
-            $data->feedback = format_text(
-                (string) $alloc->feedback,
-                (int) $alloc->feedbackformat,
-                ['context' => $context]
-            );
-        }
-        return $data;
     }
 }
