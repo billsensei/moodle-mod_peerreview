@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Internal only, nothing changes for teachers or students: the largest classes were split into smaller ones. The allocation manager gave up its CSV import and export (`allocation\csv`), its deleting (`allocation\deleter`), the order for the rotation method (`allocation\rotation_order`) and the "in scope" set of the automatic methods (`allocation\pool_scope`). The random allocator gave up the matching of missing reviews (`allocation\slot_matcher`). The review service gave up the grading controller and instance lookups (`review\grading_access`) and the clean-up of draft rubrics and guides (`review\draft_normaliser`). The public methods of the manager and the service are unchanged. For the same seed the random allocator gives exactly the same proposals as before (checked on 1,960 recorded cases), and the review, feedback, report and export pages came out identical on a test site.
+
 ## 0.13.0 (beta), 2026-10-03
 
 - Self-assessment: the allocation page has a new **Self-assessment** tab that gives every student a review of themselves (needs **Allow self-review** in the activity settings; students who already have one are left alone). When feedback is released, a student with a submitted self-review and at least one submitted peer review sees their self-assessment next to their peers' grade, with how many points higher or lower they rated themselves (for a scale only whether it is the same item), and, for a rubric or marking guide, their score and their peers' average on each criterion. Self-reviews still never count in the received grade.
