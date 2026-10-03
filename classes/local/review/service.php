@@ -37,6 +37,9 @@ use mod_peerreview\local\grade\grade_range;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class service {
+    /** @var grading_access|null Grading controller and instance lookups, created on first use. */
+    private ?grading_access $grading = null;
+
     /**
      * Constructor.
      *
@@ -94,14 +97,13 @@ class service {
     }
 
     /**
-     * The grading manager for this activity's grading area (loads the grading library, which pages do not include).
+     * The grading helper of this activity (created on first use).
      *
-     * @return \grading_manager
+     * @return grading_access
      */
-    private function get_grading_manager(): \grading_manager {
-        global $CFG;
-        require_once($CFG->dirroot . '/grade/grading/lib.php');
-        return get_grading_manager($this->context, 'mod_peerreview', 'received');
+    private function grading(): grading_access {
+        $this->grading ??= new grading_access($this->peerreview, $this->context);
+        return $this->grading;
     }
 
     /**
@@ -110,65 +112,7 @@ class service {
      * @return \gradingform_controller|null
      */
     public function get_controller(): ?\gradingform_controller {
-        $manager = $this->get_grading_manager();
-        $method = $manager->get_active_method();
-        if (!$method) {
-            return null;
-        }
-        $controller = $manager->get_controller($method);
-        if (!$controller->is_form_available()) {
-            return null;
-        }
-        $controller->set_grade_range($this->get_range()->get_menu(), true);
-        return $controller;
-    }
-
-    /**
-     * The grading method that was active when a review was stored, if it is no longer the active one.
-     *
-     * Core keeps one definition per method and area, and each grading instance belongs to a definition, so reviews
-     * written before the teacher switched methods still point at the old method's form.
-     *
-     * @param \stdClass $alloc Allocation record.
-     * @return \gradingform_instance|null The stored instance of the old method, null when there is none or its method
-     *         cannot be loaded any more.
-     */
-    private function get_instance_of_other_method(\stdClass $alloc): ?\gradingform_instance {
-        global $CFG, $DB;
-
-        $manager = $this->get_grading_manager();
-        require_once($CFG->dirroot . '/grade/grading/form/lib.php'); // Pages only load it with a controller.
-        $active = $manager->get_active_method();
-        $sql = "SELECT gi.*, gd.method
-                  FROM {grading_instances} gi
-                  JOIN {grading_definitions} gd ON gd.id = gi.definitionid
-                  JOIN {grading_areas} ga ON ga.id = gd.areaid
-                 WHERE gi.itemid = :itemid AND ga.contextid = :contextid AND ga.component = :component
-                       AND ga.areaname = :areaname AND gi.status IN (:active, :needupdate)
-              ORDER BY gi.timemodified DESC, gi.id DESC";
-        $records = $DB->get_records_sql($sql, [
-            'itemid' => $alloc->id,
-            'contextid' => $this->context->id,
-            'component' => 'mod_peerreview',
-            'areaname' => 'received',
-            'active' => \gradingform_instance::INSTANCE_STATUS_ACTIVE,
-            'needupdate' => \gradingform_instance::INSTANCE_STATUS_NEEDUPDATE,
-        ], 0, 5);
-        foreach ($records as $record) {
-            if ($record->method === $active) {
-                continue;
-            }
-            try {
-                $controller = $manager->get_controller($record->method);
-            } catch (\moodle_exception $e) {
-                continue; // The method plugin is disabled or gone.
-            }
-            if ($controller->is_form_available()) {
-                $controller->set_grade_range($this->get_range()->get_menu(), true);
-                return $controller->get_current_instance($alloc->reviewerid, $alloc->id);
-            }
-        }
-        return null;
+        return $this->grading()->get_controller();
     }
 
     /**
@@ -177,15 +121,7 @@ class service {
      * @return string Empty when there is no problem.
      */
     public function get_unavailable_message(): string {
-        $manager = $this->get_grading_manager();
-        $method = $manager->get_active_method();
-        if ($method) {
-            $controller = $manager->get_controller($method);
-            if (!$controller->is_form_available()) {
-                return $controller->form_unavailable_notification() ?? '';
-            }
-        }
-        return '';
+        return $this->grading()->get_unavailable_message();
     }
 
     /**
@@ -194,10 +130,7 @@ class service {
      * @return bool
      */
     public function supports_drafts(): bool {
-        $controller = $this->get_controller();
-        return $controller === null
-            || $controller instanceof \gradingform_rubric_controller
-            || $controller instanceof \gradingform_guide_controller;
+        return $this->grading()->supports_drafts();
     }
 
     /**
@@ -209,8 +142,7 @@ class service {
      * @return \gradingform_instance|null Null when no advanced method is usable.
      */
     public function get_instance(\stdClass $alloc, int $raterid, $instanceid = null): ?\gradingform_instance {
-        $controller = $this->get_controller();
-        return $controller?->get_or_create_instance($instanceid, $raterid, $alloc->id);
+        return $this->grading()->get_instance($alloc, $raterid, $instanceid);
     }
 
     /**
@@ -223,8 +155,7 @@ class service {
      * @return \gradingform_instance|null
      */
     public function get_submitted_instance(\stdClass $alloc): ?\gradingform_instance {
-        return $this->get_controller()?->get_current_instance($alloc->reviewerid, $alloc->id)
-            ?? $this->get_instance_of_other_method($alloc);
+        return $this->grading()->get_submitted_instance($alloc);
     }
 
     /**
@@ -234,11 +165,7 @@ class service {
      * @return string|null Null when the instance belongs to the active method.
      */
     public function get_other_method(\gradingform_instance $instance): ?string {
-        // The method plugin name is part of the controller class name (gradingform_rubric_controller).
-        if (!preg_match('/^gradingform_(\w+)_controller$/', get_class($instance->get_controller()), $matches)) {
-            return null;
-        }
-        return $matches[1] !== $this->get_grading_manager()->get_active_method() ? $matches[1] : null;
+        return $this->grading()->get_other_method($instance);
     }
 
     /**
@@ -263,7 +190,7 @@ class service {
         $update->id = $alloc->id;
         $instance = $this->get_instance($alloc, $userid, $data['advancedgradinginstanceid'] ?? null);
         if ($instance) {
-            $value = $this->normalise_draft($instance, (array) ($data['advancedgrading'] ?? []));
+            $value = (new draft_normaliser())->normalise($instance, (array) ($data['advancedgrading'] ?? []));
             if ($value['criteria']) {
                 $value['itemid'] = $alloc->id;
                 $instance->update($value);
@@ -360,36 +287,5 @@ class service {
             $update->feedback = $data['feedback'];
             $update->feedbackformat = $data['feedbackformat'] ?? FORMAT_HTML;
         }
-    }
-
-    /**
-     * Reduce a partly filled form to what the grading method can store.
-     *
-     * Rubric: criteria with a chosen level or a remark. Marking guide: criteria with a valid score (the score column is
-     * mandatory, so a remark without a score cannot be kept in a draft).
-     *
-     * @param \gradingform_instance $instance The instance.
-     * @param array $value Submitted advancedgrading value.
-     * @return array Value with only storable criteria.
-     */
-    private function normalise_draft(\gradingform_instance $instance, array $value): array {
-        $criteria = [];
-        foreach ((array) ($value['criteria'] ?? []) as $criterionid => $record) {
-            $remark = trim((string) ($record['remark'] ?? ''));
-            if ($instance instanceof \gradingform_rubric_instance) {
-                $levelid = isset($record['levelid']) && is_numeric($record['levelid']) ? (int) $record['levelid'] : null;
-                if ($levelid !== null || $remark !== '') {
-                    $criteria[$criterionid] = ['levelid' => $levelid, 'remark' => $remark];
-                }
-            } else {
-                $definition = $instance->get_controller()->get_definition();
-                $max = $definition->guide_criteria[$criterionid]['maxscore'] ?? null;
-                $score = $record['score'] ?? '';
-                if ($max !== null && is_numeric($score) && $score >= 0 && $score <= $max) {
-                    $criteria[$criterionid] = ['score' => $score, 'remark' => $remark];
-                }
-            }
-        }
-        return ['criteria' => $criteria];
     }
 }

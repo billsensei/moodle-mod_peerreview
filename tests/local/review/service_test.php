@@ -37,6 +37,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 #[CoversClass(service::class)]
+#[CoversClass(grading_access::class)]
+#[CoversClass(draft_normaliser::class)]
 final class service_test extends \advanced_testcase {
     /** @var \stdClass Activity record. */
     private \stdClass $peerreview;
