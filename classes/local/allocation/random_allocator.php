@@ -36,9 +36,6 @@ use Random\Randomizer;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class random_allocator {
-    /** @var int Random matchings tried per amount of padding before adding more padding. */
-    private const MATCH_ATTEMPTS = 6;
-
     /** @var Randomizer Source of randomness (seedable so a preview can be reproduced on confirm). */
     private Randomizer $random;
 
@@ -71,10 +68,7 @@ class random_allocator {
      */
     public function generate(array $pools, int $n, array $existing = []): proposal {
         $proposal = new proposal();
-        $existingset = [];
-        foreach ($existing as [$reviewer, $reviewee]) {
-            $existingset[$reviewer . '_' . $reviewee] = true;
-        }
+        $existingset = $this->existing_set($existing);
 
         foreach ($pools as $poolid => $members) {
             $members = array_values(array_unique($members));
@@ -88,17 +82,7 @@ class random_allocator {
                 $proposal->warn('warnnreduced', (object) ['pool' => $poolid, 'size' => $size, 'n' => $effective]);
             }
 
-            $hasexisting = false;
-            foreach ($members as $userid) {
-                foreach ($members as $other) {
-                    if (isset($existingset[$userid . '_' . $other])) {
-                        $hasexisting = true;
-                        break 2;
-                    }
-                }
-            }
-
-            if ($hasexisting) {
+            if ($this->has_existing($members, $existingset)) {
                 $this->top_up($proposal, $members, $effective, $existingset);
             } else {
                 $this->fresh($proposal, $members, $effective);
@@ -127,11 +111,42 @@ class random_allocator {
     }
 
     /**
+     * Existing pairs as a lookup.
+     *
+     * @param int[][] $existing Existing pairs, each [reviewerid, revieweeid].
+     * @return bool[] Keys "reviewer_reviewee".
+     */
+    private function existing_set(array $existing): array {
+        $existingset = [];
+        foreach ($existing as [$reviewer, $reviewee]) {
+            $existingset[$reviewer . '_' . $reviewee] = true;
+        }
+        return $existingset;
+    }
+
+    /**
+     * Whether any pair among the members already exists.
+     *
+     * @param int[] $members
+     * @param bool[] $existingset Keys "reviewer_reviewee".
+     * @return bool
+     */
+    private function has_existing(array $members, array $existingset): bool {
+        foreach ($members as $userid) {
+            foreach ($members as $other) {
+                if (isset($existingset[$userid . '_' . $other])) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Top up existing allocations so everyone gives and receives at least N.
      *
-     * Slots: every reviewer below N gets a "give" slot per missing review, every reviewee below N a "receive"
-     * slot. The shorter list is padded with the least-loaded members, then give and receive slots are matched
-     * at random and conflicts (self, duplicates, existing pairs) are repaired by swapping targets.
+     * Counts what each member already gives and receives, lets the slot matcher pair up the missing reviews and
+     * adds the pairs it could place to the proposal (a warning for each it could not).
      *
      * @param proposal $proposal
      * @param int[] $members
@@ -150,27 +165,7 @@ class random_allocator {
             }
         }
 
-        $giveneeded = $this->slots($given, $n);
-        $receiveneeded = $this->slots($received, $n);
-        $base = max(count($giveneeded), count($receiveneeded));
-
-        // If the only students still short of reviews are few (a late joiner), the slots may only match each other.
-        // Pad with the least-loaded students, one more slot at a time, until every slot can be placed.
-        $best = null;
-        $maxcount = $base + count($members);
-        for ($count = $base; $count <= $maxcount && ($best === null || $best[2] > 0); $count++) {
-            for ($attempt = 0; $attempt < self::MATCH_ATTEMPTS && ($best === null || $best[2] > 0); $attempt++) {
-                $giveslots = $this->random->shuffleArray($this->pad($giveneeded, $given, $count));
-                $receiveslots = $this->random->shuffleArray($this->pad($receiveneeded, $received, $count));
-                $this->repair($giveslots, $receiveslots, $existingset);
-                $dropped = count(array_filter($receiveslots, static fn($slot) => $slot === null));
-                if ($best === null || $dropped < $best[2] || ($dropped === $best[2] && $count < $best[3])) {
-                    $best = [$giveslots, $receiveslots, $dropped, $count];
-                }
-            }
-        }
-        [$giveslots, $receiveslots] = $best;
-
+        [$giveslots, $receiveslots] = (new slot_matcher($this->random))->match($given, $received, $n, $existingset);
         foreach ($giveslots as $index => $reviewer) {
             $reviewee = $receiveslots[$index];
             if ($reviewee === null) {
@@ -178,100 +173,6 @@ class random_allocator {
                 continue;
             }
             $proposal->add($reviewer, $reviewee);
-        }
-    }
-
-    /**
-     * One slot per missing review.
-     *
-     * @param int[] $counts userid => current count
-     * @param int $n
-     * @return int[] Slot list (userid repeated).
-     */
-    private function slots(array $counts, int $n): array {
-        $slots = [];
-        foreach ($counts as $userid => $count) {
-            for ($i = $count; $i < $n; $i++) {
-                $slots[] = $userid;
-            }
-        }
-        return $slots;
-    }
-
-    /**
-     * Pad a slot list to $count with the currently least-loaded users (ties broken at random).
-     *
-     * @param int[] $slots
-     * @param int[] $counts userid => current count
-     * @param int $count Target length.
-     * @return int[]
-     */
-    private function pad(array $slots, array $counts, int $count): array {
-        foreach ($slots as $userid) {
-            $counts[$userid]++;
-        }
-        for ($have = count($slots); $have < $count; $have++) {
-            $min = min($counts);
-            $candidates = array_keys(array_filter($counts, static fn($c) => $c === $min));
-            $pick = $candidates[$this->random->getInt(0, count($candidates) - 1)];
-            $slots[] = $pick;
-            $counts[$pick]++;
-        }
-        return $slots;
-    }
-
-    /**
-     * Swap receive slots until no position is illegal (self, existing pair or duplicate); drop what cannot be fixed.
-     *
-     * Each swap makes both positions legal, so the number of illegal positions strictly decreases.
-     *
-     * @param int[] $giveslots
-     * @param array $receiveslots Modified in place (by reference); null marks a dropped pair.
-     * @param bool[] $existingset
-     */
-    private function repair(array $giveslots, array &$receiveslots, array $existingset): void {
-        $count = count($giveslots);
-        $legal = function (int $index) use (&$giveslots, &$receiveslots, $existingset): bool {
-            $reviewer = $giveslots[$index];
-            $reviewee = $receiveslots[$index];
-            if ($reviewee === null) {
-                return true;
-            }
-            if ($reviewer === $reviewee || isset($existingset[$reviewer . '_' . $reviewee])) {
-                return false;
-            }
-            foreach ($giveslots as $other => $otherreviewer) {
-                if ($other !== $index && $otherreviewer === $reviewer && $receiveslots[$other] === $reviewee) {
-                    return $other > $index; // The later duplicate is the illegal one.
-                }
-            }
-            return true;
-        };
-
-        for ($index = 0; $index < $count; $index++) {
-            if ($legal($index)) {
-                continue;
-            }
-            $others = $this->random->shuffleArray(array_values(array_diff(range(0, $count - 1), [$index])));
-            $fixed = false;
-            foreach ($others as $other) {
-                [$receiveslots[$index], $receiveslots[$other]] = [$receiveslots[$other], $receiveslots[$index]];
-                if ($legal($index) && $legal($other)) {
-                    $fixed = true;
-                    break;
-                }
-                [$receiveslots[$index], $receiveslots[$other]] = [$receiveslots[$other], $receiveslots[$index]];
-            }
-            if (!$fixed) {
-                $receiveslots[$index] = null;
-            }
-        }
-
-        // A swap can, rarely, turn an earlier position into a duplicate; drop whatever is still illegal.
-        for ($index = 0; $index < $count; $index++) {
-            if (!$legal($index)) {
-                $receiveslots[$index] = null;
-            }
         }
     }
 }
