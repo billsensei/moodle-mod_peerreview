@@ -76,61 +76,8 @@ class student_view implements \renderable, \templatable {
      */
     public function export_for_template(\renderer_base $output): \stdClass {
         $range = grade_range::for_activity($this->peerreview);
-        $statuses = [
-            manager::STATUS_NEW => [get_string('statusnew', 'mod_peerreview'), 'bg-secondary'],
-            manager::STATUS_DRAFT => [get_string('statusdraft', 'mod_peerreview'), 'bg-warning text-dark'],
-            manager::STATUS_SUBMITTED => [get_string('statussubmitted', 'mod_peerreview'), 'bg-success'],
-        ];
-        $open = $this->window === 'open';
-
-        $cards = [];
-        $done = 0;
-        foreach ($this->todo as $item) {
-            $done += $item->status === manager::STATUS_SUBMITTED ? 1 : 0;
-            $action = null;
-            if ($open) {
-                $action = ['review' . $item->status, 'mod_peerreview'];
-            } else if ($this->window === 'closed' && $item->status === manager::STATUS_SUBMITTED) {
-                $action = ['viewreview', 'mod_peerreview'];
-            }
-            $cards[] = [
-                'name' => fullname($item->user),
-                'picture' => $output->user_picture($item->user, ['size' => 64, 'link' => false, 'includefullname' => false]),
-                'statuslabel' => $statuses[$item->status][0],
-                'statusclass' => $statuses[$item->status][1],
-                'actionlabel' => $action ? get_string(...$action) : '',
-                'url' => $action ? (new \moodle_url('/mod/peerreview/review.php', [
-                    'id' => $this->cmid,
-                    'alloc' => $item->id,
-                ]))->out(false) : '',
-            ];
-        }
-
-        $received = null;
-        if ($this->received !== null) {
-            $received = [];
-            foreach ($this->received as $review) {
-                if ($review->reviewer) {
-                    $who = fullname($review->reviewer);
-                    if ($review->isself) {
-                        $who = get_string('selfreview', 'mod_peerreview');
-                    }
-                } else {
-                    $who = get_string('anonymousreviewer', 'mod_peerreview');
-                }
-                $received[] = [
-                    'who' => $who,
-                    'grade' => $range->format_with_max((float) $review->grade),
-                    'hascomment' => trim((string) $review->feedback) !== '',
-                    'comment' => format_text($review->feedback ?? '', $review->feedbackformat, ['context' => $this->context]),
-                    'url' => (new \moodle_url('/mod/peerreview/feedback.php', [
-                        'id' => $this->cmid,
-                        'alloc' => $review->id,
-                    ]))->out(false),
-                ];
-            }
-        }
-
+        [$cards, $done] = $this->export_cards($output);
+        $received = $this->received === null ? null : $this->export_received($range);
         $comparison = $this->comparison ? $this->export_comparison($this->comparison, $range) : null;
 
         $total = count($cards);
@@ -150,6 +97,90 @@ class student_view implements \renderable, \templatable {
             'hascomparison' => $comparison !== null,
             'comparison' => $comparison,
         ];
+    }
+
+    /**
+     * The cards of the reviews to do, and how many of them are submitted.
+     *
+     * @param \renderer_base $output
+     * @return array [array[] cards, int number of submitted reviews]
+     */
+    private function export_cards(\renderer_base $output): array {
+        $statuses = [
+            manager::STATUS_NEW => [get_string('statusnew', 'mod_peerreview'), 'bg-secondary'],
+            manager::STATUS_DRAFT => [get_string('statusdraft', 'mod_peerreview'), 'bg-warning text-dark'],
+            manager::STATUS_SUBMITTED => [get_string('statussubmitted', 'mod_peerreview'), 'bg-success'],
+        ];
+        $cards = [];
+        $done = 0;
+        foreach ($this->todo as $item) {
+            $done += $item->status === manager::STATUS_SUBMITTED ? 1 : 0;
+            $action = $this->card_action($item);
+            $cards[] = [
+                'name' => fullname($item->user),
+                'picture' => $output->user_picture($item->user, ['size' => 64, 'link' => false, 'includefullname' => false]),
+                'statuslabel' => $statuses[$item->status][0],
+                'statusclass' => $statuses[$item->status][1],
+                'actionlabel' => $action ? get_string(...$action) : '',
+                'url' => $action ? (new \moodle_url('/mod/peerreview/review.php', [
+                    'id' => $this->cmid,
+                    'alloc' => $item->id,
+                ]))->out(false) : '',
+            ];
+        }
+        return [$cards, $done];
+    }
+
+    /**
+     * The button of a card: start or continue while the activity is open, view once it is closed and submitted.
+     *
+     * @param \stdClass $item The review to do.
+     * @return array|null Arguments for get_string(), null when the card has no button.
+     */
+    private function card_action(\stdClass $item): ?array {
+        if ($this->window === 'open') {
+            return ['review' . $item->status, 'mod_peerreview'];
+        }
+        if ($this->window === 'closed' && $item->status === manager::STATUS_SUBMITTED) {
+            return ['viewreview', 'mod_peerreview'];
+        }
+        return null;
+    }
+
+    /**
+     * The reviews the student received, ready for the template.
+     *
+     * @param grade_range $range Grade range of the activity.
+     * @return array[]
+     */
+    private function export_received(grade_range $range): array {
+        $received = [];
+        foreach ($this->received as $review) {
+            $received[] = [
+                'who' => $this->reviewer_name($review),
+                'grade' => $range->format_with_max((float) $review->grade),
+                'hascomment' => trim((string) $review->feedback) !== '',
+                'comment' => format_text($review->feedback ?? '', $review->feedbackformat, ['context' => $this->context]),
+                'url' => (new \moodle_url('/mod/peerreview/feedback.php', [
+                    'id' => $this->cmid,
+                    'alloc' => $review->id,
+                ]))->out(false),
+            ];
+        }
+        return $received;
+    }
+
+    /**
+     * How a received review names its reviewer: the name, "self-review" for the student's own, or "Anonymous".
+     *
+     * @param \stdClass $review The received review.
+     * @return string
+     */
+    private function reviewer_name(\stdClass $review): string {
+        if (!$review->reviewer) {
+            return get_string('anonymousreviewer', 'mod_peerreview');
+        }
+        return $review->isself ? get_string('selfreview', 'mod_peerreview') : fullname($review->reviewer);
     }
 
     /**
