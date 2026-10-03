@@ -281,3 +281,11 @@ Where the built allocation code differs from the plan above:
   - core's naming of backup classes (`backup_peerreview_activity_structure_step`);
   - complexity and coupling metrics of the allocator, the service, the privacy provider and some test classes. Splitting these now would change tested code just before the beta without changing behaviour; noted in ROADMAP.md.
 - **Maturity**: `MATURITY_BETA`, release 0.9.0, version 2026093003 (no database change, so no upgrade step).
+
+## Moodle app (unreleased, after 0.14.0)
+
+- **Mechanism**: `db/mobile.php` declares a `CoreCourseModuleDelegate` handler whose method is `\mod_peerreview\output\mobile::mobile_course_view()`. The app reaches it through `tool_mobile_get_content`, which passes arguments as strings and `otherdata` values as strings, so the whole page state is one JSON string (`otherdata['data']`, built by `mobile::build_state()`). `mobile/main.html` is the Angular/Ionic template and `mobile/main.js` the page script. They are plain files, not Mustache (Angular's `{{ }}` would clash) and not under `templates/`.
+- **All text is made on the server** in the user's language and passed in the data (`strings`), so the template needs no language strings.
+- **Web services** (`MOODLE_OFFICIAL_MOBILE_SERVICE`): `view_peerreview` (logs the view), `get_review` (the reviewer's own review, simple form only), `save_review` (submits through `service::submit()`, so rules, events and completion are the website's). Both review services refuse an activity with an active rubric or marking guide (`errormobileadvanced`); the page then links to `review.php` and `feedback.php` with the app's `core-link` directive, which opens the browser. The two teacher services are not exposed to the app.
+- **Comment format**: the app edits plain text and stores `FORMAT_PLAIN`; a comment stored as HTML is converted with `html_to_text()` for editing.
+- **Not checked**: there is no Moodle app or emulator on this machine. PHPUnit covers the data, the services and the call through core's `tool_mobile` function; the template and script (names such as `CoreSitesProvider`, `CoreDomUtilsProvider`, `core-link`, `refreshContent`) follow the app's documentation and are untested.

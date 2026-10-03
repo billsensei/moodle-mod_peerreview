@@ -1,0 +1,68 @@
+<!-- Moodle app template of mod_peerreview. Data comes from \mod_peerreview\output\mobile; script in main.js. -->
+<core-course-module-description *ngIf="state?.intro" [description]="state.intro" component="mod_peerreview" [componentId]="state.cmid"></core-course-module-description>
+<ion-list *ngIf="state">
+    <ion-item *ngIf="state.dates" lines="none"><ion-label class="ion-text-wrap"><p>{{ state.dates }}</p></ion-label></ion-item>
+    <ion-item *ngIf="state.windowtext" lines="none"><ion-label class="ion-text-wrap"><p><strong>{{ state.windowtext }}</strong></p></ion-label></ion-item>
+
+    <!-- A person without the review capability (a teacher): the tools are in the browser. -->
+    <ng-container *ngIf="!state.canreview">
+        <ion-item lines="none"><ion-label class="ion-text-wrap">{{ state.strings.teacherhint }}</ion-label></ion-item>
+        <ion-item><ion-button core-link capture="false" [href]="state.webview">{{ state.strings.openbrowser }}</ion-button></ion-item>
+    </ng-container>
+
+    <!-- The review form (simple points or scale form only). -->
+    <ng-container *ngIf="state.canreview && review">
+        <ion-item-divider><ion-label>{{ review.reviewee }}</ion-label></ion-item-divider>
+        <ion-item *ngIf="review.notice" lines="none"><ion-label class="ion-text-wrap">{{ review.notice }}</ion-label></ion-item>
+        <ion-item *ngIf="!review.isscale">
+            <ion-label position="stacked">{{ state.strings.scorepoints.replace('{$a}', review.max) }}</ion-label>
+            <ion-input type="number" inputmode="decimal" min="0" [max]="review.max" [(ngModel)]="review.score" [disabled]="!review.canedit"></ion-input>
+        </ion-item>
+        <ion-item *ngIf="review.isscale">
+            <ion-label>{{ state.strings.score }}</ion-label>
+            <ion-select interface="action-sheet" [(ngModel)]="review.score" [disabled]="!review.canedit">
+                <ion-select-option *ngFor="let item of review.items" [value]="'' + item.value">{{ item.label }}</ion-select-option>
+            </ion-select>
+        </ion-item>
+        <ion-item>
+            <ion-label position="stacked">{{ state.strings.overallcomment }}</ion-label>
+            <ion-textarea rows="5" [autoGrow]="true" [(ngModel)]="review.feedback" [disabled]="!review.canedit"></ion-textarea>
+        </ion-item>
+        <ion-item lines="none">
+            <ion-button *ngIf="review.canedit" [disabled]="busy" (click)="submitReview()">{{ state.strings.submitreview }}</ion-button>
+            <ion-button fill="outline" [disabled]="busy" (click)="closeReview()">{{ state.strings.cancel }}</ion-button>
+        </ion-item>
+    </ng-container>
+
+    <!-- Reviews to do. -->
+    <ng-container *ngIf="state.canreview && !review">
+        <ion-item-divider><ion-label>{{ state.strings.reviewstodo }}</ion-label></ion-item-divider>
+        <ion-item *ngIf="state.todo.length == 0" lines="none"><ion-label class="ion-text-wrap">{{ state.strings.noreviewsassigned }}</ion-label></ion-item>
+        <ion-item *ngIf="state.todo.length > 0" lines="none"><ion-label><p>{{ state.progress }}</p></ion-label></ion-item>
+        <ion-item *ngFor="let card of state.todo">
+            <ion-label class="ion-text-wrap">
+                <h2>{{ card.name }}</h2>
+                <p>{{ card.status }}</p>
+            </ion-label>
+            <ng-container *ngIf="card.action">
+                <ion-button *ngIf="!state.advanced" slot="end" [disabled]="busy" (click)="openReview(card)">{{ card.action }}</ion-button>
+                <ion-button *ngIf="state.advanced" slot="end" core-link capture="false" [href]="card.url">{{ card.action }}</ion-button>
+            </ng-container>
+        </ion-item>
+        <ion-item *ngIf="state.advanced && state.todo.length > 0" lines="none"><ion-label class="ion-text-wrap"><p>{{ state.strings.advancedhint }}</p></ion-label></ion-item>
+
+        <!-- Feedback received, once the teacher has released it. -->
+        <ng-container *ngIf="state.showreceived">
+            <ion-item-divider><ion-label>{{ state.strings.feedbackreceived }}</ion-label></ion-item-divider>
+            <ion-item *ngIf="state.grade" lines="none"><ion-label><h2>{{ state.strings.yourgrade }} {{ state.grade }}</h2></ion-label></ion-item>
+            <ion-item *ngIf="state.received.length == 0" lines="none"><ion-label class="ion-text-wrap">{{ state.strings.noreviewsreceived }}</ion-label></ion-item>
+            <ion-item *ngFor="let item of state.received">
+                <ion-label class="ion-text-wrap">
+                    <h2>{{ item.who }}: {{ item.grade }}</h2>
+                    <core-format-text *ngIf="item.comment" [text]="item.comment" contextLevel="module" [contextInstanceId]="state.cmid"></core-format-text>
+                    <a *ngIf="state.advanced" core-link capture="false" [href]="item.url">{{ state.strings.details }}</a>
+                </ion-label>
+            </ion-item>
+        </ng-container>
+    </ng-container>
+</ion-list>

@@ -15,7 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version metadata for mod_peerreview.
+ * Moodle app (mobile) support for mod_peerreview.
+ *
+ * The activity page is a remote template: the app asks {@see \mod_peerreview\output\mobile::mobile_course_view()}
+ * for it. Modelled on the format described in https://moodledev.io/general/app/development/plugins-development-guide.
  *
  * @package    mod_peerreview
  * @copyright  2026 Bill <wrwjpn@gmail.com>
@@ -24,9 +27,20 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'mod_peerreview';
-$plugin->version = 2026100303;
-$plugin->requires = 2025041400; // Moodle 5.0.
-$plugin->supported = [500, 502]; // Tested on Moodle 5.0, 5.1 and 5.2 (range: first and last supported branch).
-$plugin->maturity = MATURITY_BETA;
-$plugin->release = '0.14.0';
+$addons = [
+    'mod_peerreview' => [
+        'handlers' => [
+            'peerreview' => [
+                'displaydata' => [
+                    'icon' => $CFG->wwwroot . '/mod/peerreview/pix/monologo.svg',
+                    'class' => '',
+                ],
+                'delegate' => 'CoreCourseModuleDelegate',
+                'method' => 'mobile_course_view',
+            ],
+        ],
+        'lang' => [
+            ['pluginname', 'mod_peerreview'],
+        ],
+    ],
+];

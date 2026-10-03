@@ -17,6 +17,7 @@ Compared with the Workshop activity (`mod_workshop`), there is nothing to upload
 - **Completion**: "Student must submit all assigned reviews".
 - **Groups and groupings**, course reset, backup and restore (with or without user data), privacy API (export and delete), event logging.
 - **Phone first**: one-column cards on phones, large touch targets, no sideways scrolling (checked by an automated test at 425×750).
+- **Moodle app** (unreleased, not yet tried in the real app): students see their reviews to do, submit reviews with the points or scale form, and read received feedback. Rubric and marking guide reviews, and all teacher tools, open in the browser.
 
 ## Requirements
 

@@ -347,3 +347,4 @@ If it fails: see the entries for Java, PostgreSQL and ci-local.sh above.
 - 2026-10-02: edited .github/workflows/ci.yml (add MOODLE_502_STABLE); not run
 - 2026-10-02: phpunit init (version bump), reminder_test.php; behat.sh init + ci-local.sh (reminders)
 - 2026-10-02: criterion statistics: tests/local/criterion_stats_test.php (phpunit --filter criterion_stats_test), behat flow assertion (behat.sh init, behat.sh run --name="Teacher sets up a rubric review"); ci-local.sh
+- 2026-10-03: Moodle app support: tests/external/mobile_test.php (vendor/bin/phpunit mod/peerreview/tests/external/mobile_test.php; mutation: removed require_simple_form() from save_review.php, the test failed, file restored); phpunit init after the version bump; ci-local.sh --no-behat; moodle-plugin-ci phpcs

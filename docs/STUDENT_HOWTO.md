@@ -11,3 +11,5 @@ When all your cards say **Submitted**, you are done.
 **Your feedback:** when your teacher releases it, the section **Feedback I received** appears under your cards. It shows your grade and your classmates' comments. Reviewers are usually shown as "Anonymous".
 
 Be fair, be specific, be kind.
+
+**In the Moodle app:** the activity opens inside the app. You can see your reviews to do, give a score and a comment, and read the feedback you received. If your teacher uses a rubric or marking guide, the button opens the review in your browser instead.
