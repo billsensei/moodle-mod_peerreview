@@ -197,11 +197,9 @@ $string['releasefeedback'] = 'Release feedback';
 $string['remark'] = 'Remark';
 $string['reminderconfirm'] = 'Send a message to every student in this view who has reviews left to do?';
 $string['reminderlead'] = 'Remind students before the close date';
-$string['reminderlead_help'] = 'Moodle sends one message to each student who still has peer reviews to do, this long before the close date. It needs a close date and the Moodle cron, and is sent only once for each close date; changing the close date or this setting arms it again. The teacher\'s button on the report works as before.';
-$string['reminderleadday'] = '1 day before';
-$string['reminderleaddays'] = '{$a} days before';
-$string['reminderleadoff'] = 'Do not send automatic reminders';
-$string['reminderleadweek'] = '1 week before';
+$string['reminderlead_help'] = 'Moodle sends one message to each student who still has peer reviews to do, this long before the close date. Choose any time from 1 hour to 52 weeks; the check runs once an hour, so the message can arrive up to an hour after that moment. It needs a close date and the Moodle cron, and is sent only once for each close date; changing the close date or this setting arms it again. The teacher\'s button on the report works as before.';
+$string['reminderleadtoolarge'] = 'The reminder cannot be more than 52 weeks before the close date.';
+$string['reminderleadtoosmall'] = 'The reminder must be at least 1 hour before the close date, because reminders are checked once an hour.';
 $string['remindermessage'] = 'Hello {$a->firstname},
 
 You still have {$a->remaining} of {$a->total} peer reviews to finish in {$a->activity}.

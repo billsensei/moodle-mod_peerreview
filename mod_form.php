@@ -69,12 +69,11 @@ class mod_peerreview_mod_form extends moodleform_mod {
         $mform->addElement('advcheckbox', 'feedbackreleased', get_string('feedbackreleased', 'mod_peerreview'));
         $mform->addElement('date_time_selector', 'timeopen', get_string('timeopen', 'mod_peerreview'), ['optional' => true]);
         $mform->addElement('date_time_selector', 'timeclose', get_string('timeclose', 'mod_peerreview'), ['optional' => true]);
-        $mform->addElement('select', 'reminderlead', get_string('reminderlead', 'mod_peerreview'), [
-            0 => get_string('reminderleadoff', 'mod_peerreview'),
-            DAYSECS => get_string('reminderleadday', 'mod_peerreview'),
-            2 * DAYSECS => get_string('reminderleaddays', 'mod_peerreview', 2),
-            3 * DAYSECS => get_string('reminderleaddays', 'mod_peerreview', 3),
-            WEEKSECS => get_string('reminderleadweek', 'mod_peerreview'),
+        // Any lead time from one hour (the reminder task runs hourly) up to 52 weeks; unticked means no reminder (0).
+        $mform->addElement('duration', 'reminderlead', get_string('reminderlead', 'mod_peerreview'), [
+            'optional' => true,
+            'defaultunit' => DAYSECS,
+            'units' => [HOURSECS, DAYSECS, WEEKSECS],
         ]);
         $mform->addHelpButton('reminderlead', 'reminderlead', 'mod_peerreview');
         $mform->setDefault('reminderlead', 0);
@@ -129,6 +128,13 @@ class mod_peerreview_mod_form extends moodleform_mod {
         $errors = parent::validation($data, $files);
         if (isset($data['gradeparticipation']) && (int) $data['gradeparticipation'] < 0) {
             $errors['gradeparticipation'] = get_string('pointsonly', 'mod_peerreview');
+        }
+        if (!empty($data['reminderlead'])) {
+            if ($data['reminderlead'] < HOURSECS) {
+                $errors['reminderlead'] = get_string('reminderleadtoosmall', 'mod_peerreview');
+            } else if ($data['reminderlead'] > 52 * WEEKSECS) {
+                $errors['reminderlead'] = get_string('reminderleadtoolarge', 'mod_peerreview');
+            }
         }
         if (!$errors && !empty($data['instance']) && isset($data['grade'])) {
             $error = $this->get_grade_change_error((int) $data['instance'], (int) $data['grade']);

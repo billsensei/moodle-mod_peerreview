@@ -49,7 +49,7 @@ To follow progress, open the activity and press **Report**. The table shows how 
 
 To nudge students who are behind, press **Remind students with reviews to do** on the same page. Every student in the current group view who has reviews left gets a message (popup, email or the Moodle app, depending on their notification settings). It only works while the activity is open.
 
-To have Moodle do it for you, set a close date and choose **Remind students before the close date** in the activity settings (1, 2 or 3 days, or 1 week). Moodle then sends one message to every student who still has reviews left when that time is reached, from the site's no-reply address. It is sent once for each close date; if you change the close date or the lead time it is armed again. It is off by default, and it needs the Moodle cron to be running (ask your administrator).
+To have Moodle do it for you, set a close date and tick **Remind students before the close date** in the activity settings and choose how long before it (any time from 1 hour to 52 weeks, for example 2 days or 36 hours). Moodle checks once an hour, so the message can arrive up to an hour after that moment. It sends one message to every student who still has reviews left, from the site's no-reply address. It is sent once for each close date; if you change the close date or the lead time it is armed again. It is off by default, and it needs the Moodle cron to be running (ask your administrator).
 
 ## 5. Release the feedback
 

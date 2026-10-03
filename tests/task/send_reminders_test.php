@@ -110,6 +110,28 @@ final class send_reminders_test extends \advanced_testcase {
     }
 
     /**
+     * The lead time is not limited to the old choices (1, 2, 3 days, 1 week): hours and several weeks work too.
+     */
+    public function test_any_lead_time(): void {
+        $this->resetAfterTest();
+        global $DB;
+        $this->create_activity(2, ['timeclose' => time() + 7 * HOURSECS, 'reminderlead' => 6 * HOURSECS]);
+        $this->allocate(1, 2);
+        $id = $this->peerreview->id;
+
+        $this->assertCount(0, $this->run_task(), 'seven hours away is outside a six hour lead time');
+        $DB->set_field('peerreview', 'timeclose', time() + 5 * HOURSECS, ['id' => $id]);
+        $this->assertCount(1, $this->run_task(), 'five hours away is inside it');
+
+        $DB->update_record('peerreview', (object) [
+            'id' => $id, 'timeclose' => time() + 22 * DAYSECS, 'reminderlead' => 3 * WEEKSECS, 'remindersentfor' => 0,
+        ]);
+        $this->assertCount(0, $this->run_task(), '22 days away is outside a three week lead time');
+        $DB->set_field('peerreview', 'timeclose', time() + 20 * DAYSECS, ['id' => $id]);
+        $this->assertCount(1, $this->run_task(), '20 days away is inside it');
+    }
+
+    /**
      * A hidden activity is skipped and stays armed for when it becomes visible.
      */
     public function test_hidden_activity_is_skipped(): void {

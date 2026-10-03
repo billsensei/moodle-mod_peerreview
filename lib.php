@@ -68,6 +68,7 @@ function peerreview_add_instance(stdClass $data, ?mod_peerreview_mod_form $mform
     $data->timecreated = time();
     $data->timemodified = $data->timecreated;
     $data->gradeparticipation = (int) ($data->gradeparticipation ?? 0);
+    $data->reminderlead = (int) round($data->reminderlead ?? 0); // The duration field can give fractions of a second.
     $data->id = $DB->insert_record('peerreview', $data);
 
     peerreview_grade_item_update($data);
@@ -88,6 +89,9 @@ function peerreview_update_instance(stdClass $data, ?mod_peerreview_mod_form $mf
     $data->id = $data->instance;
     $data->timemodified = time();
     $data->gradeparticipation = (int) ($data->gradeparticipation ?? 0);
+    if (isset($data->reminderlead)) {
+        $data->reminderlead = (int) round($data->reminderlead); // The duration field can give fractions of a second.
+    }
     $old = $DB->get_record('peerreview', ['id' => $data->id], 'grade, timeclose, reminderlead', MUST_EXIST);
     $oldgrade = (int) $old->grade;
     // A new close date or lead time arms the automatic reminder again.

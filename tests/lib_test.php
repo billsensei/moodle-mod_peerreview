@@ -195,6 +195,40 @@ final class lib_test extends \advanced_testcase {
     }
 
     /**
+     * The duration field can deliver fractions of a second: the lead time is stored in whole seconds, and a value that
+     * rounds to the stored one does not arm the reminder again.
+     */
+    public function test_reminder_lead_is_stored_in_whole_seconds(): void {
+        $this->resetAfterTest();
+        global $DB;
+        $close = time() + 5 * DAYSECS;
+        $this->create_activity(1, ['timeclose' => $close, 'reminderlead' => 2 * HOURSECS, 'remindersentfor' => $close]);
+        $id = $this->peerreview->id;
+
+        $data = clone $this->peerreview;
+        $data->instance = $data->id;
+        unset($data->remindersentfor);
+        $data->reminderlead = 2 * HOURSECS + 0.4;
+        peerreview_update_instance($data);
+        $this->assertSame(2 * HOURSECS, (int) $DB->get_field('peerreview', 'reminderlead', ['id' => $id]));
+        $this->assertEquals($close, $DB->get_field('peerreview', 'remindersentfor', ['id' => $id]), 'still armed as it was');
+
+        // 7200.6 is stored as 7201: that is a new lead time, so it arms the reminder again. Comparing the unrounded
+        // value with a plain (int) cast would call it unchanged.
+        $data->reminderlead = 2 * HOURSECS + 0.6;
+        peerreview_update_instance($data);
+        $this->assertSame(2 * HOURSECS + 1, (int) $DB->get_field('peerreview', 'reminderlead', ['id' => $id]));
+        $this->assertEquals(0, $DB->get_field('peerreview', 'remindersentfor', ['id' => $id]), 'a new lead time arms it');
+
+        $new = (object) [
+            'course' => $this->course->id, 'name' => 'Rounded', 'intro' => '', 'introformat' => FORMAT_HTML,
+            'grade' => 100, 'reminderlead' => 5400.4, 'timeclose' => $close,
+        ];
+        $newid = peerreview_add_instance($new);
+        $this->assertSame(5400, (int) $DB->get_field('peerreview', 'reminderlead', ['id' => $newid]));
+    }
+
+    /**
      * Course module info carries the custom completion rule only when completion is tracked automatically.
      */
     public function test_coursemodule_info_exposes_the_rule(): void {
