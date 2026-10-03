@@ -1,10 +1,10 @@
 # Roadmap
 
-Ideas and known limitations for versions after 0.14.0. Nothing here is promised.
+Ideas and known limitations for versions after 0.15.0. Nothing here is promised.
 
-## Known limitations in 0.14.0
+## Known limitations in 0.15.0
 
-- **Moodle app: students only, simple form only** (unreleased). Rubric and marking guide reviews, the self-assessment comparison and all teacher tools open in the browser. Not tried in the real app yet.
+- **Moodle app: students only, simple form only** (0.15.0). Rubric and marking guide reviews, the self-assessment comparison and all teacher tools open in the browser. Not tried in the real app yet.
 - **No files** in comments (the overall comment editor accepts text only).
 
 ## Ideas
