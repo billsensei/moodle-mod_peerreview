@@ -178,86 +178,6 @@ class manager {
     }
 
     /**
-     * Ordered list of students for the rotation method.
-     *
-     * @param string $sortby lastname, firstname, username or random.
-     * @param int $seed Seed for random.
-     * @param string $usernames Optional explicit order, one username per line (overrides $sortby).
-     * @return array [int[] ordered user ids, string[] unknown usernames]
-     */
-    public function get_rotation_order(string $sortby, int $seed, string $usernames = ''): array {
-        $students = $this->get_students();
-        $usernames = array_filter(array_map('trim', preg_split('/\R/', $usernames)));
-        if ($usernames) {
-            $byusername = [];
-            foreach ($students as $student) {
-                $byusername[\core_text::strtolower($student->username)] = (int) $student->id;
-            }
-            $order = [];
-            $unknown = [];
-            foreach ($usernames as $username) {
-                $key = \core_text::strtolower($username);
-                if (isset($byusername[$key])) {
-                    $order[] = $byusername[$key];
-                } else {
-                    $unknown[] = $username;
-                }
-            }
-            return [$order, $unknown];
-        }
-
-        $list = array_values($students);
-        if ($sortby === 'random') {
-            $ids = random_allocator::seeded($seed)->shuffleArray(array_map(static fn($s) => (int) $s->id, $list));
-            return [$ids, []];
-        }
-        $field = in_array($sortby, ['firstname', 'username'], true) ? $sortby : 'lastname';
-        usort($list, static fn($a, $b) => \core_text::strtolower($a->$field) <=> \core_text::strtolower($b->$field)
-            ?: $a->id <=> $b->id);
-        return [array_map(static fn($s) => (int) $s->id, $list), []];
-    }
-
-    /**
-     * Allocations that a "replace" run would remove: not started and inside the pools involved.
-     *
-     * @param int[][] $pools Pool id => user ids in scope.
-     * @return \stdClass[] Allocation records (status new only).
-     */
-    public function get_replaceable(array $pools): array {
-        $inscope = [];
-        foreach ($pools as $members) {
-            foreach ($members as $userid) {
-                $inscope[$userid] = true;
-            }
-        }
-        return array_filter(
-            $this->get_allocations(),
-            static fn($alloc) => (int) $alloc->status === self::STATUS_NEW
-                && isset($inscope[$alloc->reviewerid], $inscope[$alloc->revieweeid])
-        );
-    }
-
-    /**
-     * Count of allocations in scope that have a saved or submitted review (they are always kept by "replace").
-     *
-     * @param int[][] $pools Pool id => user ids in scope.
-     * @return int
-     */
-    public function count_started_in_scope(array $pools): int {
-        $inscope = [];
-        foreach ($pools as $members) {
-            foreach ($members as $userid) {
-                $inscope[$userid] = true;
-            }
-        }
-        return count(array_filter(
-            $this->get_allocations(),
-            static fn($alloc) => (int) $alloc->status > self::STATUS_NEW
-                && isset($inscope[$alloc->reviewerid], $inscope[$alloc->revieweeid])
-        ));
-    }
-
-    /**
      * Work out what an automatic method would do, without changing anything.
      *
      * Params by method: random (n, crossgroup, replace), group (groupid, replace),
@@ -283,7 +203,7 @@ class manager {
                 }
                 break;
             case 'rotation':
-                [$order, $unknown] = $this->get_rotation_order(
+                [$order, $unknown] = (new rotation_order($this->get_students()))->build(
                     $params['sortby'] ?? 'lastname',
                     $seed,
                     $params['usernames'] ?? ''
@@ -297,11 +217,13 @@ class manager {
                 throw new \coding_exception('Unknown allocation method ' . $method);
         }
 
-        $allocations = $this->get_allocations();
+        $all = $this->get_allocations();
+        $scope = new pool_scope($pools);
+        $allocations = $all;
         $deleteids = [];
         if (!empty($params['replace'])) {
-            $deleteids = array_keys($this->get_replaceable($pools));
-            $allocations = array_diff_key($allocations, array_flip($deleteids));
+            $deleteids = array_keys($scope->replaceable($all));
+            $allocations = array_diff_key($all, array_flip($deleteids));
         }
         $existing = $this->get_pairs($allocations);
 
@@ -333,7 +255,7 @@ class manager {
         $result = new \stdClass();
         $result->proposal = $proposal;
         $result->deleteids = $deleteids;
-        $result->keptstarted = $this->count_started_in_scope($pools);
+        $result->keptstarted = $scope->count_started($all);
         [$result->given, $result->received] = $proposal->totals($existing);
         $result->existingpairs = $existing;
         return $result;
