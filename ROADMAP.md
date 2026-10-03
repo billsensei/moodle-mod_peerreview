@@ -1,8 +1,8 @@
 # Roadmap
 
-Ideas and known limitations for versions after 0.13.0. Nothing here is promised.
+Ideas and known limitations for versions after 0.14.0. Nothing here is promised.
 
-## Known limitations in 0.13.0
+## Known limitations in 0.14.0
 
 - **No Moodle app support yet.** In the app the activity opens in the phone's browser; students can also use the browser directly.
 - **No files** in comments (the overall comment editor accepts text only).
