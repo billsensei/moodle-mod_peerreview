@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 0.16.0 (beta), 2026-10-04
 
 - Moodle app, teacher side: a teacher who opens the activity in the app now sees how far the class is ("12 of 30 reviews done"), each student's reviews given and received, grade and participation (the same figures and the same group rules as the report page), and a **Release feedback** / **Hide feedback** button, so feedback can be released from a phone at the end of a lesson. The full report and the allocation page open in the browser. Teachers are not shown the student's review lists unless they are also students of the activity. Pull to refresh to see new figures (there is no automatic refresh in the app). The release switch is the same web service as the website's (`mod_peerreview_set_feedback_release`, now also available to the app); the progress list is built into the page, so `mod_peerreview_get_progress` stays web only. Like the student page, this has been tested with PHPUnit and over REST but **not yet in the real Moodle app**. After submitting a review in the app, the card now shows as submitted straight away. Database: no change; the version number changed (run the usual upgrade).
 
