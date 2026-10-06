@@ -45,10 +45,13 @@ Copy the plugin to `mod/peerreview` in your Moodle directory and run the upgrade
 2. Student on a phone: rubric review form.
 3. Student on a phone: "Feedback I received" with "Anonymous" and the grade.
 4. Teacher: activity page summary with the Report and Allocate buttons.
-5. Teacher: random allocation preview (numbers per student, "Confirm and save").
-6. Teacher: live report with the auto-refresh switch, "Release feedback" and "Push grades to gradebook".
-7. Teacher: drill-down of one student with the override form.
-8. Activity settings: anonymity, aggregation, grading method, participation grade.
+5. <img width="1009" height="506" alt="Screenshot From 2026-10-06 15-58-51" src="https://github.com/user-attachments/assets/d352544e-6f35-415b-bb77-bb9efaf5224d" />
+<img width="1009" height="506" alt="Screenshot From 2026-10-06 15-58-22" src="https://github.com/user-attachments/assets/8be718b6-077c-47e5-9e74-718674aa311a" />
+
+6. Teacher: random allocation preview (numbers per student, "Confirm and save").
+7. Teacher: live report with the auto-refresh switch, "Release feedback" and "Push grades to gradebook".
+8. Teacher: drill-down of one student with the override form.
+9. Activity settings: anonymity, aggregation, grading method, participation grade.
 
 ## Development
 
