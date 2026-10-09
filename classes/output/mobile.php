@@ -106,8 +106,9 @@ class mobile {
             'strings' => self::strings(),
             'todo' => [],
             'progress' => '',
-            // True for a grading method the app cannot show (a marking guide): its reviews open in the browser.
-            'advanced' => $controller !== null && !$controller instanceof \gradingform_rubric_controller,
+            // True for a grading method the app cannot show (neither rubric nor marking guide): its reviews open in the browser.
+            'advanced' => $controller !== null && !$controller instanceof \gradingform_rubric_controller
+                && !$controller instanceof \gradingform_guide_controller,
             'showreceived' => false,
             'received' => [],
             'grade' => '',

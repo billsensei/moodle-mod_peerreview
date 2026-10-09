@@ -37,6 +37,7 @@ this.openReview = async (card) => {
         // A chosen level is kept as a string so the radio buttons of the rubric compare it with their value.
         review.criteria.forEach((criterion) => {
             criterion.choice = criterion.levelid ? String(criterion.levelid) : '';
+            criterion.points = criterion.score === '' ? null : criterion.score;
         });
         this.review = review;
     } catch (error) {
@@ -85,11 +86,15 @@ this.saveDraft = async () => {
 this.saveReview = async (draft) => {
     const review = this.review;
     const rubric = review.method === 'rubric';
-    if (!draft && !rubric && (review.score === null || review.score === undefined || review.score === '')) {
+    const guide = review.method === 'guide';
+    if (!draft && !rubric && !guide && (review.score === null || review.score === undefined || review.score === '')) {
         this.CoreDomUtilsProvider.showErrorModal(this.state.strings.score);
         return;
     }
-    if (!draft && rubric && review.criteria.some((criterion) => !criterion.choice)) {
+    const missing = (criterion) => guide
+        ? criterion.points === null || criterion.points === undefined || criterion.points === ''
+        : !criterion.choice;
+    if (!draft && (rubric || guide) && review.criteria.some(missing)) {
         this.CoreDomUtilsProvider.showErrorModal(this.state.strings.incomplete);
         return;
     }
@@ -98,11 +103,12 @@ this.saveReview = async (draft) => {
         await site().write('mod_peerreview_save_review', {
             cmid: this.state.cmid,
             allocid: review.allocid,
-            score: rubric || review.score === null ? '' : String(review.score),
+            score: rubric || guide || review.score === null ? '' : String(review.score),
             feedback: review.feedback || '',
             criteria: review.criteria.map((criterion) => ({
                 id: criterion.id,
                 levelid: criterion.choice ? Number(criterion.choice) : 0,
+                score: criterion.points === null || criterion.points === undefined ? '' : String(criterion.points),
                 remark: criterion.remark || '',
             })),
             draft: draft,

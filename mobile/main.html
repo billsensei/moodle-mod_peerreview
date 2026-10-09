@@ -35,7 +35,7 @@
         </ion-item>
     </ng-container>
 
-    <!-- The review form: simple points or scale form, or a rubric (marking guides open in the browser). -->
+    <!-- The review form: simple points or scale form, a rubric or a marking guide. -->
     <ng-container *ngIf="state.canreview && review">
         <ion-item-divider><ion-label>{{ review.reviewee }}</ion-label></ion-item-divider>
         <ion-item *ngIf="review.notice" lines="none"><ion-label class="ion-text-wrap">{{ review.notice }}</ion-label></ion-item>
@@ -51,11 +51,24 @@
                 </ion-item>
             </ion-radio-group>
         </ng-container>
-        <ion-item *ngIf="review.method != 'rubric' && !review.isscale">
+        <ng-container *ngIf="review.method == 'guide'">
+            <ng-container *ngFor="let criterion of review.criteria">
+                <ion-item-divider><ion-label class="ion-text-wrap">{{ criterion.description }}</ion-label></ion-item-divider>
+                <ion-item>
+                    <ion-label position="stacked">{{ state.strings.scorepoints.replace('{$a}', criterion.maxscore) }}</ion-label>
+                    <ion-input type="number" inputmode="decimal" min="0" [max]="criterion.maxscore" [(ngModel)]="criterion.points" [disabled]="!review.canedit"></ion-input>
+                </ion-item>
+                <ion-item>
+                    <ion-label position="stacked">{{ state.strings.remark }}</ion-label>
+                    <ion-textarea rows="2" [autoGrow]="true" [(ngModel)]="criterion.remark" [disabled]="!review.canedit"></ion-textarea>
+                </ion-item>
+            </ng-container>
+        </ng-container>
+        <ion-item *ngIf="review.method == '' && !review.isscale">
             <ion-label position="stacked">{{ state.strings.scorepoints.replace('{$a}', review.max) }}</ion-label>
             <ion-input type="number" inputmode="decimal" min="0" [max]="review.max" [(ngModel)]="review.score" [disabled]="!review.canedit"></ion-input>
         </ion-item>
-        <ion-item *ngIf="review.method != 'rubric' && review.isscale">
+        <ion-item *ngIf="review.method == '' && review.isscale">
             <ion-label>{{ state.strings.score }}</ion-label>
             <ion-select interface="action-sheet" [(ngModel)]="review.score" [disabled]="!review.canedit">
                 <ion-select-option *ngFor="let item of review.items" [value]="'' + item.value">{{ item.label }}</ion-select-option>

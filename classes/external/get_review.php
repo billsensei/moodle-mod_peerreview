@@ -93,7 +93,7 @@ class get_review extends external_api {
 
         $range = $service->get_range();
         $items = [];
-        $criteria = $method === 'rubric' ? self::export_rubric($service, $alloc, $canedit) : [];
+        $criteria = $method === '' ? [] : self::export_criteria($service, $alloc, $canedit);
         foreach ($range->get_items() as $value => $label) {
             $items[] = ['value' => (int) $value, 'label' => $label];
         }
@@ -117,10 +117,10 @@ class get_review extends external_api {
     }
 
     /**
-     * Throw when the activity uses a grading method the app cannot show (a marking guide), and say which one is used.
+     * Throw when the activity uses a grading method the app cannot show (neither rubric nor marking guide).
      *
      * @param service $service Review service.
-     * @return string '' for the simple points or scale form, 'rubric' for a rubric.
+     * @return string '' for the simple points or scale form, 'rubric' for a rubric, 'guide' for a marking guide.
      * @throws \moodle_exception
      */
     public static function require_supported_form(service $service): string {
@@ -128,27 +128,35 @@ class get_review extends external_api {
         if ($controller === null) {
             return '';
         }
-        if (!$controller instanceof \gradingform_rubric_controller) {
-            throw new \moodle_exception('errormobileadvanced', 'mod_peerreview');
+        if ($controller instanceof \gradingform_rubric_controller) {
+            return 'rubric';
         }
-        return 'rubric';
+        if ($controller instanceof \gradingform_guide_controller) {
+            return 'guide';
+        }
+        throw new \moodle_exception('errormobileadvanced', 'mod_peerreview');
     }
 
     /**
-     * The criteria of the rubric with the levels and what this review has chosen so far.
+     * The criteria of the rubric or marking guide with what this review has filled in so far.
      *
-     * The submitted instance is shown when the review cannot be changed, like review.php does.
+     * The submitted instance is shown when the review cannot be changed, like review.php does. A marking guide shows the
+     * markers' description, which is the one meant for the reviewer.
      *
      * @param service $service Review service.
      * @param \stdClass $alloc Allocation record.
      * @param bool $canedit Whether the reviewer can change the review.
      * @return array[]
      */
-    private static function export_rubric(service $service, \stdClass $alloc, bool $canedit): array {
+    private static function export_criteria(service $service, \stdClass $alloc, bool $canedit): array {
         global $USER;
 
         $instance = $canedit ? $service->get_instance($alloc, (int) $USER->id) : $service->get_submitted_instance($alloc);
         $definition = $service->get_controller()->get_definition();
+        if ($service->get_controller() instanceof \gradingform_guide_controller) {
+            $filling = $instance instanceof \gradingform_guide_instance ? $instance->get_guide_filling()['criteria'] : [];
+            return self::export_guide($definition->guide_criteria, $filling);
+        }
         $filling = $instance instanceof \gradingform_rubric_instance ? $instance->get_rubric_filling()['criteria'] : [];
         $criteria = [];
         foreach ($definition->rubric_criteria as $id => $criterion) {
@@ -157,22 +165,56 @@ class get_review extends external_api {
                 $levels[] = [
                     'id' => (int) $levelid,
                     'score' => (float) $level['score'],
-                    'definition' => trim(html_to_text(format_text($level['definition'], $level['definitionformat']), 0, false)),
+                    'definition' => self::plain($level['definition'], $level['definitionformat']),
                 ];
             }
             $criteria[] = [
                 'id' => (int) $id,
-                'description' => trim(html_to_text(
-                    format_text($criterion['description'], $criterion['descriptionformat']),
-                    0,
-                    false
-                )),
+                'description' => self::plain($criterion['description'], $criterion['descriptionformat']),
                 'levels' => $levels,
                 'levelid' => (int) ($filling[$id]['levelid'] ?? 0),
+                'maxscore' => 0.0,
+                'score' => '',
                 'remark' => (string) ($filling[$id]['remark'] ?? ''),
             ];
         }
         return $criteria;
+    }
+
+    /**
+     * The criteria of a marking guide.
+     *
+     * @param array $definitions The criteria of the guide definition.
+     * @param array $filling What the instance holds, by criterion id.
+     * @return array[]
+     */
+    private static function export_guide(array $definitions, array $filling): array {
+        $criteria = [];
+        foreach ($definitions as $id => $criterion) {
+            $markers = self::plain($criterion['descriptionmarkers'], $criterion['descriptionmarkersformat']);
+            $criteria[] = [
+                'id' => (int) $id,
+                'description' => format_string($criterion['shortname'])
+                    . ($markers === '' ? '' : "\n" . $markers),
+                'levels' => [],
+                'levelid' => 0,
+                'maxscore' => (float) $criterion['maxscore'],
+                'score' => isset($filling[$id]['score']) ? (string) (float) $filling[$id]['score'] : '',
+                'remark' => (string) ($filling[$id]['remark'] ?? ''),
+            ];
+        }
+        return $criteria;
+    }
+
+    /**
+     * Rich text as plain text, which is what a phone form shows.
+     *
+     * @param string $text Stored text.
+     * @param int $format Its format.
+     * @return string
+     */
+    private static function plain(string $text, int $format): string {
+        return trim(html_to_text(format_text($text, $format), 0, false));
     }
 
     /**
@@ -207,7 +249,7 @@ class get_review extends external_api {
                 'value' => new external_value(PARAM_INT, 'Position of the scale item'),
                 'label' => new external_value(PARAM_TEXT, 'Name of the scale item'),
             ]), 'Scale items, empty for points'),
-            'method' => new external_value(PARAM_ALPHA, 'Grading method: empty for the simple form, rubric'),
+            'method' => new external_value(PARAM_ALPHA, 'Grading method: empty for the simple form, rubric or guide'),
             'candraft' => new external_value(PARAM_BOOL, 'A draft can be saved'),
             'criteria' => new external_multiple_structure(new external_single_structure([
                 'id' => new external_value(PARAM_INT, 'Criterion id'),
@@ -217,9 +259,11 @@ class get_review extends external_api {
                     'score' => new external_value(PARAM_FLOAT, 'Points of the level'),
                     'definition' => new external_value(PARAM_TEXT, 'Level text'),
                 ])),
-                'levelid' => new external_value(PARAM_INT, 'Chosen level, 0 when none'),
+                'levelid' => new external_value(PARAM_INT, 'Chosen level, 0 when none (rubric)'),
+                'maxscore' => new external_value(PARAM_FLOAT, 'Maximum score of the criterion (marking guide), 0 for a rubric'),
+                'score' => new external_value(PARAM_RAW, 'Score given so far (marking guide), empty when none'),
                 'remark' => new external_value(PARAM_TEXT, 'Remark of the reviewer'),
-            ]), 'Rubric criteria, empty for the simple form'),
+            ]), 'Rubric or marking guide criteria, empty for the simple form'),
             'score' => new external_value(PARAM_RAW, 'Score so far, empty when none'),
             'feedback' => new external_value(PARAM_RAW, 'Overall comment as plain text'),
         ]);

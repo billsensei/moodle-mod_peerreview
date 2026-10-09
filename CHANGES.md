@@ -1,5 +1,9 @@
 # Changes
 
+## 0.18.0 (beta), 2026-10-09
+
+- Moodle app: reviews that use a **marking guide** now work in the app. A student sees each criterion with its name and the markers' description, enters a score from 0 to the criterion's maximum, can add a remark, and can **Save draft** and finish later or submit. Submitting needs a valid score for every criterion, as on the website. The frequently used comments of a guide are not offered in the app yet. Only a grading method added by a third-party plugin still opens in the browser, as do the self-assessment comparison and the full report. `mod_peerreview_get_review` returns `method` = `guide` with each criterion's maximum, score and remark; `mod_peerreview_save_review` takes a score for each criterion (optional, so the simple form and rubrics are unchanged). Tested with PHPUnit, **not yet in the real Moodle app**. Database: no change; the version number changed (run the usual upgrade).
+
 ## 0.17.0 (beta), 2026-10-09
 
 - Moodle app: reviews that use a **rubric** now work in the app. A student sees each criterion with its levels (and points), chooses one level per criterion, can add a remark, and can **Save draft** and finish later or submit. Submitting needs a level for every criterion, as on the website. Marking guide reviews, the self-assessment comparison and the full report still open in the browser. `mod_peerreview_get_review` now also returns the method, the criteria and whether a draft can be saved; `mod_peerreview_save_review` takes the chosen levels and a draft flag (both optional, so the simple form is unchanged). Tested with PHPUnit, **not yet in the real Moodle app**.

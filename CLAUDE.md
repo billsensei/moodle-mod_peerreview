@@ -1,6 +1,6 @@
 # CLAUDE.md — mod_peerreview
 
-Moodle activity plugin: lightweight in-class peer assessment. Original spec: `~/test/prompt.md` (phased; all phases 0-9 are done). Now maintained as a beta: release 0.17.0, `MATURITY_BETA`, `requires` 5.0, `supported = [500, 502]` (5.0 to 5.2). See `CHANGES.md` for what each release did and `ROADMAP.md` for ideas (nothing promised).
+Moodle activity plugin: lightweight in-class peer assessment. Original spec: `~/test/prompt.md` (phased; all phases 0-9 are done). Now maintained as a beta: release 0.18.0, `MATURITY_BETA`, `requires` 5.0, `supported = [500, 502]` (5.0 to 5.2). See `CHANGES.md` for what each release did and `ROADMAP.md` for ideas (nothing promised).
 
 ## Paths
 - Plugin repo: **`~/test/moodle/mod/peerreview`** (the real directory; `~/dev/mod_peerreview` is a convenience symlink to it). It must NOT be the other way round: entry scripts do `require('../../config.php')`, which breaks when the plugin is only a symlink into dirroot. Never edit Moodle core.

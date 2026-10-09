@@ -55,9 +55,10 @@ class save_review extends external_api {
             'feedback' => new external_value(PARAM_TEXT, 'Overall comment as plain text', VALUE_DEFAULT, ''),
             'criteria' => new external_multiple_structure(new external_single_structure([
                 'id' => new external_value(PARAM_INT, 'Criterion id'),
-                'levelid' => new external_value(PARAM_INT, 'Chosen level, 0 when none'),
+                'levelid' => new external_value(PARAM_INT, 'Chosen level, 0 when none (rubric)', VALUE_DEFAULT, 0),
+                'score' => new external_value(PARAM_RAW, 'Score given, empty when none (marking guide)', VALUE_DEFAULT, ''),
                 'remark' => new external_value(PARAM_TEXT, 'Remark of the reviewer', VALUE_DEFAULT, ''),
-            ]), 'Rubric criteria (rubric reviews only)', VALUE_DEFAULT, []),
+            ]), 'Rubric or marking guide criteria (those reviews only)', VALUE_DEFAULT, []),
             'draft' => new external_value(PARAM_BOOL, 'Keep as a draft instead of submitting', VALUE_DEFAULT, false),
         ]);
     }
@@ -69,7 +70,7 @@ class save_review extends external_api {
      * @param int $allocid Allocation id.
      * @param string $score Points or scale position.
      * @param string $feedback Overall comment.
-     * @param array $criteria Rubric criteria: id, levelid, remark.
+     * @param array $criteria Rubric or guide criteria: id, levelid or score, remark.
      * @param bool $draft Save a draft instead of submitting.
      * @return array
      */
@@ -110,13 +111,13 @@ class save_review extends external_api {
             'feedback' => $params['feedback'],
             'feedbackformat' => FORMAT_PLAIN,
         ];
-        if ($method === 'rubric') {
+        if ($method !== '') {
             $data['advancedgrading'] = ['criteria' => []];
             foreach ($params['criteria'] as $criterion) {
-                $data['advancedgrading']['criteria'][$criterion['id']] = [
-                    'levelid' => $criterion['levelid'] ?: '',
-                    'remark' => $criterion['remark'],
-                ];
+                $data['advancedgrading']['criteria'][$criterion['id']] = ['remark' => $criterion['remark']]
+                    + ($method === 'rubric'
+                        ? ['levelid' => $criterion['levelid'] ?: '']
+                        : ['score' => trim($criterion['score'])]);
             }
         }
         if ($params['draft']) {

@@ -352,3 +352,4 @@ If it fails: see the entries for Java, PostgreSQL and ci-local.sh above.
 - 2026-10-03: Moodle app teacher side: tests/external/mobile_test.php (13 tests; mutations: group scoping, canrelease, capability gate); phpunit init after version bump 2026100305
 - 2026-10-04: scripts/dev-site.sh (start|stop|status: MariaDB via db.sh + PHP built-in server on 0.0.0.0:8000, pid file ~/.local/var/dev-site.pid); tested start, status, second start, stop
 - 2026-10-09: 0.17.0 release: phpunit init + behat.sh start/init after version bump; scripts/ci-local.sh (10 PASS); git pull --rebase (remote README change); git push; gh run view; git tag v0.17.0; git archive zip; gh release create --prerelease
+- 2026-10-09: 0.18.0 release: marking guides in the app; phpcs line length fix; same steps as 0.17.0

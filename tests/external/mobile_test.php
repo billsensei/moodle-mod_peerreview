@@ -105,9 +105,9 @@ final class mobile_test extends \advanced_testcase {
     }
 
     /**
-     * A marking guide is not served: the app opens the browser instead.
+     * A marking guide as its reviewer gets it, saved as a draft, refused while incomplete, then submitted.
      */
-    public function test_advanced_method_is_refused(): void {
+    public function test_marking_guide_review(): void {
         $this->resetAfterTest();
         $this->create_activity(3);
         $alloc = $this->allocate(1, 2);
@@ -116,19 +116,50 @@ final class mobile_test extends \advanced_testcase {
             ->get_test_guide($this->context, 'mod_peerreview', 'received');
         $this->setUser($this->students[1]);
 
-        $calls = [
-            'get' => fn() => get_review::execute($this->cm->id, $alloc->id),
-            'save' => fn() => save_review::execute($this->cm->id, $alloc->id, '1'),
+        $result = external_api::clean_returnvalue(
+            get_review::execute_returns(),
+            get_review::execute($this->cm->id, $alloc->id)
+        );
+        $this->assertSame('guide', $result['method']);
+        $this->assertTrue($result['candraft']);
+        $this->assertCount(2, $result['criteria']);
+        $criteria = $result['criteria'];
+        $this->assertStringContainsString('Spelling mistakes', $criteria[0]['description']);
+        $this->assertStringContainsString('Deduct 5 points', $criteria[0]['description']);
+        $this->assertEqualsWithDelta(25.0, $criteria[0]['maxscore'], 0.001);
+        $this->assertSame('', $criteria[0]['score']);
+
+        // A draft with one score; the others stay empty.
+        save_review::execute($this->cm->id, $alloc->id, '', '', [
+            ['id' => $criteria[0]['id'], 'score' => '20', 'remark' => 'two slips'],
+            ['id' => $criteria[1]['id'], 'score' => ''],
+        ], true);
+        $this->assertSame(manager::STATUS_DRAFT, (int) $this->reload($alloc)->status);
+        $draft = get_review::execute($this->cm->id, $alloc->id)['criteria'];
+        $this->assertSame('20', $draft[0]['score']);
+        $this->assertSame('two slips', $draft[0]['remark']);
+        $this->assertSame('', $draft[1]['score']);
+
+        // Missing and too high scores are refused.
+        $all = fn(string $second) => [
+            ['id' => $criteria[0]['id'], 'score' => '20'],
+            ['id' => $criteria[1]['id'], 'score' => $second],
         ];
-        foreach ($calls as $name => $call) {
+        foreach ([$all(''), $all('99')] as $incomplete) {
             try {
-                $call();
-                $this->fail("$name should be refused");
+                save_review::execute($this->cm->id, $alloc->id, '', '', $incomplete);
+                $this->fail('An incomplete or too high marking guide must be refused');
             } catch (\moodle_exception $e) {
-                $this->assertSame('errormobileadvanced', $e->errorcode, $name);
+                $this->assertSame('errorreviewincomplete', $e->errorcode);
             }
         }
-        $this->assertSame(manager::STATUS_NEW, (int) $this->reload($alloc)->status);
+        $this->assertSame(manager::STATUS_DRAFT, (int) $this->reload($alloc)->status);
+
+        save_review::execute($this->cm->id, $alloc->id, '', 'Fine', $all('10'));
+        $stored = $this->reload($alloc);
+        $this->assertSame(manager::STATUS_SUBMITTED, (int) $stored->status);
+        $this->assertGreaterThan(0, (float) $stored->grade);
+        $this->assertSame('10', get_review::execute($this->cm->id, $alloc->id)['criteria'][1]['score']);
     }
 
     /**
@@ -414,7 +445,7 @@ final class mobile_test extends \advanced_testcase {
     }
 
     /**
-     * The window state and the browser links of a marking guide activity.
+     * The window state and the browser links of an activity with a marking guide.
      */
     public function test_page_data_window_and_advanced(): void {
         $this->resetAfterTest();
@@ -431,7 +462,7 @@ final class mobile_test extends \advanced_testcase {
 
         $this->set_window(0, 0);
         $state = $this->state($this->students[1]);
-        $this->assertTrue($state['advanced']);
+        $this->assertFalse($state['advanced'], 'a marking guide is handled in the app now');
         $this->assertSame('open', $state['window']);
         $this->assertStringContainsString("review.php?id={$this->cm->id}&alloc={$alloc->id}", $state['todo'][0]['url']);
     }
