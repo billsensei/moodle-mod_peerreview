@@ -105,15 +105,15 @@ final class mobile_test extends \advanced_testcase {
     }
 
     /**
-     * A rubric or marking guide is not served: the app opens the browser instead.
+     * A marking guide is not served: the app opens the browser instead.
      */
     public function test_advanced_method_is_refused(): void {
         $this->resetAfterTest();
         $this->create_activity(3);
         $alloc = $this->allocate(1, 2);
         $this->setAdminUser();
-        $this->getDataGenerator()->get_plugin_generator('gradingform_rubric')
-            ->get_test_rubric($this->context, 'mod_peerreview', 'received');
+        $this->getDataGenerator()->get_plugin_generator('gradingform_guide')
+            ->get_test_guide($this->context, 'mod_peerreview', 'received');
         $this->setUser($this->students[1]);
 
         $calls = [
@@ -129,6 +129,82 @@ final class mobile_test extends \advanced_testcase {
             }
         }
         $this->assertSame(manager::STATUS_NEW, (int) $this->reload($alloc)->status);
+    }
+
+    /**
+     * A rubric as its reviewer gets it: criteria with levels, nothing chosen so far, a draft can be saved.
+     */
+    public function test_get_review_rubric(): void {
+        $this->resetAfterTest();
+        $this->create_activity(3);
+        $alloc = $this->allocate(1, 2);
+        $this->setAdminUser();
+        $this->getDataGenerator()->get_plugin_generator('gradingform_rubric')
+            ->get_test_rubric($this->context, 'mod_peerreview', 'received');
+        $this->setUser($this->students[1]);
+
+        $result = external_api::clean_returnvalue(
+            get_review::execute_returns(),
+            get_review::execute($this->cm->id, $alloc->id)
+        );
+        $this->assertSame('rubric', $result['method']);
+        $this->assertTrue($result['canedit']);
+        $this->assertTrue($result['candraft']);
+        $this->assertCount(2, $result['criteria']);
+        $this->assertSame('Spelling is important', $result['criteria'][0]['description']);
+        $this->assertCount(3, $result['criteria'][0]['levels']);
+        $this->assertSame('No mistakes', $result['criteria'][0]['levels'][2]['definition']);
+        $this->assertSame(0, $result['criteria'][0]['levelid']);
+    }
+
+    /**
+     * A rubric review saved as a draft is returned as it was left, then submitted; an incomplete one is refused.
+     */
+    public function test_save_rubric_review(): void {
+        $this->resetAfterTest();
+        $this->create_activity(3);
+        $alloc = $this->allocate(1, 2);
+        $this->setAdminUser();
+        $this->getDataGenerator()->get_plugin_generator('gradingform_rubric')
+            ->get_test_rubric($this->context, 'mod_peerreview', 'received');
+        $this->setUser($this->students[1]);
+        $first = get_review::execute($this->cm->id, $alloc->id)['criteria'];
+
+        // A draft with only the first criterion chosen.
+        save_review::execute($this->cm->id, $alloc->id, '', 'Half way', [
+            ['id' => $first[0]['id'], 'levelid' => $first[0]['levels'][2]['id'], 'remark' => 'clean'],
+            ['id' => $first[1]['id'], 'levelid' => 0, 'remark' => ''],
+        ], true);
+        $this->assertSame(manager::STATUS_DRAFT, (int) $this->reload($alloc)->status);
+        $draft = get_review::execute($this->cm->id, $alloc->id);
+        $this->assertSame($first[0]['levels'][2]['id'], $draft['criteria'][0]['levelid']);
+        $this->assertSame('clean', $draft['criteria'][0]['remark']);
+        $this->assertSame(0, $draft['criteria'][1]['levelid']);
+
+        // Submitting with a criterion left open is refused and nothing is submitted.
+        try {
+            save_review::execute($this->cm->id, $alloc->id, '', '', [
+                ['id' => $first[0]['id'], 'levelid' => $first[0]['levels'][2]['id']],
+                ['id' => $first[1]['id'], 'levelid' => 0],
+            ]);
+            $this->fail('An incomplete rubric must be refused');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('errorreviewincomplete', $e->errorcode);
+        }
+        $this->assertSame(manager::STATUS_DRAFT, (int) $this->reload($alloc)->status);
+
+        // Complete: both criteria at the top level gives the full grade.
+        save_review::execute($this->cm->id, $alloc->id, '', 'Well done', [
+            ['id' => $first[0]['id'], 'levelid' => $first[0]['levels'][2]['id']],
+            ['id' => $first[1]['id'], 'levelid' => $first[1]['levels'][2]['id'], 'remark' => 'three'],
+        ]);
+        $stored = $this->reload($alloc);
+        $this->assertSame(manager::STATUS_SUBMITTED, (int) $stored->status);
+        $this->assertEqualsWithDelta(100.0, (float) $stored->grade, 0.01);
+        $again = get_review::execute($this->cm->id, $alloc->id);
+        $this->assertTrue($again['submitted']);
+        $this->assertFalse($again['candraft']);
+        $this->assertSame($first[1]['levels'][2]['id'], $again['criteria'][1]['levelid']);
     }
 
     /**
@@ -338,15 +414,15 @@ final class mobile_test extends \advanced_testcase {
     }
 
     /**
-     * The window state and the browser links of a rubric activity.
+     * The window state and the browser links of a marking guide activity.
      */
     public function test_page_data_window_and_advanced(): void {
         $this->resetAfterTest();
         $this->create_activity(2);
         $alloc = $this->allocate(1, 2);
         $this->setAdminUser();
-        $this->getDataGenerator()->get_plugin_generator('gradingform_rubric')
-            ->get_test_rubric($this->context, 'mod_peerreview', 'received');
+        $this->getDataGenerator()->get_plugin_generator('gradingform_guide')
+            ->get_test_guide($this->context, 'mod_peerreview', 'received');
 
         $this->set_window(time() + DAYSECS, time() + 2 * DAYSECS);
         $state = $this->state($this->students[1]);

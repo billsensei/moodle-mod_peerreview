@@ -17,7 +17,7 @@ Compared with the Workshop activity (`mod_workshop`), there is nothing to upload
 - **Completion**: "Student must submit all assigned reviews".
 - **Groups and groupings**, course reset, backup and restore (with or without user data), privacy API (export and delete), event logging.
 - **Phone first**: one-column cards on phones, large touch targets, no sideways scrolling (checked by an automated test at 425×750).
-- **Moodle app** (new in 0.15.0, teacher side in 0.16.0; tested with PHPUnit, not yet tried in the real app): students see their reviews to do, submit reviews with the points or scale form, and read received feedback. Teachers see the class progress and can release feedback in the app. Rubric and marking guide reviews, the full report and the allocation open in the browser.
+- **Moodle app** (new in 0.15.0, teacher side in 0.16.0, rubrics in 0.17.0; tested with PHPUnit, not yet tried in the real app): students see their reviews to do, submit reviews with the points, scale or rubric form (a rubric review can be saved as a draft), and read received feedback. Teachers see the class progress and can release feedback in the app. Marking guide reviews, the full report and the allocation open in the browser.
 
 ## Requirements
 

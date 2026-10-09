@@ -1,5 +1,10 @@
 # Changes
 
+## 0.17.0 (beta), 2026-10-09
+
+- Moodle app: reviews that use a **rubric** now work in the app. A student sees each criterion with its levels (and points), chooses one level per criterion, can add a remark, and can **Save draft** and finish later or submit. Submitting needs a level for every criterion, as on the website. Marking guide reviews, the self-assessment comparison and the full report still open in the browser. `mod_peerreview_get_review` now also returns the method, the criteria and whether a draft can be saved; `mod_peerreview_save_review` takes the chosen levels and a draft flag (both optional, so the simple form is unchanged). Tested with PHPUnit, **not yet in the real Moodle app**.
+- Fixed: the review service now refuses a rubric or marking guide review with an empty criterion when submitting. The website form already did; the web services had no such check. Database: no change; the version number changed (run the usual upgrade).
+
 ## 0.16.0 (beta), 2026-10-04
 
 - Moodle app, teacher side: a teacher who opens the activity in the app now sees how far the class is ("12 of 30 reviews done"), each student's reviews given and received, grade and participation (the same figures and the same group rules as the report page), and a **Release feedback** / **Hide feedback** button, so feedback can be released from a phone at the end of a lesson. The full report and the allocation page open in the browser. Teachers are not shown the student's review lists unless they are also students of the activity. Pull to refresh to see new figures (there is no automatic refresh in the app). The release switch is the same web service as the website's (`mod_peerreview_set_feedback_release`, now also available to the app); the progress list is built into the page, so `mod_peerreview_get_progress` stays web only. Like the student page, this has been tested with PHPUnit and over REST but **not yet in the real Moodle app**. After submitting a review in the app, the card now shows as submitted straight away. Database: no change; the version number changed (run the usual upgrade).

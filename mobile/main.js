@@ -34,6 +34,10 @@ this.openReview = async (card) => {
             {getFromCache: false, saveToCache: false}
         );
         review.score = review.score === '' ? null : review.score;
+        // A chosen level is kept as a string so the radio buttons of the rubric compare it with their value.
+        review.criteria.forEach((criterion) => {
+            criterion.choice = criterion.levelid ? String(criterion.levelid) : '';
+        });
         this.review = review;
     } catch (error) {
         this.CoreDomUtilsProvider.showErrorModal(error);
@@ -59,11 +63,34 @@ this.markSubmitted = (allocid) => {
     this.state.progress = this.state.strings.reviewsdone.replace('{done}', done).replace('{total}', cards.length);
 };
 
+// Show a card as a draft without waiting for the page to be fetched again.
+this.markDraft = (allocid) => {
+    const card = this.state.todo.find((item) => item.allocid === allocid);
+    if (card && !card.submitted) {
+        card.status = this.state.strings.statusdraft;
+    }
+};
+
 // Submit the review. The server checks everything again (reviewer, open window, score range).
 this.submitReview = async () => {
+    await this.saveReview(false);
+};
+
+// Keep the rubric review as a draft: the reviewer can come back and finish it.
+this.saveDraft = async () => {
+    await this.saveReview(true);
+};
+
+// Send the review. Rubric: every criterion needs a level before submitting; a draft may be partly filled.
+this.saveReview = async (draft) => {
     const review = this.review;
-    if (review.score === null || review.score === undefined || review.score === '') {
+    const rubric = review.method === 'rubric';
+    if (!draft && !rubric && (review.score === null || review.score === undefined || review.score === '')) {
         this.CoreDomUtilsProvider.showErrorModal(this.state.strings.score);
+        return;
+    }
+    if (!draft && rubric && review.criteria.some((criterion) => !criterion.choice)) {
+        this.CoreDomUtilsProvider.showErrorModal(this.state.strings.incomplete);
         return;
     }
     this.busy = true;
@@ -71,10 +98,22 @@ this.submitReview = async () => {
         await site().write('mod_peerreview_save_review', {
             cmid: this.state.cmid,
             allocid: review.allocid,
-            score: String(review.score),
+            score: rubric || review.score === null ? '' : String(review.score),
             feedback: review.feedback || '',
+            criteria: review.criteria.map((criterion) => ({
+                id: criterion.id,
+                levelid: criterion.choice ? Number(criterion.choice) : 0,
+                remark: criterion.remark || '',
+            })),
+            draft: draft,
         });
         this.review = null;
+        if (draft) {
+            this.markDraft(review.allocid);
+            this.CoreDomUtilsProvider.showToast(this.state.strings.draftsaved, false, 3000);
+            await this.refreshContent(false);
+            return;
+        }
         this.markSubmitted(review.allocid);
         this.CoreDomUtilsProvider.showToast(this.state.strings.submitted, false, 3000);
         await this.refreshContent(false);

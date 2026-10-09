@@ -220,6 +220,10 @@ class service {
 
         $instance = $this->get_instance($alloc, $userid, $data['advancedgradinginstanceid'] ?? null);
         if ($instance) {
+            // The web form validates this itself; the web services have no form, so the service checks it too.
+            if (!$instance->validate_grading_element((array) ($data['advancedgrading'] ?? []))) {
+                throw new \moodle_exception('errorreviewincomplete', 'mod_peerreview');
+            }
             $grade = $instance->submit_and_get_grade((array) ($data['advancedgrading'] ?? []), $alloc->id);
             if ($grade < 0) {
                 throw new \moodle_exception('errorreviewincomplete', 'mod_peerreview');

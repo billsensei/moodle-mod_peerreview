@@ -73,6 +73,7 @@ class mobile {
      */
     public static function build_state(\stdClass $peerreview, \cm_info $cm, \context_module $context, int $userid): array {
         $service = new service($peerreview, $context);
+        $controller = $service->get_controller();
         $window = 'open';
         if ($peerreview->timeopen && time() < $peerreview->timeopen) {
             $window = 'notopen';
@@ -105,7 +106,8 @@ class mobile {
             'strings' => self::strings(),
             'todo' => [],
             'progress' => '',
-            'advanced' => $service->get_controller() !== null,
+            // True for a grading method the app cannot show (a marking guide): its reviews open in the browser.
+            'advanced' => $controller !== null && !$controller instanceof \gradingform_rubric_controller,
             'showreceived' => false,
             'received' => [],
             'grade' => '',
@@ -263,6 +265,11 @@ class mobile {
             'noreviewsreceived' => get_string('noreviewsreceived', 'mod_peerreview'),
             'yourgrade' => get_string('yourgrade', 'mod_peerreview'),
             'submitreview' => get_string('submitreview', 'mod_peerreview'),
+            'savedraft' => get_string('savedraft', 'mod_peerreview'),
+            'draftsaved' => get_string('draftsaved', 'mod_peerreview'),
+            'remark' => get_string('remark', 'mod_peerreview'),
+            'incomplete' => get_string('errorreviewincomplete', 'mod_peerreview'),
+            'statusdraft' => get_string('statusdraft', 'mod_peerreview'),
             'cancel' => get_string('cancel'),
             'overallcomment' => get_string('overallcomment', 'mod_peerreview'),
             'score' => get_string('score', 'mod_peerreview'),

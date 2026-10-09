@@ -80,7 +80,7 @@ class get_review extends external_api {
         if ((int) $alloc->reviewerid !== (int) $USER->id) {
             throw new \moodle_exception('errornotyourreview', 'mod_peerreview');
         }
-        self::require_simple_form($service);
+        $method = self::require_supported_form($service);
 
         $notice = '';
         $canedit = true;
@@ -93,6 +93,7 @@ class get_review extends external_api {
 
         $range = $service->get_range();
         $items = [];
+        $criteria = $method === 'rubric' ? self::export_rubric($service, $alloc, $canedit) : [];
         foreach ($range->get_items() as $value => $label) {
             $items[] = ['value' => (int) $value, 'label' => $label];
         }
@@ -106,21 +107,72 @@ class get_review extends external_api {
             'isscale' => $range->is_scale(),
             'max' => $range->is_scale() ? count($items) : $range->max(),
             'items' => $items,
+            'method' => $method,
+            'candraft' => $method !== '' && $canedit && (int) $alloc->status !== manager::STATUS_SUBMITTED
+                && $service->supports_drafts(),
+            'criteria' => $criteria,
             'score' => $alloc->grade === null ? '' : (string) (float) $alloc->grade,
             'feedback' => self::plain_comment($alloc),
         ];
     }
 
     /**
-     * Throw when the activity uses a rubric or marking guide, which the app does not show.
+     * Throw when the activity uses a grading method the app cannot show (a marking guide), and say which one is used.
      *
      * @param service $service Review service.
+     * @return string '' for the simple points or scale form, 'rubric' for a rubric.
      * @throws \moodle_exception
      */
-    public static function require_simple_form(service $service): void {
-        if ($service->get_controller() !== null) {
+    public static function require_supported_form(service $service): string {
+        $controller = $service->get_controller();
+        if ($controller === null) {
+            return '';
+        }
+        if (!$controller instanceof \gradingform_rubric_controller) {
             throw new \moodle_exception('errormobileadvanced', 'mod_peerreview');
         }
+        return 'rubric';
+    }
+
+    /**
+     * The criteria of the rubric with the levels and what this review has chosen so far.
+     *
+     * The submitted instance is shown when the review cannot be changed, like review.php does.
+     *
+     * @param service $service Review service.
+     * @param \stdClass $alloc Allocation record.
+     * @param bool $canedit Whether the reviewer can change the review.
+     * @return array[]
+     */
+    private static function export_rubric(service $service, \stdClass $alloc, bool $canedit): array {
+        global $USER;
+
+        $instance = $canedit ? $service->get_instance($alloc, (int) $USER->id) : $service->get_submitted_instance($alloc);
+        $definition = $service->get_controller()->get_definition();
+        $filling = $instance instanceof \gradingform_rubric_instance ? $instance->get_rubric_filling()['criteria'] : [];
+        $criteria = [];
+        foreach ($definition->rubric_criteria as $id => $criterion) {
+            $levels = [];
+            foreach ($criterion['levels'] as $levelid => $level) {
+                $levels[] = [
+                    'id' => (int) $levelid,
+                    'score' => (float) $level['score'],
+                    'definition' => trim(html_to_text(format_text($level['definition'], $level['definitionformat']), 0, false)),
+                ];
+            }
+            $criteria[] = [
+                'id' => (int) $id,
+                'description' => trim(html_to_text(
+                    format_text($criterion['description'], $criterion['descriptionformat']),
+                    0,
+                    false
+                )),
+                'levels' => $levels,
+                'levelid' => (int) ($filling[$id]['levelid'] ?? 0),
+                'remark' => (string) ($filling[$id]['remark'] ?? ''),
+            ];
+        }
+        return $criteria;
     }
 
     /**
@@ -155,6 +207,19 @@ class get_review extends external_api {
                 'value' => new external_value(PARAM_INT, 'Position of the scale item'),
                 'label' => new external_value(PARAM_TEXT, 'Name of the scale item'),
             ]), 'Scale items, empty for points'),
+            'method' => new external_value(PARAM_ALPHA, 'Grading method: empty for the simple form, rubric'),
+            'candraft' => new external_value(PARAM_BOOL, 'A draft can be saved'),
+            'criteria' => new external_multiple_structure(new external_single_structure([
+                'id' => new external_value(PARAM_INT, 'Criterion id'),
+                'description' => new external_value(PARAM_TEXT, 'Criterion text'),
+                'levels' => new external_multiple_structure(new external_single_structure([
+                    'id' => new external_value(PARAM_INT, 'Level id'),
+                    'score' => new external_value(PARAM_FLOAT, 'Points of the level'),
+                    'definition' => new external_value(PARAM_TEXT, 'Level text'),
+                ])),
+                'levelid' => new external_value(PARAM_INT, 'Chosen level, 0 when none'),
+                'remark' => new external_value(PARAM_TEXT, 'Remark of the reviewer'),
+            ]), 'Rubric criteria, empty for the simple form'),
             'score' => new external_value(PARAM_RAW, 'Score so far, empty when none'),
             'feedback' => new external_value(PARAM_RAW, 'Overall comment as plain text'),
         ]);
