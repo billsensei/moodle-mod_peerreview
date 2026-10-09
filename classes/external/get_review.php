@@ -111,6 +111,7 @@ class get_review extends external_api {
             'candraft' => $method !== '' && $canedit && (int) $alloc->status !== manager::STATUS_SUBMITTED
                 && $service->supports_drafts(),
             'criteria' => $criteria,
+            'comments' => $method === 'guide' ? self::export_guide_comments($service) : [],
             'score' => $alloc->grade === null ? '' : (string) (float) $alloc->grade,
             'feedback' => self::plain_comment($alloc),
         ];
@@ -179,6 +180,20 @@ class get_review extends external_api {
             ];
         }
         return $criteria;
+    }
+
+    /**
+     * The frequently used comments of the marking guide, which the reviewer can add to a remark.
+     *
+     * @param service $service Review service.
+     * @return string[]
+     */
+    private static function export_guide_comments(service $service): array {
+        $comments = [];
+        foreach ($service->get_controller()->get_definition()->guide_comments as $comment) {
+            $comments[] = self::plain($comment['description'], $comment['descriptionformat']);
+        }
+        return $comments;
     }
 
     /**
@@ -264,6 +279,10 @@ class get_review extends external_api {
                 'score' => new external_value(PARAM_RAW, 'Score given so far (marking guide), empty when none'),
                 'remark' => new external_value(PARAM_TEXT, 'Remark of the reviewer'),
             ]), 'Rubric or marking guide criteria, empty for the simple form'),
+            'comments' => new external_multiple_structure(
+                new external_value(PARAM_TEXT, 'Text of a frequently used comment'),
+                'Frequently used comments of a marking guide, empty otherwise'
+            ),
             'score' => new external_value(PARAM_RAW, 'Score so far, empty when none'),
             'feedback' => new external_value(PARAM_RAW, 'Overall comment as plain text'),
         ]);

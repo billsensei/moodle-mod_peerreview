@@ -47,7 +47,7 @@
 
    No output means success.
 
-4. Check: *Site administration → Plugins → Plugins overview* lists **Peer review** (mod_peerreview) with version 2026100901 and release 0.18.0.
+4. Check: *Site administration → Plugins → Plugins overview* lists **Peer review** (mod_peerreview) with version 2026101000 and release 0.19.0.
 
 ## Upgrade to a newer release
 

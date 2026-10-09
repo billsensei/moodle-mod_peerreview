@@ -269,6 +269,7 @@ class mobile {
             'savedraft' => get_string('savedraft', 'mod_peerreview'),
             'draftsaved' => get_string('draftsaved', 'mod_peerreview'),
             'remark' => get_string('remark', 'mod_peerreview'),
+            'insertcomment' => get_string('insertcomment', 'gradingform_guide'),
             'incomplete' => get_string('errorreviewincomplete', 'mod_peerreview'),
             'statusdraft' => get_string('statusdraft', 'mod_peerreview'),
             'cancel' => get_string('cancel'),

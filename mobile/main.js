@@ -47,6 +47,15 @@ this.openReview = async (card) => {
     }
 };
 
+// Add a frequently used comment of the marking guide to the remark of a criterion, on a new line.
+this.insertComment = (criterion) => {
+    const text = criterion.pick;
+    criterion.pick = null;
+    if (text) {
+        criterion.remark = criterion.remark ? criterion.remark + '\n' + text : text;
+    }
+};
+
 this.closeReview = () => {
     this.review = null;
 };

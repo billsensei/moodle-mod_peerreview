@@ -108,12 +108,24 @@ final class mobile_test extends \advanced_testcase {
      * A marking guide as its reviewer gets it, saved as a draft, refused while incomplete, then submitted.
      */
     public function test_marking_guide_review(): void {
+        global $DB;
+
         $this->resetAfterTest();
         $this->create_activity(3);
         $alloc = $this->allocate(1, 2);
         $this->setAdminUser();
-        $this->getDataGenerator()->get_plugin_generator('gradingform_guide')
+        $controller = $this->getDataGenerator()->get_plugin_generator('gradingform_guide')
             ->get_test_guide($this->context, 'mod_peerreview', 'received');
+        // Frequently used comments, as the guide editor stores them.
+        $definitionid = $controller->get_definition()->id;
+        foreach (['Good', 'Check the spelling'] as $order => $text) {
+            $DB->insert_record('gradingform_guide_comments', [
+                'definitionid' => $definitionid,
+                'sortorder' => $order + 1,
+                'description' => $text,
+                'descriptionformat' => FORMAT_HTML,
+            ]);
+        }
         $this->setUser($this->students[1]);
 
         $result = external_api::clean_returnvalue(
@@ -128,6 +140,7 @@ final class mobile_test extends \advanced_testcase {
         $this->assertStringContainsString('Deduct 5 points', $criteria[0]['description']);
         $this->assertEqualsWithDelta(25.0, $criteria[0]['maxscore'], 0.001);
         $this->assertSame('', $criteria[0]['score']);
+        $this->assertSame(['Good', 'Check the spelling'], $result['comments']);
 
         // A draft with one score; the others stay empty.
         save_review::execute($this->cm->id, $alloc->id, '', '', [

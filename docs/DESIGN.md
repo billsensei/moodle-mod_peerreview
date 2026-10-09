@@ -282,7 +282,7 @@ Where the built allocation code differs from the plan above:
   - complexity and coupling metrics of the allocator, the service, the privacy provider and some test classes. Splitting these now would change tested code just before the beta without changing behaviour; noted in ROADMAP.md.
 - **Maturity**: `MATURITY_BETA`, release 0.9.0, version 2026093003 (no database change, so no upgrade step).
 
-## Moodle app (0.15.0 students, 0.16.0 teachers, 0.17.0 rubrics, 0.18.0 marking guides)
+## Moodle app (0.15.0 students, 0.16.0 teachers, 0.17.0 rubrics, 0.18.0 marking guides, 0.19.0 their comments)
 
 - **Mechanism**: `db/mobile.php` declares a `CoreCourseModuleDelegate` handler whose method is `\mod_peerreview\output\mobile::mobile_course_view()`. The app reaches it through `tool_mobile_get_content`, which passes arguments as strings and `otherdata` values as strings, so the whole page state is one JSON string (`otherdata['data']`, built by `mobile::build_state()`). `mobile/main.html` is the Angular/Ionic template and `mobile/main.js` the page script. They are plain files, not Mustache (Angular's `{{ }}` would clash) and not under `templates/`.
 - **All text is made on the server** in the user's language and passed in the data (`strings`), so the template needs no language strings.
