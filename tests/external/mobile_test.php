@@ -371,6 +371,37 @@ final class mobile_test extends \advanced_testcase {
     }
 
     /**
+     * The self-assessment comparison reaches the app only when feedback is released and there is a submitted self-review
+     * and a submitted peer review, in the words of the website.
+     */
+    public function test_page_data_self_comparison(): void {
+        $this->resetAfterTest();
+        $this->create_activity(3, ['allowselfreview' => 1, 'grade' => 100]);
+        $this->allocate(2, 1, manager::STATUS_SUBMITTED, 60);
+        $this->manager->add_manual((int) $this->students[1]->id, [(int) $this->students[1]->id], $this->teacher->id);
+        global $DB;
+        $DB->set_field('peerreview_alloc', 'status', manager::STATUS_SUBMITTED, [
+            'reviewerid' => $this->students[1]->id,
+            'revieweeid' => $this->students[1]->id,
+        ]);
+        $DB->set_field('peerreview_alloc', 'grade', 90, [
+            'reviewerid' => $this->students[1]->id,
+            'revieweeid' => $this->students[1]->id,
+        ]);
+
+        $this->assertNull($this->state($this->students[1])['comparison'], 'not released yet');
+
+        $this->release_feedback();
+        $comparison = $this->state($this->students[1])['comparison'];
+        $this->assertNotNull($comparison);
+        $this->assertStringContainsString('90', $comparison['self']);
+        $this->assertStringContainsString('60', $comparison['peers']);
+        $this->assertSame(get_string('selfcomparehigher', 'mod_peerreview', '30'), $comparison['summary']);
+        $this->assertSame([], $comparison['criteria']);
+        $this->assertNull($this->state($this->students[2])['comparison'], 'no self-review for the other student');
+    }
+
+    /**
      * A teacher gets the class progress, the release state and the browser links, and no review lists of their own.
      */
     public function test_page_data_for_a_teacher(): void {

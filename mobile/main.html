@@ -112,6 +112,18 @@
         <ng-container *ngIf="state.showreceived">
             <ion-item-divider><ion-label>{{ state.strings.feedbackreceived }}</ion-label></ion-item-divider>
             <ion-item *ngIf="state.grade" lines="none"><ion-label><h2>{{ state.strings.yourgrade }} {{ state.grade }}</h2></ion-label></ion-item>
+            <ng-container *ngIf="state.comparison">
+                <ion-item-divider><ion-label>{{ state.strings.comparisonheading }}</ion-label></ion-item-divider>
+                <ion-item lines="none"><ion-label>{{ state.strings.comparisonself }}: {{ state.comparison.self }}</ion-label></ion-item>
+                <ion-item lines="none"><ion-label>{{ state.strings.comparisonpeers }}: {{ state.comparison.peers }}</ion-label></ion-item>
+                <ion-item lines="none"><ion-label class="ion-text-wrap"><strong>{{ state.comparison.summary }}</strong></ion-label></ion-item>
+                <ion-item *ngFor="let criterion of state.comparison.criteria">
+                    <ion-label class="ion-text-wrap">
+                        <h3>{{ criterion.name }}</h3>
+                        <p>{{ state.strings.comparisonyou }}: {{ criterion.self }} &middot; {{ state.strings.comparisonpeersaverage }}: {{ criterion.peers }} &middot; {{ state.strings.criterionmax }}: {{ criterion.max }}</p>
+                    </ion-label>
+                </ion-item>
+            </ng-container>
             <ion-item *ngIf="state.received.length == 0" lines="none"><ion-label class="ion-text-wrap">{{ state.strings.noreviewsreceived }}</ion-label></ion-item>
             <ion-item *ngFor="let item of state.received">
                 <ion-label class="ion-text-wrap">

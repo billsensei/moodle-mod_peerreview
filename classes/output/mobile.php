@@ -17,6 +17,7 @@
 namespace mod_peerreview\output;
 
 use mod_peerreview\local\allocation\manager;
+use mod_peerreview\local\criterion_stats;
 use mod_peerreview\local\group_access;
 use mod_peerreview\local\progress;
 use mod_peerreview\local\review\service;
@@ -28,8 +29,7 @@ use mod_peerreview\local\student_data;
  *
  * The app asks for the content with core_course_get_module-style args (cmid, courseid) and renders the returned
  * template with Angular. All text is produced here in the user's language, so the template needs no language strings.
- * Reviews that use a rubric or marking guide, the self-assessment comparison, the full report and the allocation open in the
- * browser.
+ * The full report and the allocation open in the browser.
  *
  * @package    mod_peerreview
  * @copyright  2026 Bill <wrwjpn@gmail.com>
@@ -112,6 +112,7 @@ class mobile {
             'showreceived' => false,
             'received' => [],
             'grade' => '',
+            'comparison' => null,
         ];
         $manager = new manager($peerreview, $cm->get_course_module_record(), $context);
         $state['teacher'] = self::export_teacher($peerreview, $cm, $context, $manager);
@@ -126,6 +127,7 @@ class mobile {
             $state['received'] = self::export_received($data->get_received($userid), $service, $context, $cm->id);
             $grade = $data->get_grade($userid);
             $state['grade'] = $grade === null ? '' : $service->get_range()->format_with_max($grade);
+            $state['comparison'] = self::export_comparison($peerreview, $context, $data, $userid, $service);
         }
         return $state;
     }
@@ -224,6 +226,31 @@ class mobile {
     }
 
     /**
+     * The student's self-assessment next to their peers' grade, in the same words as the website.
+     *
+     * @param \stdClass $peerreview Activity record.
+     * @param \context_module $context Module context.
+     * @param student_data $data Student data.
+     * @param int $userid The student.
+     * @param service $service Review service.
+     * @return array|null Null when there is nothing to compare (see student_data::get_self_comparison()).
+     */
+    private static function export_comparison(
+        \stdClass $peerreview,
+        \context_module $context,
+        student_data $data,
+        int $userid,
+        service $service
+    ): ?array {
+        $comparison = $data->get_self_comparison($userid);
+        if (!$comparison) {
+            return null;
+        }
+        $comparison->criteria = (new criterion_stats($peerreview, $context))->get_comparison($userid);
+        return json_decode(json_encode(student_view::export_comparison($comparison, $service->get_range())), true);
+    }
+
+    /**
      * The reviews the student received.
      *
      * @param \stdClass[] $received From student_data::get_received().
@@ -269,6 +296,13 @@ class mobile {
             'savedraft' => get_string('savedraft', 'mod_peerreview'),
             'draftsaved' => get_string('draftsaved', 'mod_peerreview'),
             'remark' => get_string('remark', 'mod_peerreview'),
+            'comparisonheading' => get_string('selfcompareheading', 'mod_peerreview'),
+            'comparisonself' => get_string('selfcompareself', 'mod_peerreview'),
+            'comparisonpeers' => get_string('selfcomparepeers', 'mod_peerreview'),
+            'comparisonyou' => get_string('selfcompareyou', 'mod_peerreview'),
+            'comparisonpeersaverage' => get_string('selfcomparepeersaverage', 'mod_peerreview'),
+            'criterion' => get_string('criterion', 'mod_peerreview'),
+            'criterionmax' => get_string('criterionmax', 'mod_peerreview'),
             'insertcomment' => get_string('insertcomment', 'gradingform_guide'),
             'incomplete' => get_string('errorreviewincomplete', 'mod_peerreview'),
             'statusdraft' => get_string('statusdraft', 'mod_peerreview'),

@@ -78,7 +78,7 @@ class student_view implements \renderable, \templatable {
         $range = grade_range::for_activity($this->peerreview);
         [$cards, $done] = $this->export_cards($output);
         $received = $this->received === null ? null : $this->export_received($range);
-        $comparison = $this->comparison ? $this->export_comparison($this->comparison, $range) : null;
+        $comparison = $this->comparison ? self::export_comparison($this->comparison, $range) : null;
 
         $total = count($cards);
         return (object) [
@@ -184,13 +184,13 @@ class student_view implements \renderable, \templatable {
     }
 
     /**
-     * The self-assessment compared with the peers, ready for the template.
+     * The self-assessment compared with the peers, ready for the template (also used by the Moodle app page).
      *
      * @param \stdClass $comparison Overall grades (self, peers) and, for a rubric or marking guide, criteria.
      * @param grade_range $range Grade range of the activity.
      * @return \stdClass
      */
-    private function export_comparison(\stdClass $comparison, grade_range $range): \stdClass {
+    public static function export_comparison(\stdClass $comparison, grade_range $range): \stdClass {
         if ($range->is_scale()) {
             // A scale has no meaningful distance, only the same item or not.
             $same = $range->format($comparison->self) === $range->format($comparison->peers);
