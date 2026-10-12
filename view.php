@@ -86,11 +86,16 @@ $isteacher = has_any_capability(
 );
 if ($isteacher) {
     $progress = new progress($peerreview, $manager);
+    $rows = $progress->get_rows();
+    $visible = \mod_peerreview\local\group_access::visible_userids($cm, $context); // Null: no group restriction.
+    if ($visible !== null) {
+        $rows = array_intersect_key($rows, array_flip($visible));
+    }
     echo $renderer->render(new teacher_summary(
         $peerreview,
         $context,
         $cm->id,
-        $progress->summarise($progress->get_rows())
+        $progress->summarise($rows)
     ));
 }
 

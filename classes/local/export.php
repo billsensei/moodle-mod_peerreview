@@ -128,7 +128,11 @@ class export {
               ORDER BY r.lastname, r.firstname, e.lastname, e.firstname, a.id";
         $rs = $DB->get_recordset_sql($sql, ['pr' => $this->peerreview->id]);
         foreach ($rs as $alloc) {
-            if ($this->visibleusers !== null && !in_array((int) $alloc->revieweeid, $this->visibleusers, true)) {
+            if (
+                $this->visibleusers !== null
+                && (!in_array((int) $alloc->revieweeid, $this->visibleusers, true)
+                    || !in_array((int) $alloc->reviewerid, $this->visibleusers, true))
+            ) {
                 continue;
             }
             $row = [

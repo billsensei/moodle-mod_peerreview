@@ -90,6 +90,7 @@ $string['errorscorerange'] = 'Enter a number between 0 and {$a}.';
 $string['errorselfnotallowed'] = 'Self-review is not allowed in this activity ({$a}).';
 $string['errorshiftzero'] = 'The shift cannot be 0.';
 $string['errorstartedchanged'] = 'More of the selected reviews were started while you were on this page. Nothing was deleted; please check again.';
+$string['errorlocktimeout'] = 'Another allocation is being saved for this activity. Please try again in a moment.';
 $string['errorstartedreviews'] = 'These allocations include saved or submitted reviews and can only be deleted after confirmation.';
 $string['eventallocation_created'] = 'Allocation created';
 $string['eventallocation_deleted'] = 'Allocation deleted';

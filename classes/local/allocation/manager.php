@@ -270,6 +270,28 @@ class manager {
      * @return int Number of pairs created.
      */
     public function save(proposal $proposal, int $byuserid, array $deleteids = []): int {
+        // Serialise writers of one activity, so the exists-then-insert check of add_pair() cannot race into the unique index.
+        $lock = \core\lock\lock_config::get_lock_factory('mod_peerreview')
+            ->get_lock('allocations_' . $this->peerreview->id, MINSECS);
+        if (!$lock) {
+            throw new \moodle_exception('errorlocktimeout', 'mod_peerreview');
+        }
+        try {
+            return $this->save_locked($proposal, $byuserid, $deleteids);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * Saves a proposal; the caller holds the activity's allocation lock.
+     *
+     * @param proposal $proposal Pairs to add.
+     * @param int $byuserid Teacher who allocates.
+     * @param array $deleteids Allocation ids to delete first.
+     * @return int Number of allocations created.
+     */
+    private function save_locked(proposal $proposal, int $byuserid, array $deleteids): int {
         global $DB;
 
         $transaction = $DB->start_delegated_transaction();

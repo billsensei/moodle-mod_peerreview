@@ -67,7 +67,6 @@ class mod_peerreview_mod_form extends moodleform_mod {
         $mform->addHelpButton('anonymous', 'anonymous', 'mod_peerreview');
         $mform->addElement('advcheckbox', 'allowselfreview', get_string('allowselfreview', 'mod_peerreview'));
         $mform->addHelpButton('allowselfreview', 'allowselfreview', 'mod_peerreview');
-        $mform->addElement('advcheckbox', 'feedbackreleased', get_string('feedbackreleased', 'mod_peerreview'));
         $mform->addElement('date_time_selector', 'timeopen', get_string('timeopen', 'mod_peerreview'), ['optional' => true]);
         $mform->addElement('date_time_selector', 'timeclose', get_string('timeclose', 'mod_peerreview'), ['optional' => true]);
         // Up to five reminders, each any time from one hour (the reminder task runs hourly) to 52 weeks before the close date;

@@ -174,7 +174,7 @@ final class export_test extends \advanced_testcase {
     }
 
     /**
-     * Only reviews of visible reviewees are exported; an empty list exports nothing.
+     * Only reviews between visible users are exported (reviewer and reviewee); an empty list exports nothing.
      */
     public function test_visible_users_restrict_rows(): void {
         $this->resetAfterTest();
@@ -190,7 +190,7 @@ final class export_test extends \advanced_testcase {
 
         $visible = [(int) $this->students[2]->id, (int) $this->students[3]->id];
         $rows = iterator_to_array((new export($this->peerreview, $this->context, $visible))->get_rows(), false);
-        $this->assertEqualsCanonicalizing(['about two', 'about three'], array_column($rows, 'comment'));
+        $this->assertSame(['about three'], array_column($rows, 'comment'), 'a reviewer outside the groups is not exported either');
 
         $rows = iterator_to_array((new export($this->peerreview, $this->context, []))->get_rows(), false);
         $this->assertSame([], $rows);

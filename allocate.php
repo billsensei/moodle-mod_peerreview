@@ -222,9 +222,11 @@ if ($method === 'csv' && ($iid = optional_param('iid', 0, PARAM_INT)) && optiona
     require_sesskey();
     $reader = new csv_import_reader($iid, 'peerreview_alloc');
     $rows = [];
-    $reader->init();
+    if (!$reader->init()) {
+        $finish(get_string('csvnoheader', 'mod_peerreview'), \core\output\notification::NOTIFY_ERROR); // Upload expired.
+    }
     while ($line = $reader->next()) {
-        $rows[count($rows) + 2] = [$line[0], $line[1]];
+        $rows[count($rows) + 2] = [$line[0], $line[1] ?? ''];
     }
     $reader->close();
     $reader->cleanup(true);
