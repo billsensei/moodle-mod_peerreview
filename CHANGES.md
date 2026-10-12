@@ -1,5 +1,9 @@
 # Changes
 
+## 0.19.1 (beta), 2026-10-12
+
+- Fixed (found in a code review and security audit; nothing exploitable was found, these are small gaps): in a course with **separate groups**, the summary on the activity page now counts only the teacher's own groups, and the review export leaves out reviews whose reviewer or reviewee is outside them. The activity **settings form no longer has a "Feedback released" checkbox**: it let a teacher who can edit the activity release feedback without the *Release feedback* permission; use the Release/Hide feedback button (or the app) instead. Importing an allocation CSV no longer warns on a one-column line and says so when the upload has expired. Saving allocations is now serialised per activity, so two teachers allocating at the same moment cannot hit a database error. Database: no change; the version number changed (run the usual upgrade).
+
 ## 0.19.0 (beta), 2026-10-10
 
 - Moodle app: a marking guide review now offers the guide's **frequently used comments**. Under the remark of each criterion, **Insert frequently used comment** opens a list; the chosen comment is added to that remark on a new line, like the picker on the website. The list only shows when the guide has comments and the review can still be changed. `mod_peerreview_get_review` returns them as `comments` (empty for the simple form and rubrics). Tested with PHPUnit, **not yet in the real Moodle app**. Database: no change; the version number changed (run the usual upgrade).
