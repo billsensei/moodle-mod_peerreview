@@ -1,5 +1,10 @@
 # Changes
 
+## 0.19.4 (beta), 2026-10-12
+
+- Moodle app: the **self-assessment comparison** shows in the app. When feedback is released and a student has a submitted self-review and a submitted peer review, the page shows their self-assessment next to their peers' grade with the same sentence as the website (for example how many points higher they rated themselves), and, for a rubric or marking guide, their score and their peers' average on each criterion. It has been in the code since 0.19.1 but was never listed here. Tested with PHPUnit, **not yet in the real Moodle app**.
+- Repository only: three generated `phpunit.xml` files were committed by mistake and are removed from git (and ignored); they are not part of the plugin. Database: no change; the version number changed (run the usual upgrade).
+
 ## 0.19.3 (beta), 2026-10-12
 
 - Moodle 5.3 is now supported and tested in GitHub CI (PHP 8.3, MariaDB and PostgreSQL), as well as 5.0, 5.1 and 5.2. The plugin code is unchanged; only `supported` in `version.php` moved from 5.0 to 5.2 to 5.0 to 5.3. Database: no change; the version number changed (run the usual upgrade).

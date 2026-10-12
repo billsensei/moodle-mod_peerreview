@@ -355,3 +355,4 @@ If it fails: see the entries for Java, PostgreSQL and ci-local.sh above.
 - 2026-10-09: 0.18.0 release: marking guides in the app; phpcs line length fix; same steps as 0.17.0
 - 2026-10-10: 0.19.0 release: guide comments in the app; same steps as 0.17.0
 - 2026-10-12: 0.19.3 release: Moodle 5.3 in supported and CI; same steps as 0.17.0
+- 2026-10-12: 0.19.4 release: self-assessment comparison in the app documented; git rm --cached phpunit.xml (3 files) + .gitignore; same steps as 0.17.0

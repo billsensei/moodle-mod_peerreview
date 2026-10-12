@@ -1,10 +1,10 @@
 # Roadmap
 
-Ideas and known limitations for versions after 0.19.3. Nothing here is promised.
+Ideas and known limitations for versions after 0.19.4. Nothing here is promised.
 
-## Known limitations in 0.19.3
+## Known limitations in 0.19.4
 
-- **Moodle app: parts open in the browser.** The self-assessment comparison, the full report and the allocation open in the browser (students from 0.15.0, the teacher progress list and release switch from 0.16.0). Not tried in the real app yet.
+- **Moodle app: parts open in the browser.** The full report and the allocation open in the browser (students from 0.15.0, the teacher progress list and release switch from 0.16.0). Not tried in the real app yet.
 - **No files** in comments (the overall comment editor accepts text only).
 
 ## Next
@@ -12,8 +12,7 @@ Ideas and known limitations for versions after 0.19.3. Nothing here is promised.
 In this order, nothing promised:
 
 1. **Try the app on a real phone.** Student reviews (points, scale, rubric, marking guide) and the teacher's progress list have only been tested with PHPUnit and over REST. Fix what looks wrong before adding more to the app.
-2. **Self-assessment comparison in the app.** The last part of the student page that still opens the browser.
-3. **Grade calibration and outliers** (see Ideas), once there is feedback from real classes.
+2. **Grade calibration and outliers** (see Ideas), once there is feedback from real classes.
 
 ## Ideas
 
