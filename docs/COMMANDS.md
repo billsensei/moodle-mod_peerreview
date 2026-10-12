@@ -354,3 +354,4 @@ If it fails: see the entries for Java, PostgreSQL and ci-local.sh above.
 - 2026-10-09: 0.17.0 release: phpunit init + behat.sh start/init after version bump; scripts/ci-local.sh (10 PASS); git pull --rebase (remote README change); git push; gh run view; git tag v0.17.0; git archive zip; gh release create --prerelease
 - 2026-10-09: 0.18.0 release: marking guides in the app; phpcs line length fix; same steps as 0.17.0
 - 2026-10-10: 0.19.0 release: guide comments in the app; same steps as 0.17.0
+- 2026-10-12: 0.19.3 release: Moodle 5.3 in supported and CI; same steps as 0.17.0

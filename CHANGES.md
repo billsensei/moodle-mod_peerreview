@@ -1,5 +1,9 @@
 # Changes
 
+## 0.19.3 (beta), 2026-10-12
+
+- Moodle 5.3 is now supported and tested in GitHub CI (PHP 8.3, MariaDB and PostgreSQL), as well as 5.0, 5.1 and 5.2. The plugin code is unchanged; only `supported` in `version.php` moved from 5.0 to 5.2 to 5.0 to 5.3. Database: no change; the version number changed (run the usual upgrade).
+
 ## 0.19.2 (beta), 2026-10-12
 
 - Tests only: `test_delete_instance` called `course_delete_module()`, which Moodle 5.2 deprecated, so on Moodle 5.3 PHPUnit reported a notice. The test now uses `core_courseformat\local\cmactions::delete` where it exists (5.2 and later) and the old function on 5.0 and 5.1. The plugin code is unchanged. The whole PHPUnit suite also passes on Moodle 5.3 (209 tests). Database: no change; the version number changed (run the usual upgrade).
