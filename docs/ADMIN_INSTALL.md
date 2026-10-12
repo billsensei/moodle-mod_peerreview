@@ -5,7 +5,7 @@
 - Moodle **5.0** (version 2025041400 or later). This release is tested with 5.0 only.
 - PHP 8.2 or 8.3 (Moodle 5.2 and 5.3 need PHP 8.3 or later) and a database Moodle 5.0 supports (tested: MariaDB 11, PostgreSQL 17).
 - The Moodle cron must run for the optional automatic reminder before the close date (scheduled task *Send automatic peer review reminders*, hourly).
-- For the **Moodle app**: *Site administration → Mobile app → Mobile settings* must have **Enable web services for mobile devices** on (it is off by default on a new site). The plugin adds the activity page to the app by itself; nothing else needs setting up. Students get the app page for the simple points or scale form; rubric and marking guide reviews open in the browser.
+- For the **Moodle app**: *Site administration → Mobile app → Mobile settings* must have **Enable web services for mobile devices** on (it is off by default on a new site). The plugin adds the activity page to the app by itself; nothing else needs setting up. Students can do reviews in the app with the simple points or scale form, a rubric or a marking guide; only a grading method from a third-party plugin opens in the browser, and so do the full report and the allocation page for teachers. See `docs/APP_CHECKLIST.md` for what to try on a phone.
 - Command-line access to the server is recommended; the web installer works too.
 
 ## Before you start
