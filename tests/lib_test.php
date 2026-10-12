@@ -118,7 +118,11 @@ final class lib_test extends \advanced_testcase {
         global $DB;
         $this->create_activity(2);
         $this->allocate(1, 2, manager::STATUS_SUBMITTED, 50);
-        course_delete_module($this->cm->id);
+        if (method_exists(\core_courseformat\local\cmactions::class, 'delete')) {
+            (new \core_courseformat\local\cmactions($this->course))->delete($this->cm->id); // Moodle 5.2+.
+        } else {
+            course_delete_module($this->cm->id); // Deprecated since 5.2.
+        }
         $this->assertSame(0, $DB->count_records('peerreview'));
         $this->assertSame(0, $DB->count_records('peerreview_alloc'));
         $this->assertSame(0, $DB->count_records('grade_items', ['itemmodule' => 'peerreview']));
