@@ -1,11 +1,12 @@
 # Roadmap
 
-Ideas and known limitations for versions after 0.19.0. Nothing here is promised.
+Ideas and known limitations for versions after 0.19.2. Nothing here is promised.
 
-## Known limitations in 0.19.0
+## Known limitations in 0.19.2
 
 - **Moodle app: parts open in the browser.** The self-assessment comparison, the full report and the allocation open in the browser (students from 0.15.0, the teacher progress list and release switch from 0.16.0). Not tried in the real app yet.
 - **No files** in comments (the overall comment editor accepts text only).
+- **Moodle 5.3 is tested locally only.** The whole PHPUnit suite passes on a throwaway 5.3 site (0.19.2), but `supported` is still 5.0 to 5.2 and GitHub CI does not run 5.3. Decide whether to add it.
 
 ## Next
 
