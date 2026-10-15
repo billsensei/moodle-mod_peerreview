@@ -1,5 +1,5 @@
 # CI for mod_peerreview: Moodle 5.0, 5.1, 5.2 and 5.3 (PHP 8.2 and 8.3; 5.2 and 5.3 on 8.3 only), with PostgreSQL and MariaDB.
-# Based on moodle-plugin-ci's gha.dist.yml (4.5.11). Run the same checks locally with scripts/ci-local.sh.
+# Based on moodle-plugin-ci's gha.dist.yml (4.5.11).
 name: Moodle Plugin CI
 
 on: [push, pull_request]

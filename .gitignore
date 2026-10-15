@@ -1,1 +1,5 @@
 phpunit.xml
+# Developer-only files: kept on the maintainer machine, not in the repository.
+/CLAUDE.md
+/scripts/
+/docs/COMMANDS.md

@@ -36,7 +36,7 @@ Copy the plugin to `mod/peerreview` in your Moodle directory and run the upgrade
 - [Teacher quick start](docs/TEACHER_QUICKSTART.md): one page, from creating the activity to checking grades.
 - [Student how-to](docs/STUDENT_HOWTO.md): half a page to project in class.
 - [Admin install and upgrade](docs/ADMIN_INSTALL.md)
-- [Design](docs/DESIGN.md) and [commands](docs/COMMANDS.md): for developers.
+- [Design](docs/DESIGN.md): for developers.
 - [Changes](CHANGES.md) and [roadmap](ROADMAP.md).
 
 ## Screenshots (to take)
@@ -55,7 +55,7 @@ Copy the plugin to `mod/peerreview` in your Moodle directory and run the upgrade
 
 ## Development
 
-Run every check locally with `scripts/ci-local.sh` (see [docs/COMMANDS.md](docs/COMMANDS.md)); GitHub Actions runs the same checks on PHP 8.2 and 8.3 with MariaDB and PostgreSQL (`.github/workflows/ci.yml`).
+Run the checks locally with [moodle-plugin-ci](https://moodlehq.github.io/moodle-plugin-ci/); GitHub Actions runs the same checks on PHP 8.2 and 8.3 with MariaDB and PostgreSQL (`.github/workflows/ci.yml`).
 
 ## License
 
