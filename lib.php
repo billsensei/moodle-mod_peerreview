@@ -120,7 +120,9 @@ function peerreview_update_instance(stdClass $data, ?mod_peerreview_mod_form $mf
             'iteminstance' => $data->id, 'itemnumber' => gradeitems::ITEM_RECEIVED,
         ]);
         if ($item && $DB->record_exists_select('grade_grades', 'itemid = ? AND finalgrade IS NOT NULL', [$item->id])) {
-            peerreview_update_grades($DB->get_record('peerreview', ['id' => $data->id], '*', MUST_EXIST));
+            // Straight to the gradebook: these grades were pushed on purpose, even if feedback is still hidden.
+            $current = $DB->get_record('peerreview', ['id' => $data->id], '*', MUST_EXIST);
+            (new \mod_peerreview\local\grade\gradebook($current))->push();
         }
     }
 
@@ -273,7 +275,7 @@ function peerreview_scale_used($peerreviewid, $scaleid): bool {
  * Push grades to the gradebook: the received grade (mean/median of submitted reviews, or the teacher override) and,
  * when enabled, the participation grade. Students with no counted review get no grade rather than zero.
  *
- * Modelled on assign_update_grades() in mod/assign/lib.php.
+ * Modelled on assign_update_grades() in mod/assign/lib.php. Nothing is pushed while feedback is hidden.
  *
  * @param stdClass $peerreview Instance record.
  * @param int $userid Specific user only, 0 for all.
@@ -281,7 +283,11 @@ function peerreview_scale_used($peerreviewid, $scaleid): bool {
  */
 function peerreview_update_grades(stdClass $peerreview, int $userid = 0, bool $nullifnone = true): void {
     peerreview_grade_item_update($peerreview);
-    (new \mod_peerreview\local\grade\gradebook($peerreview))->push($userid);
+    // Core calls this on its own (rename, unlocking the grade item); grades stay out of the gradebook until released.
+    // The teacher's "Push grades" button calls the gradebook class directly.
+    if (!empty($peerreview->feedbackreleased)) {
+        (new \mod_peerreview\local\grade\gradebook($peerreview))->push($userid);
+    }
 }
 
 /**
@@ -386,6 +392,14 @@ function peerreview_reset_userdata($data): array {
             'item' => get_string('resetgradebook', 'mod_peerreview'),
             'error' => false,
         ];
+    }
+
+    if (!empty($data->timeshift)) {
+        shift_course_mod_dates('peerreview', ['timeopen', 'timeclose'], $data->timeshift, $data->courseid);
+        foreach ($DB->get_fieldset_select('peerreview', 'id', 'course = ?', [$data->courseid]) as $id) {
+            (new reminder_schedule((int) $id))->rearm();
+        }
+        $status[] = ['component' => $componentstr, 'item' => get_string('date'), 'error' => false];
     }
     return $status;
 }

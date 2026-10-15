@@ -27,6 +27,7 @@ require_once(__DIR__ . '/lib.php');
 
 use core\output\notification;
 use mod_peerreview\local\feedback;
+use mod_peerreview\local\grade\gradebook;
 use mod_peerreview\local\grade\override;
 use mod_peerreview\local\group_access;
 use mod_peerreview\local\reminder;
@@ -69,10 +70,15 @@ switch ($action) {
         break;
     case 'pushgrades':
         require_capability('mod/peerreview:overridegrade', $context);
-        peerreview_update_grades($peerreview);
+        peerreview_grade_item_update($peerreview);
+        (new gradebook($peerreview))->push(); // Also works before the feedback is released.
         $message = get_string('gradespushed', 'mod_peerreview');
         break;
     case 'revertoverride':
+        $visible = group_access::visible_userids($cm, $context);
+        if ($visible !== null && !in_array($userid, $visible, true)) {
+            throw new required_capability_exception($context, 'moodle/site:accessallgroups', 'nopermissions', '');
+        }
         $reverted = (new override($peerreview, $context))->revert($userid); // Checks the capability.
         $message = get_string($reverted ? 'overridereverted' : 'nooverridetorevert', 'mod_peerreview');
         break;

@@ -98,6 +98,28 @@ final class lib_test extends \advanced_testcase {
     }
 
     /**
+     * A reset with a new course start date moves the open and close dates and arms the reminders again.
+     */
+    public function test_reset_userdata_shifts_the_dates(): void {
+        $this->resetAfterTest();
+        global $DB;
+        $open = time() + DAYSECS;
+        $close = time() + 5 * DAYSECS;
+        $this->create_activity(1, [
+            'timeopen' => $open, 'timeclose' => $close, 'reminderlead' => DAYSECS, 'remindersentfor' => $close,
+        ]);
+
+        $status = peerreview_reset_userdata((object) ['courseid' => $this->course->id, 'timeshift' => 30 * DAYSECS]);
+
+        $row = $DB->get_record('peerreview', ['id' => $this->peerreview->id]);
+        $this->assertEquals($open + 30 * DAYSECS, $row->timeopen);
+        $this->assertEquals($close + 30 * DAYSECS, $row->timeclose);
+        $this->assertSame([DAYSECS => 0], $this->sent_state($this->peerreview->id));
+        $this->assertCount(1, $status);
+        $this->assertFalse($status[0]['error']);
+    }
+
+    /**
      * Reset does nothing unless asked to.
      */
     public function test_reset_options_are_respected(): void {
@@ -145,7 +167,7 @@ final class lib_test extends \advanced_testcase {
             'overriddenby' => $this->teacher->id,
             'timemodified' => time(),
         ]);
-        peerreview_update_grades($this->peerreview);
+        (new \mod_peerreview\local\grade\gradebook($this->peerreview))->push(); // Pushed by the teacher, not released.
 
         $data = clone $this->peerreview;
         $data->instance = $data->id;

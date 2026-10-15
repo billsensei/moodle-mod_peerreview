@@ -219,6 +219,32 @@ final class service_test extends \advanced_testcase {
     }
 
     /**
+     * Rubric: a draft with a criterion or level that is not part of the rubric stores only what belongs to it.
+     */
+    public function test_rubric_draft_ignores_foreign_criteria_and_levels(): void {
+        $this->resetAfterTest();
+        $alloc = $this->setup_activity();
+        $controller = $this->use_rubric();
+        $service = $this->service();
+        $reviewer = $this->students[1]->id;
+        $full = $this->getDataGenerator()->get_plugin_generator('gradingform_rubric')
+            ->get_test_form_data($controller, $alloc->id, 1, 'first', 2, 'second');
+        $firstid = array_key_first($full['criteria']);
+
+        $value = ['criteria' => [
+            $firstid => ['levelid' => 999999, 'remark' => 'kept, level unknown'],
+            987654 => ['levelid' => 1, 'remark' => 'not a criterion of this rubric'],
+            'abc' => ['remark' => 'not even numeric'],
+        ]];
+        $service->save_draft($alloc, $reviewer, ['advancedgrading' => $value]);
+
+        $filling = $service->get_instance($alloc, $reviewer)->get_rubric_filling(true);
+        $this->assertSame([$firstid], array_keys($filling['criteria']));
+        $this->assertSame('kept, level unknown', $filling['criteria'][$firstid]['remark']);
+        $this->assertEmpty($filling['criteria'][$firstid]['levelid'] ?? null);
+    }
+
+    /**
      * Rubric: a half-filled draft is stored without a grade and picked up again; submit completes it.
      */
     public function test_rubric_draft_then_submit(): void {

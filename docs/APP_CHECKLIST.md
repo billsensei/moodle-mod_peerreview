@@ -1,6 +1,6 @@
 # Moodle app checklist (real phone)
 
-What to try in the official Moodle app, because the app pages (0.15.0 to 0.19.5) have only been tested with PHPUnit and over REST. Write down anything that looks wrong: the screen, what you did, what you expected. Screenshots help.
+What to try in the official Moodle app, because the app pages (0.15.0 to 0.19.6) have only been tested with PHPUnit and over REST. Write down anything that looks wrong: the screen, what you did, what you expected. Screenshots help.
 
 ## Setup
 

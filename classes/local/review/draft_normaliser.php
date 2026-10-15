@@ -49,7 +49,7 @@ class draft_normaliser {
         foreach ((array) ($value['criteria'] ?? []) as $criterionid => $record) {
             $remark = trim((string) ($record['remark'] ?? ''));
             $kept = $instance instanceof \gradingform_rubric_instance
-                ? $this->rubric_criterion($record, $remark)
+                ? $this->rubric_criterion($instance, $criterionid, $record, $remark)
                 : $this->guide_criterion($instance, $criterionid, $record, $remark);
             if ($kept !== null) {
                 $criteria[$criterionid] = $kept;
@@ -61,12 +61,23 @@ class draft_normaliser {
     /**
      * A rubric criterion as it can be stored: kept when a level was chosen or a remark written.
      *
+     * The criterion must belong to the rubric and a level that does not belong to that criterion is dropped.
+     *
+     * @param \gradingform_instance $instance The instance.
+     * @param mixed $criterionid Id of the criterion.
      * @param mixed $record Submitted criterion (levelid, remark).
      * @param string $remark The trimmed remark.
      * @return array|null The value to store, null to leave the criterion out.
      */
-    private function rubric_criterion($record, string $remark): ?array {
+    private function rubric_criterion(\gradingform_instance $instance, $criterionid, $record, string $remark): ?array {
+        $criteria = $instance->get_controller()->get_definition()->rubric_criteria;
+        if (!isset($criteria[$criterionid])) {
+            return null;
+        }
         $levelid = isset($record['levelid']) && is_numeric($record['levelid']) ? (int) $record['levelid'] : null;
+        if ($levelid !== null && !isset($criteria[$criterionid]['levels'][$levelid])) {
+            $levelid = null;
+        }
         return $levelid !== null || $remark !== '' ? ['levelid' => $levelid, 'remark' => $remark] : null;
     }
 

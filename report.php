@@ -55,7 +55,13 @@ $PAGE->set_title(get_string('report', 'mod_peerreview'));
 $PAGE->set_heading(format_string($course->fullname));
 $renderer = $PAGE->get_renderer('mod_peerreview');
 
-$manager = new manager($peerreview, $cm->get_course_module_record(), $context);
+$manager = new manager(
+    $peerreview,
+    $cm->get_course_module_record(),
+    $context,
+    group_access::visible_userids($cm, $context),
+    group_access::visible_groupids($cm, $context)
+);
 $progress = new progress($peerreview, $manager);
 $groupid = group_access::resolve($cm, $context, (int) groups_get_activity_group($cm, true));
 $rows = $progress->get_rows($groupid);

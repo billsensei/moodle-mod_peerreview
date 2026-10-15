@@ -27,6 +27,7 @@ namespace mod_peerreview\local\grade;
 
 use mod_peerreview\grades\gradeitems;
 use mod_peerreview\local\allocation\manager;
+use mod_peerreview\local\grade\gradebook;
 use mod_peerreview\tests\activity_trait;
 use PHPUnit\Framework\Attributes\CoversClass;
 
@@ -74,7 +75,7 @@ final class gradebook_test extends \advanced_testcase {
     public function test_grade_items(): void {
         $this->resetAfterTest();
         global $DB;
-        $this->create_activity(2, ['grade' => 80, 'gradeparticipation' => 0]);
+        $this->create_activity(2, ['grade' => 80, 'gradeparticipation' => 0, 'feedbackreleased' => 1]);
         $params = ['courseid' => $this->course->id, 'itemtype' => 'mod', 'itemmodule' => 'peerreview',
             'iteminstance' => $this->peerreview->id];
         $received = \grade_item::fetch($params + ['itemnumber' => gradeitems::ITEM_RECEIVED]);
@@ -94,7 +95,7 @@ final class gradebook_test extends \advanced_testcase {
      */
     public function test_push_received_grades(): void {
         $this->resetAfterTest();
-        $this->create_activity(4, ['allowselfreview' => 1]);
+        $this->create_activity(4, ['allowselfreview' => 1, 'feedbackreleased' => 1]);
         $this->allocate(1, 2, manager::STATUS_SUBMITTED, 80);
         $this->allocate(3, 2, manager::STATUS_SUBMITTED, 60);
         $this->allocate(4, 2, manager::STATUS_DRAFT, 10);      // Draft: not counted.
@@ -114,7 +115,7 @@ final class gradebook_test extends \advanced_testcase {
      */
     public function test_override_reaches_gradebook_and_can_be_reverted(): void {
         $this->resetAfterTest();
-        $this->create_activity(3);
+        $this->create_activity(3, ['feedbackreleased' => 1]);
         $this->allocate(1, 2, manager::STATUS_SUBMITTED, 50);
         $this->allocate(3, 2, manager::STATUS_SUBMITTED, 70);
         $userid = (int) $this->students[2]->id;
@@ -137,7 +138,7 @@ final class gradebook_test extends \advanced_testcase {
      */
     public function test_grade_is_cleared_when_it_no_longer_applies(): void {
         $this->resetAfterTest();
-        $this->create_activity(2);
+        $this->create_activity(2, ['feedbackreleased' => 1]);
         $alloc = $this->allocate(1, 2, manager::STATUS_SUBMITTED, 88);
         $userid = (int) $this->students[2]->id;
         peerreview_update_grades($this->peerreview);
@@ -153,7 +154,7 @@ final class gradebook_test extends \advanced_testcase {
      */
     public function test_participation_grades(): void {
         $this->resetAfterTest();
-        $this->create_activity(4, ['gradeparticipation' => 20]);
+        $this->create_activity(4, ['gradeparticipation' => 20, 'feedbackreleased' => 1]);
         $this->allocate(1, 2, manager::STATUS_SUBMITTED, 70);
         $this->allocate(1, 3, manager::STATUS_SUBMITTED, 70);
         $this->allocate(1, 4, manager::STATUS_SUBMITTED, 70);
@@ -186,5 +187,29 @@ final class gradebook_test extends \advanced_testcase {
         (new gradebook($this->peerreview))->push((int) $this->students[2]->id);
         $this->assertEquals(40.0, $this->gradebook_grade(gradeitems::ITEM_RECEIVED, $this->students[2]->id));
         $this->assertNull($this->gradebook_grade(gradeitems::ITEM_RECEIVED, $this->students[3]->id));
+    }
+
+    /**
+     * The core callback (rename, unlocking the grade item) sends nothing while feedback is hidden; the explicit push
+     * does, and the callback follows once feedback is released.
+     */
+    public function test_core_refresh_respects_the_release_flag(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->create_activity(2);
+        $this->allocate(1, 2, manager::STATUS_SUBMITTED, 75);
+        $userid = (int) $this->students[2]->id;
+
+        peerreview_update_grades($this->peerreview);
+        $this->assertNull($this->gradebook_grade(gradeitems::ITEM_RECEIVED, $userid));
+
+        (new gradebook($this->peerreview))->push();
+        $this->assertEquals(75.0, $this->gradebook_grade(gradeitems::ITEM_RECEIVED, $userid));
+
+        $this->allocate(1, 2, manager::STATUS_SUBMITTED, 75);
+        $DB->set_field('peerreview', 'feedbackreleased', 1, ['id' => $this->peerreview->id]);
+        $this->peerreview->feedbackreleased = 1;
+        peerreview_update_grades($this->peerreview);
+        $this->assertEquals(75.0, $this->gradebook_grade(gradeitems::ITEM_RECEIVED, $userid));
     }
 }

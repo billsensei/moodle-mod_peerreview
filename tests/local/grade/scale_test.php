@@ -59,7 +59,7 @@ final class scale_test extends \advanced_testcase {
      */
     private function create_scale_activity(int $nstudents = 3, array $activity = []): void {
         $this->scaleid = (int) $this->getDataGenerator()->create_scale(['scale' => 'Poor, Fair, Good, Excellent'])->id;
-        $this->create_activity($nstudents, ['grade' => -$this->scaleid] + $activity);
+        $this->create_activity($nstudents, ['grade' => -$this->scaleid, 'feedbackreleased' => 1] + $activity);
     }
 
     /**

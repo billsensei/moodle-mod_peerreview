@@ -1,5 +1,13 @@
 # Changes
 
+## 0.19.6 (beta), 2026-10-15
+
+- Fixed (found in a code review, low severity): **grades no longer reach the gradebook before feedback is released** when Moodle refreshes them on its own (renaming the activity inline, unlocking the grade item). Only the teacher's **Push grades** button sends grades while feedback is hidden. Grades a teacher already pushed are still refreshed when the maximum grade changes.
+- Fixed: in a course with **separate groups**, a teacher without the *access all groups* permission can no longer revert the grade override of a student in another group, and the report's drill-down no longer lists partners from other groups.
+- Fixed: a **rubric draft** now keeps only criteria and levels that belong to the rubric; unknown ones are ignored (a non-numeric criterion used to cause a database error).
+- Fixed: a **course reset with a new start date** now moves the activity's open and close dates and arms the automatic reminders again.
+- Tests: 214 PHPUnit tests pass on Moodle 5.0. Not yet run on 5.1 to 5.3. Database: no change; the version number changed (run the usual upgrade).
+
 ## 0.19.5 (beta), 2026-10-15
 
 - Fixed (found in a code review): in a course with **separate groups**, the **allocation page** now shows only the teacher's own groups. A teacher without the *access all groups* permission (for example the non-editing teacher) no longer sees, exports or deletes allocations of other groups, and cannot allocate students from other groups, by hand, with an automatic method or by CSV import. Before, only the activity page and the review export were limited (0.19.1). Teachers with *access all groups* and activities without separate groups work as before.
