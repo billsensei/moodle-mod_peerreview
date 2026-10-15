@@ -113,6 +113,83 @@ class behat_mod_peerreview extends behat_base {
     }
 
     /**
+     * Give students a grade override.
+     *
+     * Example: the following peer review overrides exist:
+     *   | activity    | user     | grade |
+     *   | Talk review | student3 | 70    |
+     *
+     * @Given /^the following peer review overrides exist:$/
+     * @param TableNode $table Rows: activity, user (username), grade.
+     */
+    public function the_following_peer_review_overrides_exist(TableNode $table): void {
+        global $DB;
+
+        foreach ($table->getHash() as $row) {
+            $cm = $this->get_cm_by_activity_name('peerreview', $row['activity']);
+            $peerreview = $DB->get_record('peerreview', ['id' => $cm->instance], '*', MUST_EXIST);
+            $userid = (int) $DB->get_field('user', 'id', ['username' => $row['user']], MUST_EXIST);
+            (new \mod_peerreview\local\grade\override($peerreview, \context_module::instance($cm->id)))
+                ->set($userid, (float) $row['grade'], 'Set by a test', get_admin()->id);
+        }
+    }
+
+    /**
+     * Send the "revert override" request of the logged-in user for a student and say what came back.
+     *
+     * The revert needs the session key and a POST-free link, so the request is made from the browser session. The
+     * outcome is "refused" for a "no permissions" error page, otherwise "accepted". The step leaves the error page.
+     *
+     * Example: Then reverting the peer review override of "student3" in "Talk review" should be "refused"
+     *
+     * @Then /^reverting the peer review override of "(?P<user>[^"]*)" in "(?P<name>[^"]*)" should be "(?P<out>accepted|refused)"$/
+     * @param string $user The student.
+     * @param string $name Activity name.
+     * @param string $out "accepted" or "refused".
+     */
+    public function reverting_the_peer_review_override_should_be(string $user, string $name, string $out): void {
+        global $DB;
+
+        $this->require_javascript();
+        $cm = $this->get_cm_by_activity_name('peerreview', $name);
+        $userid = (int) $DB->get_field('user', 'id', ['username' => $user], MUST_EXIST);
+        $sesskey = $this->evaluate_script('return M.cfg.sesskey;');
+        $url = new moodle_url('/mod/peerreview/action.php', [
+            'id' => $cm->id, 'action' => 'revertoverride', 'user' => $userid, 'sesskey' => $sesskey,
+        ]);
+        $this->getSession()->visit($this->locate_path($url->out_as_local_url(false)));
+        $error = $this->getSession()->getPage()->find('xpath', "//div[@data-rel='fatalerror']");
+        $errortext = $error ? $error->getText() : '';
+        // Leave the error page first, or the exception check after this step would fail it.
+        $this->getSession()->visit($this->locate_path('/'));
+        $refused = str_contains($errortext, 'Sorry, but you do not currently have permissions to do that');
+        if ($refused !== ($out === 'refused')) {
+            throw new ExpectationException("Expected the revert for $user to be $out.", $this->getSession());
+        }
+    }
+
+    /**
+     * Check whether a student still has a grade override.
+     *
+     * Example: Then the peer review override of "student3" in "Talk review" should "exist"
+     *
+     * @Then /^the peer review override of "(?P<user>[^"]*)" in "(?P<name>[^"]*)" should "(?P<state>exist|not exist)"$/
+     * @param string $user The student.
+     * @param string $name Activity name.
+     * @param string $state "exist" or "not exist".
+     */
+    public function the_peer_review_override_should(string $user, string $name, string $state): void {
+        global $DB;
+
+        $cm = $this->get_cm_by_activity_name('peerreview', $name);
+        $userid = (int) $DB->get_field('user', 'id', ['username' => $user], MUST_EXIST);
+        $exists = $DB->record_exists('peerreview_override', ['peerreviewid' => $cm->instance, 'userid' => $userid]);
+        if ($exists !== ($state === 'exist')) {
+            throw new ExpectationException("The override of $user should $state.", $this->getSession());
+        }
+    }
+
+    /**
      * Open a review page that must be refused, check the "no permissions" error, then leave the error page.
      *
      * Behat fails any step that ends on an exception page, so the check and the navigation away happen in one step.
