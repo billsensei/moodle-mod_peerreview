@@ -103,6 +103,28 @@ final class student_data_test extends \advanced_testcase {
     }
 
     /**
+     * Feedback links carry an opaque reference, not the allocation id, and only the reviewee can resolve it.
+     */
+    public function test_feedback_reference_is_opaque_and_private(): void {
+        $this->resetAfterTest();
+        $this->create_activity(3, ['anonymous' => 1, 'feedbackreleased' => 1]);
+        $this->allocate(1, 2, manager::STATUS_SUBMITTED, 80);
+        $this->allocate(3, 2, manager::STATUS_SUBMITTED, 60);
+        $data = new student_data($this->peerreview, $this->manager);
+
+        $received = $data->get_received($this->students[2]->id);
+        $this->assertCount(2, $received);
+        foreach ($received as $review) {
+            $this->assertDoesNotMatchRegularExpression('/^\d+$/', $review->ref);
+            $alloc = $data->find_received_by_ref($review->ref, (int) $this->students[2]->id);
+            $this->assertEquals($review->id, $alloc->id);
+            // Another student cannot use the reference.
+            $this->assertNull($data->find_received_by_ref($review->ref, (int) $this->students[1]->id));
+        }
+        $this->assertNull($data->find_received_by_ref('0123456789abcdef0123', (int) $this->students[2]->id));
+    }
+
+    /**
      * By-name activity: reviewers are shown. Self review is flagged and never anonymous.
      */
     public function test_by_name_and_self_review(): void {

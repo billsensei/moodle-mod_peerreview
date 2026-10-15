@@ -55,6 +55,8 @@ class manager {
      * @param \stdClass $peerreview Activity record.
      * @param \stdClass $cm Course module record (needs id, course, groupmode, groupingid).
      * @param \context_module $context Module context.
+     * @param int[]|null $visibleusers Only these users can be allocated or seen (separate groups), null for everyone.
+     * @param int[]|null $visiblegroups Only these groups are offered, null for all.
      */
     public function __construct(
         /** @var \stdClass Activity record. */
@@ -62,7 +64,11 @@ class manager {
         /** @var \stdClass Course module record. */
         private readonly \stdClass $cm,
         /** @var \context_module Module context. */
-        private readonly \context_module $context
+        private readonly \context_module $context,
+        /** @var int[]|null Users the caller may work with, null for everyone. */
+        private readonly ?array $visibleusers = null,
+        /** @var int[]|null Groups the caller may work with, null for all. */
+        private readonly ?array $visiblegroups = null
     ) {
     }
 
@@ -87,6 +93,9 @@ class manager {
                 0,
                 true
             );
+            if ($this->visibleusers !== null) {
+                $this->students = array_intersect_key($this->students, array_flip($this->visibleusers));
+            }
         }
         return $this->students;
     }
@@ -98,15 +107,26 @@ class manager {
      */
     public function get_group_members(): array {
         $students = $this->get_students();
-        $groups = groups_get_all_groups($this->cm->course, 0, $this->cm->groupingid, 'g.id, g.name', true);
         $result = [];
-        foreach ($groups as $group) {
+        foreach ($this->get_course_groups() as $group) {
+            if ($this->visiblegroups !== null && !in_array((int) $group->id, $this->visiblegroups, true)) {
+                continue;
+            }
             $members = array_values(array_intersect(array_keys($group->members), array_keys($students)));
             if ($members) {
                 $result[$group->id] = $members;
             }
         }
         return $result;
+    }
+
+    /**
+     * Groups of the course (restricted to the activity's grouping) with their members.
+     *
+     * @return \stdClass[] Group records with members.
+     */
+    private function get_course_groups(): array {
+        return groups_get_all_groups($this->cm->course, 0, $this->cm->groupingid, 'g.id, g.name', true);
     }
 
     /**
@@ -141,7 +161,11 @@ class manager {
         if ($this->primarygroup === null) {
             $this->primarygroup = [];
             if ((int) $this->cm->groupmode !== NOGROUPS) {
-                $members = $this->get_group_members();
+                // Always from all groups, so the stored group does not depend on who allocates.
+                $members = [];
+                foreach ($this->get_course_groups() as $group) {
+                    $members[(int) $group->id] = array_keys($group->members);
+                }
                 ksort($members);
                 foreach (array_reverse($members, true) as $groupid => $userids) {
                     foreach ($userids as $memberid) {
@@ -154,13 +178,31 @@ class manager {
     }
 
     /**
-     * All allocation records of this activity.
+     * All allocation records of this activity (only those between visible users when the caller is restricted).
      *
      * @return \stdClass[] id => record.
      */
     public function get_allocations(): array {
         global $DB;
-        return $DB->get_records('peerreview_alloc', ['peerreviewid' => $this->peerreview->id], 'id');
+        $records = $DB->get_records('peerreview_alloc', ['peerreviewid' => $this->peerreview->id], 'id');
+        if ($this->visibleusers === null) {
+            return $records;
+        }
+        $visible = array_flip($this->visibleusers);
+        return array_filter($records, static fn($r) => isset($visible[$r->reviewerid]) && isset($visible[$r->revieweeid]));
+    }
+
+    /**
+     * Keep only the allocation ids the caller may see.
+     *
+     * @param int[] $ids Allocation ids.
+     * @return int[]
+     */
+    private function limit_ids(array $ids): array {
+        if ($this->visibleusers === null) {
+            return $ids;
+        }
+        return array_values(array_intersect($ids, array_keys($this->get_allocations())));
     }
 
     /**
@@ -383,7 +425,7 @@ class manager {
      * @return int
      */
     public function count_started(array $ids): int {
-        return (new deleter($this->peerreview, $this->context))->count_started($ids);
+        return (new deleter($this->peerreview, $this->context))->count_started($this->limit_ids($ids));
     }
 
     /**
@@ -395,6 +437,6 @@ class manager {
      * @throws \moodle_exception If started reviews are included and not confirmed.
      */
     public function delete(array $ids, bool $confirmedstarted): int {
-        return (new deleter($this->peerreview, $this->context))->delete($ids, $confirmedstarted);
+        return (new deleter($this->peerreview, $this->context))->delete($this->limit_ids($ids), $confirmedstarted);
     }
 }

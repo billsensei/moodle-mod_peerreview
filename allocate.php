@@ -34,6 +34,7 @@ require_once($CFG->libdir . '/csvlib.class.php');
 use mod_peerreview\form\allocate_form;
 use mod_peerreview\local\allocation\csv;
 use mod_peerreview\local\allocation\manager;
+use mod_peerreview\local\group_access;
 use mod_peerreview\output\allocation_list;
 use mod_peerreview\output\allocation_preview;
 
@@ -46,7 +47,13 @@ require_login($course, false, $cm);
 $context = context_module::instance($cm->id);
 require_capability('mod/peerreview:allocate', $context);
 
-$manager = new manager($peerreview, $cm->get_course_module_record(), $context);
+$manager = new manager(
+    $peerreview,
+    $cm->get_course_module_record(),
+    $context,
+    group_access::visible_userids($cm, $context),
+    group_access::visible_groupids($cm, $context)
+);
 $csv = new csv($peerreview, $manager);
 $students = $manager->get_students();
 $pageurl = new moodle_url('/mod/peerreview/allocate.php', ['id' => $cm->id]);

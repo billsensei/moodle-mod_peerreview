@@ -1,5 +1,12 @@
 # Changes
 
+## 0.19.5 (beta), 2026-10-15
+
+- Fixed (found in a code review): in a course with **separate groups**, the **allocation page** now shows only the teacher's own groups. A teacher without the *access all groups* permission (for example the non-editing teacher) no longer sees, exports or deletes allocations of other groups, and cannot allocate students from other groups, by hand, with an automatic method or by CSV import. Before, only the activity page and the review export were limited (0.19.1). Teachers with *access all groups* and activities without separate groups work as before.
+- Fixed (found in a code review): with **anonymous reviewers**, the links to received feedback no longer contain the allocation id. Ids are created reviewer by reviewer, so their order could help a student guess who reviewed them. The links (website and Moodle app) now carry an opaque reference that only works for the student who received the review. **Old `feedback.php?...&alloc=` links stop working**; open the feedback again from the activity page.
+- Release zip: it no longer contains the development files (`CLAUDE.md`, `scripts/`, `docs/COMMANDS.md`, `.github`). They held local paths and a development password and are not meant for a production site. **Zips of 0.17.0 to 0.19.4 contain them**; use this release, or delete those files from an installed copy.
+- Tests: 211 PHPUnit tests pass on Moodle 5.0. Not yet run on 5.1 to 5.3, and the feedback link not yet tried in the real Moodle app. Database: no change; the version number changed (run the usual upgrade).
+
 ## 0.19.4 (beta), 2026-10-12
 
 - Moodle app: the **self-assessment comparison** shows in the app. When feedback is released and a student has a submitted self-review and a submitted peer review, the page shows their self-assessment next to their peers' grade with the same sentence as the website (for example how many points higher they rated themselves), and, for a rubric or marking guide, their score and their peers' average on each criterion. It has been in the code since 0.19.1 but was never listed here. Tested with PHPUnit, **not yet in the real Moodle app**.

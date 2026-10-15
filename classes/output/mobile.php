@@ -274,7 +274,7 @@ class mobile {
                 'comment' => trim((string) $review->feedback) === ''
                     ? ''
                     : format_text($review->feedback, $review->feedbackformat, ['context' => $context]),
-                'url' => (new \moodle_url('/mod/peerreview/feedback.php', ['id' => $cmid, 'alloc' => $review->id]))->out(false),
+                'url' => (new \moodle_url('/mod/peerreview/feedback.php', ['id' => $cmid, 'ref' => $review->ref]))->out(false),
             ];
         }
         return $items;

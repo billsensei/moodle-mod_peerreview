@@ -116,8 +116,12 @@ class csv {
             manager::STATUS_DRAFT => get_string('statusdraft', 'mod_peerreview'),
             manager::STATUS_SUBMITTED => get_string('statussubmitted', 'mod_peerreview'),
         ];
+        $allowed = $this->manager->get_allocations();
         $rs = $DB->get_recordset_sql($sql, ['pr' => $this->peerreview->id]);
         foreach ($rs as $row) {
+            if (!isset($allowed[$row->id])) {
+                continue;
+            }
             yield (object) [
                 'reviewer' => $row->reviewer,
                 'reviewee' => $row->reviewee,

@@ -28,9 +28,10 @@ require_once('../../config.php');
 
 use mod_peerreview\local\allocation\manager;
 use mod_peerreview\local\review\service;
+use mod_peerreview\local\student_data;
 
 $id = required_param('id', PARAM_INT); // Course module id.
-$allocid = required_param('alloc', PARAM_INT);
+$ref = required_param('ref', PARAM_ALPHANUM);
 
 [$course, $cm] = get_course_and_cm_from_cmid($id, 'peerreview');
 $peerreview = $DB->get_record('peerreview', ['id' => $cm->instance], '*', MUST_EXIST);
@@ -39,11 +40,13 @@ $context = context_module::instance($cm->id);
 require_capability('mod/peerreview:view', $context);
 
 $service = new service($peerreview, $context);
-$alloc = $service->get_allocation($allocid);
 $viewurl = new moodle_url('/mod/peerreview/view.php', ['id' => $cm->id]);
 
-// Only the reviewee, only submitted reviews, only once released.
-if ((int) $alloc->revieweeid !== (int) $USER->id || (int) $alloc->status !== manager::STATUS_SUBMITTED) {
+// Only the reviewee, only submitted reviews, only once released. The link carries an opaque reference, not the
+// allocation id, because ids follow the order of allocation and could reveal an anonymous reviewer.
+$data = new student_data($peerreview, new manager($peerreview, $cm->get_course_module_record(), $context));
+$alloc = $data->find_received_by_ref($ref, (int) $USER->id);
+if (!$alloc) {
     throw new moodle_exception('errornotyourfeedback', 'mod_peerreview', $viewurl);
 }
 if (!$peerreview->feedbackreleased) {
@@ -59,7 +62,7 @@ if ($isself) {
     $who = get_string('anonymousreviewer', 'mod_peerreview');
 }
 
-$PAGE->set_url('/mod/peerreview/feedback.php', ['id' => $cm->id, 'alloc' => $alloc->id]);
+$PAGE->set_url('/mod/peerreview/feedback.php', ['id' => $cm->id, 'ref' => $ref]);
 $PAGE->set_title(format_string($peerreview->name));
 $PAGE->set_heading(format_string($course->fullname));
 

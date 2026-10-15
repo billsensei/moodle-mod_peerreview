@@ -94,6 +94,7 @@ class student_data {
             }
             $received[] = (object) [
                 'id' => $alloc->id,
+                'ref' => self::feedback_ref((int) $this->peerreview->id, (int) $alloc->id, $userid),
                 'grade' => $alloc->grade,
                 'feedback' => $alloc->feedback,
                 'feedbackformat' => $alloc->feedbackformat,
@@ -104,6 +105,44 @@ class student_data {
         // A stable order unrelated to who reviewed, so the order cannot reveal reviewers.
         usort($received, static fn($a, $b) => crc32($a->id . '_' . $userid) <=> crc32($b->id . '_' . $userid));
         return $received;
+    }
+
+    /**
+     * Opaque reference to one received review, used in feedback links instead of the allocation id.
+     *
+     * Allocation ids are created reviewer by reviewer, so in an anonymous activity the ids of the reviews a student
+     * received could reveal who wrote them. The reference does not follow allocation order.
+     *
+     * @param int $peerreviewid Activity id.
+     * @param int $allocid Allocation id.
+     * @param int $userid The reviewee.
+     * @return string
+     */
+    public static function feedback_ref(int $peerreviewid, int $allocid, int $userid): string {
+        return substr(hash_hmac('sha256', "feedback|$peerreviewid|$allocid|$userid", get_site_identifier()), 0, 20);
+    }
+
+    /**
+     * The allocation record behind a feedback reference, among the user's submitted received reviews.
+     *
+     * @param string $ref Value from feedback_ref().
+     * @param int $userid The reviewee.
+     * @return \stdClass|null Null when the reference matches none of the user's received reviews.
+     */
+    public function find_received_by_ref(string $ref, int $userid): ?\stdClass {
+        global $DB;
+
+        $records = $DB->get_records('peerreview_alloc', [
+            'peerreviewid' => $this->peerreview->id,
+            'revieweeid' => $userid,
+            'status' => manager::STATUS_SUBMITTED,
+        ]);
+        foreach ($records as $alloc) {
+            if (hash_equals(self::feedback_ref((int) $this->peerreview->id, (int) $alloc->id, $userid), $ref)) {
+                return $alloc;
+            }
+        }
+        return null;
     }
 
     /**

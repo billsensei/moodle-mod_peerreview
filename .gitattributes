@@ -1,0 +1,7 @@
+# Development files stay in the repository but are left out of release zips (git archive).
+/CLAUDE.md export-ignore
+/scripts export-ignore
+/docs/COMMANDS.md export-ignore
+/.github export-ignore
+/.gitignore export-ignore
+/.gitattributes export-ignore

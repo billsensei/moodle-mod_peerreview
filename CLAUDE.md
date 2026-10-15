@@ -1,6 +1,6 @@
 # CLAUDE.md — mod_peerreview
 
-Moodle activity plugin: lightweight in-class peer assessment. Original spec: `~/test/prompt.md` (phased; all phases 0-9 are done). Now maintained as a beta: release 0.19.4, `MATURITY_BETA`, `requires` 5.0, `supported = [500, 503]` (5.0 to 5.3). See `CHANGES.md` for what each release did and `ROADMAP.md` for ideas (nothing promised).
+Moodle activity plugin: lightweight in-class peer assessment. Original spec: `~/test/prompt.md` (phased; all phases 0-9 are done). Now maintained as a beta: release 0.19.5, `MATURITY_BETA`, `requires` 5.0, `supported = [500, 503]` (5.0 to 5.3). See `CHANGES.md` for what each release did and `ROADMAP.md` for ideas (nothing promised).
 
 ## Paths
 - Plugin repo: **`~/test/moodle/mod/peerreview`** (the real directory; `~/dev/mod_peerreview` is a convenience symlink to it). It must NOT be the other way round: entry scripts do `require('../../config.php')`, which breaks when the plugin is only a symlink into dirroot. Never edit Moodle core.
@@ -31,5 +31,5 @@ Moodle activity plugin: lightweight in-class peer assessment. Original spec: `~/
 - GitHub CI (`.github/workflows/ci.yml`): Moodle 5.0, 5.1, 5.2, 5.3 x PHP 8.2/8.3 x MariaDB/PostgreSQL. 5.2 and 5.3 run on PHP 8.3 only (5.2: its composer.lock needs 8.3; 5.3: composer.json requires it). Check runs with `gh run list` / `gh run view <id>`.
 - After ANY `version.php` change, re-init both test sites before `scripts/ci-local.sh`: `php admin/tool/phpunit/cli/init.php`, then `mod/peerreview/scripts/behat.sh start && ... init` (run the helper scripts from `mod/peerreview`, they are not in the Moodle root). Run `source scripts/env.sh` first or every check fails with exit 127.
 - `$plugin->supported` is a range of exactly two values `[min, max]`, not a list.
-- Release steps: update `CHANGES.md` and `version.php`, `scripts/ci-local.sh` (all 10 PASS), commit, push, **wait for GitHub CI to pass**, then tag `vX.Y.Z` and `gh release create` as a pre-release with a zip built by `git archive --format=zip --prefix=peerreview/ -o ~/test/mod_peerreview_X.Y.Z.zip vX.Y.Z`. Never tag or publish before CI is green (0.11.0 shipped broken that way and was withdrawn).
+- Release steps: update `CHANGES.md` and `version.php`, `scripts/ci-local.sh` (all 10 PASS), commit, push, **wait for GitHub CI to pass**, then tag `vX.Y.Z` and `gh release create` as a pre-release with a zip built by `git archive --format=zip --prefix=peerreview/ -o ~/test/mod_peerreview_X.Y.Z.zip vX.Y.Z` (`.gitattributes` leaves out CLAUDE.md, scripts/, docs/COMMANDS.md and .github; check with `unzip -l` that none of them is in the zip). Never tag or publish before CI is green (0.11.0 shipped broken that way and was withdrawn).
 - Before acting on an old `learn.md` entry, check the code and `git log -S`: the log can lag behind the repo.

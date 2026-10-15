@@ -74,4 +74,19 @@ class group_access {
         }
         return array_values($userids);
     }
+
+    /**
+     * Ids of the groups the current user may work with, or null when not restricted.
+     *
+     * @param \stdClass|\cm_info $cm Course module.
+     * @param \context_module $context Module context.
+     * @return int[]|null Group ids, null for no restriction.
+     */
+    public static function visible_groupids(\stdClass|\cm_info $cm, \context_module $context): ?array {
+        $separate = (int) groups_get_activity_groupmode($cm) === SEPARATEGROUPS;
+        if (!$separate || has_capability('moodle/site:accessallgroups', $context)) {
+            return null;
+        }
+        return array_map('intval', array_keys(groups_get_activity_allowed_groups($cm)));
+    }
 }

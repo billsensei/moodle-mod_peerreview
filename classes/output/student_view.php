@@ -163,7 +163,7 @@ class student_view implements \renderable, \templatable {
                 'comment' => format_text($review->feedback ?? '', $review->feedbackformat, ['context' => $this->context]),
                 'url' => (new \moodle_url('/mod/peerreview/feedback.php', [
                     'id' => $this->cmid,
-                    'alloc' => $review->id,
+                    'ref' => $review->ref,
                 ]))->out(false),
             ];
         }

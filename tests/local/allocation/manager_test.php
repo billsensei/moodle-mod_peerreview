@@ -321,4 +321,54 @@ final class manager_test extends \advanced_testcase {
         $this->assertCount(0, $plan->proposal->pairs);
         $this->assertSame('warnselfnotallowed', $plan->proposal->warnings[0][0]);
     }
+
+    /**
+     * A manager limited to some users and groups only offers, shows and deletes those.
+     */
+    public function test_restricted_manager(): void {
+        $this->resetAfterTest();
+        [$full, $course, $instance, $s, $teacher] = $this->setup_course(4, ['allowselfreview' => 1], SEPARATEGROUPS);
+        $generator = $this->getDataGenerator();
+        $mine = $generator->create_group(['courseid' => $course->id]);
+        $other = $generator->create_group(['courseid' => $course->id]);
+        $generator->create_group_member(['groupid' => $mine->id, 'userid' => $s[1]->id]);
+        $generator->create_group_member(['groupid' => $mine->id, 'userid' => $s[2]->id]);
+        $generator->create_group_member(['groupid' => $other->id, 'userid' => $s[3]->id]);
+        $generator->create_group_member(['groupid' => $other->id, 'userid' => $s[4]->id]);
+        $full->add_manual($s[1]->id, [$s[2]->id], $teacher->id);
+        $full->add_manual($s[3]->id, [$s[4]->id], $teacher->id);
+        $full->add_manual($s[1]->id, [$s[3]->id], $teacher->id); // Across the groups.
+
+        $cm = get_coursemodule_from_id('peerreview', $instance->cmid, 0, false, MUST_EXIST);
+        $peerreview = $GLOBALS['DB']->get_record('peerreview', ['id' => $instance->id], '*', MUST_EXIST);
+        $limited = new manager(
+            $peerreview,
+            $cm,
+            \context_module::instance($cm->id),
+            [(int) $s[1]->id, (int) $s[2]->id],
+            [(int) $mine->id]
+        );
+
+        $this->assertEqualsCanonicalizing([(int) $s[1]->id, (int) $s[2]->id], array_keys($limited->get_students()));
+        $this->assertSame([(int) $mine->id], array_keys($limited->get_group_members()));
+        $this->assertCount(1, $limited->get_allocations());
+        $this->assertCount(3, $full->get_allocations());
+
+        // Students of the other group cannot be allocated.
+        [$created, $errors] = $limited->add_manual($s[1]->id, [$s[4]->id], $teacher->id);
+        $this->assertSame(0, $created);
+        $this->assertSame([(int) $s[4]->id => 'errornotstudent'], $errors);
+
+        // Automatic methods only touch the visible students.
+        $plan = $limited->plan('self', [], 1);
+        foreach ($plan->proposal->pairs as [$reviewer, $reviewee]) {
+            $this->assertContains($reviewer, [(int) $s[1]->id, (int) $s[2]->id]);
+        }
+        $this->assertCount(2, $plan->proposal->pairs);
+
+        // Deleting an allocation outside the restriction does nothing.
+        $all = array_keys($full->get_allocations());
+        $this->assertSame(1, $limited->delete($all, true));
+        $this->assertCount(2, $full->get_allocations());
+    }
 }
