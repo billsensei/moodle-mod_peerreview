@@ -37,6 +37,7 @@ Feedback (the teacher releases it from the phone or the website):
 - [ ] A comment written in the browser with formatting shows readable text.
 - [ ] **Self-assessment comparison** (activity A, and C or D for the per-criterion lines): heading, your score, your peers' score, and one sentence ("You rated yourself 30 points higher ..."). For C and D every criterion shows You / Peers (average) / Max. Check long criterion names wrap. A student with no self-review sees no comparison.
 - [ ] Your own self-review appears in the list as "You (self-review)" and does not change the grade shown.
+- [ ] Feedback opens from the activity page in the app (the link carries an opaque reference, from 0.19.5). An old `feedback.php?...&alloc=` link fails with a normal Moodle error, not a blank page.
 
 ## Teacher (log in as the teacher)
 
@@ -45,6 +46,7 @@ Feedback (the teacher releases it from the phone or the website):
 - [ ] **Release feedback**, then **Hide feedback**: the state text changes at once, and the website agrees. Try it as a teacher without the *Release feedback* permission: the button is not offered.
 - [ ] **Report** and **Allocate** open the website (browser or in-app browser) and work after logging in.
 - [ ] A teacher who is not a student does not see review lists of their own.
+- [ ] Release gate (0.19.6): with feedback hidden, rename the activity inline on the course page, then check the gradebook on the website. No peer grades appear and the student still sees no grade in the app. After **Push grades** the grades appear.
 
 ## Other
 
