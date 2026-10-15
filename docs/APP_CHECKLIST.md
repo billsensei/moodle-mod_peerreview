@@ -1,12 +1,12 @@
 # Moodle app checklist (real phone)
 
-What to try in the official Moodle app, because the app pages (0.15.0 to 0.19.4) have only been tested with PHPUnit and over REST. Write down anything that looks wrong: the screen, what you did, what you expected. Screenshots help.
+What to try in the official Moodle app, because the app pages (0.15.0 to 0.19.5) have only been tested with PHPUnit and over REST. Write down anything that looks wrong: the screen, what you did, what you expected. Screenshots help.
 
 ## Setup
 
-1. On the computer: `source scripts/env.sh`, then `scripts/dev-site.sh start`. The phone must reach `http://192.168.1.4:8000` (same Wi-Fi). `wwwroot` in `config.php` must match that address.
+1. Use a Moodle 5.0 to 5.3 site with the plugin installed that the phone can reach (for example a test site on the same Wi-Fi). `wwwroot` in `config.php` must match the address the phone uses, not `localhost`.
 2. *Site administration → Mobile app → Mobile settings*: **Enable web services for mobile devices** on.
-3. Install the Moodle app (Android or iOS) and log in to the site address above. Use `http`, so expect a warning about an insecure connection.
+3. Install the Moodle app (Android or iOS) and log in to the site address. If the test site uses plain `http`, expect a warning about an insecure connection.
 4. Make one course with these activities, and at least 4 students plus 1 teacher (log in as a student on the phone, as the teacher in a browser):
    - A: simple points (grade 100), **Allow self-review** on.
    - B: a scale.
@@ -56,5 +56,5 @@ Feedback (the teacher releases it from the phone or the website):
 
 ## If something fails
 
-- Blank page or spinner: the app's debug log (*More → Settings → General → Debug*, or *More → Settings → About → Logs*) and `~/test/moodle-web.log` on the computer.
+- Blank page or spinner: the app's debug log (*More → Settings → General → Debug*, or *More → Settings → About → Logs*) and the web server and PHP error log on the computer.
 - Check the same action works in the website. If the website works and the app does not, it is an app page bug: report which review method and which step.
