@@ -98,6 +98,7 @@ class save_review extends external_api {
         [, $cm] = get_course_and_cm_from_cmid($params['cmid'], 'peerreview');
         $context = \context_module::instance($cm->id);
         self::validate_context($context);
+        require_capability('mod/peerreview:review', $context);
 
         $peerreview = $DB->get_record('peerreview', ['id' => $cm->instance], '*', MUST_EXIST);
         $service = new service($peerreview, $context);
