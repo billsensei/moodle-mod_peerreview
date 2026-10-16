@@ -1,5 +1,10 @@
 # Changes
 
+## 0.19.7 (beta), 2026-10-17
+
+- No change to how the plugin works. New Behat tests (`override_groups.feature`) check that, in a course with **separate groups**, a teacher without the *access all groups* permission cannot revert the grade override of a student in another group and does not see partners from other groups in the report's drill-down. They fail on 0.19.5 and earlier and pass on 0.19.6 and later.
+- Database: no change; the version number changed (run the usual upgrade).
+
 ## 0.19.6 (beta), 2026-10-15
 
 - Fixed (found in a code review, low severity): **grades no longer reach the gradebook before feedback is released** when Moodle refreshes them on its own (renaming the activity inline, unlocking the grade item). Only the teacher's **Push grades** button sends grades while feedback is hidden. Grades a teacher already pushed are still refreshed when the maximum grade changes.
