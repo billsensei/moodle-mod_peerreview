@@ -98,4 +98,18 @@ final class csv_test extends \advanced_testcase {
         $this->assertSame($s[2]->username, $rows[0]->reviewee);
         $this->assertSame(get_string('statusnew', 'mod_peerreview'), $rows[0]->status);
     }
+
+    /**
+     * A username that a spreadsheet would read as a formula gets an apostrophe in the export.
+     */
+    public function test_export_rows_neutralise_formulas(): void {
+        global $DB;
+        $this->resetAfterTest();
+        [$manager, $csv, $s, $teacher] = $this->setup_course(2);
+        $DB->set_field('user', 'username', '-formula', ['id' => $s[1]->id]);
+        $manager->add_manual($s[1]->id, [$s[2]->id], $teacher->id);
+        $rows = iterator_to_array($csv->export_rows(), false);
+        $this->assertSame("'-formula", $rows[0]->reviewer);
+        $this->assertSame($s[2]->username, $rows[0]->reviewee);
+    }
 }

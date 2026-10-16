@@ -24,6 +24,8 @@
 
 namespace mod_peerreview\local\allocation;
 
+use mod_peerreview\local\export;
+
 /**
  * CSV import (validation into a proposal) and export of the allocations of one activity.
  *
@@ -123,8 +125,8 @@ class csv {
                 continue;
             }
             yield (object) [
-                'reviewer' => $row->reviewer,
-                'reviewee' => $row->reviewee,
+                'reviewer' => export::safe_cell($row->reviewer),
+                'reviewee' => export::safe_cell($row->reviewee),
                 'status' => $statuses[$row->status],
             ];
         }

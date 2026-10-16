@@ -62,7 +62,7 @@ class export {
      * @param string $text Cell text.
      * @return string
      */
-    private static function safe_cell(string $text): string {
+    public static function safe_cell(string $text): string {
         return preg_match('/^[=+\-@\t\r]/', $text) ? "'" . $text : $text;
     }
 
