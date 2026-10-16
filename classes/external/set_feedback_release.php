@@ -67,6 +67,7 @@ class set_feedback_release extends external_api {
         [, $cm] = get_course_and_cm_from_cmid($cmid, 'peerreview');
         $context = \context_module::instance($cm->id);
         self::validate_context($context);
+        require_capability('mod/peerreview:releasefeedback', $context);
 
         $peerreview = $DB->get_record('peerreview', ['id' => $cm->instance], '*', MUST_EXIST);
         feedback::set_released($peerreview, $context, $released);
