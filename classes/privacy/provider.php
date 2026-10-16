@@ -64,6 +64,7 @@ class provider implements
         $collection->add_database_table('peerreview_alloc', [
             'reviewerid' => 'privacy:metadata:peerreview_alloc:reviewerid',
             'revieweeid' => 'privacy:metadata:peerreview_alloc:revieweeid',
+            'groupid' => 'privacy:metadata:peerreview_alloc:groupid',
             'status' => 'privacy:metadata:peerreview_alloc:status',
             'grade' => 'privacy:metadata:peerreview_alloc:grade',
             'feedback' => 'privacy:metadata:peerreview_alloc:feedback',
@@ -82,6 +83,7 @@ class provider implements
         ], 'privacy:metadata:peerreview_override');
 
         $collection->add_subsystem_link('core_grading', [], 'privacy:metadata:core_grading');
+        $collection->add_subsystem_link('core_message', [], 'privacy:metadata:core_message');
 
         $collection->add_user_preference('mod_peerreview_autorefresh', 'privacy:metadata:preference:autorefresh');
 

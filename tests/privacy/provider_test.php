@@ -142,13 +142,13 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
     }
 
     /**
-     * Metadata covers both tables, the grading subsystem and the preference.
+     * Metadata covers both tables, the grading and messaging subsystems and the preference.
      */
     public function test_get_metadata(): void {
         $items = provider::get_metadata(new collection('mod_peerreview'))->get_collection();
         $names = array_map(fn($item) => $item->get_name(), $items);
         $this->assertEqualsCanonicalizing(
-            ['peerreview_alloc', 'peerreview_override', 'core_grading', 'mod_peerreview_autorefresh'],
+            ['peerreview_alloc', 'peerreview_override', 'core_grading', 'core_message', 'mod_peerreview_autorefresh'],
             $names
         );
     }
