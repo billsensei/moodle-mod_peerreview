@@ -1,5 +1,11 @@
 # Changes
 
+## Unreleased
+
+- Hardening (found in a security review, low severity, no change in behaviour): the web service functions **`mod_peerreview_set_feedback_release`** and **`mod_peerreview_save_review`** now check the `releasefeedback` and `review` permissions in their own code, as the other functions already did. Before, the same checks happened one level deeper (in `feedback::set_released()` and `service::require_can_edit()`), so nobody gained or lost access.
+- Privacy (found in a privacy audit): the privacy metadata now also lists the **group** of an allocation and the **reminder notifications** sent through the messaging subsystem. Nothing is stored differently; only the description of the stored data was incomplete.
+- Hardening (found in a security review, low severity): the **allocation CSV export** now neutralises usernames that start with `=`, `+`, `-` or `@`, like the review export already did, so a spreadsheet cannot read them as a formula. Such a username gets an apostrophe in front, so it will not match when that file is imported again. The permission **Allocate reviews** (`mod/peerreview:allocate`) is now marked as a data-loss risk in the role editor, because it can delete started reviews. Run the usual upgrade for the permission flag to take effect.
+
 ## 0.19.7 (beta), 2026-10-17
 
 - No change to how the plugin works. New Behat tests (`override_groups.feature`) check that, in a course with **separate groups**, a teacher without the *access all groups* permission cannot revert the grade override of a student in another group and does not see partners from other groups in the report's drill-down. They fail on 0.19.5 and earlier and pass on 0.19.6 and later.
