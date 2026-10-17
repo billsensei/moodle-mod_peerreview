@@ -1,8 +1,8 @@
 # Roadmap
 
-Ideas and known limitations for versions after 0.19.7. Nothing here is promised.
+Ideas and known limitations for versions after 0.19.8. Nothing here is promised.
 
-## Known limitations in 0.19.7
+## Known limitations in 0.19.8
 
 - **Moodle app: parts open in the browser.** The full report and the allocation open in the browser (students from 0.15.0, the teacher progress list and release switch from 0.16.0). Not tried in the real app yet.
 - **No files** in comments (the overall comment editor accepts text only).
