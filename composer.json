@@ -1,0 +1,18 @@
+{
+    "name": "billsensei/moodle-mod_peerreview",
+    "description": "Peer review activity for Moodle: students assess each other with scores, scales, rubrics or marking guides.",
+    "type": "moodle-mod",
+    "license": "GPL-3.0-or-later",
+    "homepage": "https://github.com/billsensei/moodle-mod_peerreview",
+    "support": {
+        "issues": "https://github.com/billsensei/moodle-mod_peerreview/issues",
+        "source": "https://github.com/billsensei/moodle-mod_peerreview"
+    },
+    "require": {
+        "php": ">=8.2",
+        "composer/installers": "^1.0 || ^2.0"
+    },
+    "extra": {
+        "installer-name": "peerreview"
+    }
+}
