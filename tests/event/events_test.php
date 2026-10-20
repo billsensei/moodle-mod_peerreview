@@ -204,6 +204,8 @@ final class events_test extends \advanced_testcase {
      *
      * @param string $class Event class.
      * @param array $data Creation data apart from the context.
+     *
+     * @dataProvider invalid_event_provider
      */
     #[DataProvider('invalid_event_provider')]
     public function test_validation(string $class, array $data): void {

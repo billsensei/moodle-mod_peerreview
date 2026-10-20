@@ -79,6 +79,8 @@ final class random_allocator_test extends \basic_testcase {
      *
      * @param int $size
      * @param int $n
+     *
+     * @dataProvider balance_provider
      */
     #[DataProvider('balance_provider')]
     public function test_fresh_is_exactly_balanced(int $size, int $n): void {

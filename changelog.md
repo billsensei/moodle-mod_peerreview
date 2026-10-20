@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Tests: the three tests that use data providers (`events_test`, `random_allocator_test`, `aggregator_test`) now also carry `@dataProvider` annotations, so they run on Moodle 4.5 (PHPUnit 9.6) as well as 5.x. The plugin still declares Moodle 5.0 as its minimum; on 4.5.15 (PHP 8.4, minimum version lowered by hand) the 215 PHPUnit tests and 17 Behat scenarios pass. Database: no change.
+
 ## 0.19.9 (beta), 2026-10-20
 
 - Phones: a **rubric with four levels and several criteria** was wider than a 425 px screen, so the remark boxes of the review form and the received-feedback page were cut off at the right edge. Below 576 px the rubric now stacks: the criterion name, its levels (up to four across, wrapping if needed) and then the remark box at full width. Only `styles.css` changed; no database or version change.

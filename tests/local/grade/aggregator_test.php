@@ -65,6 +65,8 @@ final class aggregator_test extends \advanced_testcase {
      * @param float[] $grades
      * @param int $method
      * @param float|null $expected
+     *
+     * @dataProvider maths_provider
      */
     #[DataProvider('maths_provider')]
     public function test_aggregate(array $grades, int $method, ?float $expected): void {
