@@ -37,6 +37,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
  * @category   test
  * @copyright  2026 Bill <wrwjpn@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * @covers \mod_peerreview\local\grade\aggregator
  */
 #[CoversClass(aggregator::class)]
 final class aggregator_test extends \advanced_testcase {

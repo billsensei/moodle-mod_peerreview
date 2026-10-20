@@ -37,6 +37,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @category   test
  * @copyright  2026 Bill <wrwjpn@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * @covers \mod_peerreview\local\student_data
+ * @covers \mod_peerreview\output\student_view
  */
 #[CoversClass(student_data::class)]
 #[CoversClass(student_view::class)]

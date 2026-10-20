@@ -29,6 +29,12 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @category   test
  * @copyright  2026 Bill <wrwjpn@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * @covers \mod_peerreview\external\get_review
+ * @covers \mod_peerreview\external\save_review
+ * @covers \mod_peerreview\external\set_feedback_release
+ * @covers \mod_peerreview\external\view_peerreview
+ * @covers \mod_peerreview\output\mobile
  */
 #[CoversClass(get_review::class)]
 #[CoversClass(save_review::class)]

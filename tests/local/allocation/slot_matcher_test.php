@@ -34,6 +34,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @category   test
  * @copyright  2026 Bill <wrwjpn@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * @covers \mod_peerreview\local\allocation\slot_matcher
  */
 #[CoversClass(slot_matcher::class)]
 final class slot_matcher_test extends \basic_testcase {

@@ -37,6 +37,10 @@ use PHPUnit\Framework\Attributes\CoversFunction;
  * @category   test
  * @copyright  2026 Bill <wrwjpn@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * @covers ::peerreview_reset_userdata
+ * @covers ::peerreview_update_instance
+ * @covers ::peerreview_get_coursemodule_info
  */
 #[CoversFunction('peerreview_reset_userdata')]
 #[CoversFunction('peerreview_update_instance')]

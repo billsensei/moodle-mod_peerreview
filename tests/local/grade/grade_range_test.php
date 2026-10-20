@@ -25,6 +25,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @category   test
  * @copyright  2026 Bill <wrwjpn@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * @covers \mod_peerreview\local\grade\grade_range
  */
 #[CoversClass(grade_range::class)]
 final class grade_range_test extends \advanced_testcase {

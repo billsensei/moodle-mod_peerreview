@@ -35,6 +35,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
  * @category   test
  * @copyright  2026 Bill <wrwjpn@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * @covers \mod_peerreview\local\allocation\random_allocator
+ * @covers \mod_peerreview\local\allocation\proposal
  */
 #[CoversClass(random_allocator::class)]
 #[CoversClass(proposal::class)]

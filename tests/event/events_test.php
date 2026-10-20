@@ -40,6 +40,15 @@ use PHPUnit\Framework\Attributes\DataProvider;
  * @category   test
  * @copyright  2026 Bill <wrwjpn@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * @covers \mod_peerreview\event\allocation_created
+ * @covers \mod_peerreview\event\allocation_deleted
+ * @covers \mod_peerreview\event\course_module_instance_list_viewed
+ * @covers \mod_peerreview\event\course_module_viewed
+ * @covers \mod_peerreview\event\feedback_released
+ * @covers \mod_peerreview\event\grade_overridden
+ * @covers \mod_peerreview\event\review_submitted
+ * @covers \mod_peerreview\event\review_updated
  */
 #[CoversClass(allocation_created::class)]
 #[CoversClass(allocation_deleted::class)]

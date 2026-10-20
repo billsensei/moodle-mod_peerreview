@@ -46,6 +46,9 @@ require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
  * @category   test
  * @copyright  2026 Bill <wrwjpn@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * @covers \backup_peerreview_activity_structure_step
+ * @covers \restore_peerreview_activity_structure_step
  */
 #[CoversClass(\backup_peerreview_activity_structure_step::class)]
 #[CoversClass(\restore_peerreview_activity_structure_step::class)]
