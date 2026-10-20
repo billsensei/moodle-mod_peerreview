@@ -67,3 +67,33 @@ a.mod_peerreview-card:focus-visible {
     min-height: 44px;
     line-height: 44px;
 }
+
+/* Phones: stack the rubric (criterion, then its levels two per row, then the remark) so the form is never wider than the screen. */
+@media (max-width: 575.98px) {
+    .path-mod-peerreview .gradingform_rubric table.criteria,
+    .path-mod-peerreview .gradingform_rubric table.criteria > tbody,
+    .path-mod-peerreview .gradingform_rubric table.criteria > tbody > tr.criterion,
+    .path-mod-peerreview .gradingform_rubric table.criteria > tbody > tr.criterion > td,
+    .path-mod-peerreview .gradingform_rubric table.criteria table.levels,
+    .path-mod-peerreview .gradingform_rubric table.criteria table.levels > tbody {
+        display: block;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .path-mod-peerreview .gradingform_rubric table.criteria table.levels > tbody > tr {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .path-mod-peerreview .gradingform_rubric table.criteria td.level {
+        flex: 1 1 40%;
+        min-width: 0;
+        overflow-wrap: anywhere;
+        width: auto;
+    }
+
+    .path-mod-peerreview .gradingform_rubric table.criteria td.remark textarea {
+        width: 100%;
+    }
+}

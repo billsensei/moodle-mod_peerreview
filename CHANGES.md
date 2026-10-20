@@ -2,6 +2,10 @@
 
 What changed or was added since the previous version of `mod_peerreview`. The full history is in [changelog.md](changelog.md).
 
+## Unreleased
+
+- Phones: a **rubric with four levels and several criteria** was wider than a 425 px screen, so the remark boxes of the review form and the received-feedback page were cut off at the right edge. Below 576 px the rubric now stacks: the criterion name, its levels (up to four across, wrapping if needed) and then the remark box at full width. Only `styles.css` changed; no database or version change.
+
 ## 0.19.8 (beta), 2026-10-17
 
 - Hardening (found in a security review, low severity, no change in behaviour): the web service functions **`mod_peerreview_set_feedback_release`** and **`mod_peerreview_save_review`** now check the `releasefeedback` and `review` permissions in their own code, as the other functions already did. Before, the same checks happened one level deeper (in `feedback::set_released()` and `service::require_can_edit()`), so nobody gained or lost access.
