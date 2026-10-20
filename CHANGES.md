@@ -5,6 +5,7 @@ What changed or was added since the previous version of `mod_peerreview`. The fu
 ## Unreleased
 
 - Tests: the three tests that use data providers (`events_test`, `random_allocator_test`, `aggregator_test`) now also carry `@dataProvider` annotations, so they run on Moodle 4.5 (PHPUnit 9.6) as well as 5.x. The plugin still declares Moodle 5.0 as its minimum; on 4.5.15 (PHP 8.4, minimum version lowered by hand) the 215 PHPUnit tests and 17 Behat scenarios pass. Database: no change.
+- Moodle 4.5: the minimum Moodle version is now **4.5** (`$plugin->requires` 2024100700, `supported` 405 to 503) and CI also runs on `MOODLE_405_STABLE`. Before, the site refused to install the plugin below Moodle 5.0. No plugin code changed for it. Database: no change.
 
 ## 0.19.9 (beta), 2026-10-20
 

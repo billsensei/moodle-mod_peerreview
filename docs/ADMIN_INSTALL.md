@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Moodle **5.0** (version 2025041400 or later). This release is tested with 5.0 only.
+- Moodle **4.5** (version 2024100700 or later) up to 5.3.
 - PHP 8.2 or 8.3 (Moodle 5.2 and 5.3 need PHP 8.3 or later) and a database Moodle 5.0 supports (tested: MariaDB 11, PostgreSQL 17).
 - The Moodle cron must run for the optional automatic reminder before the close date (scheduled task *Send automatic peer review reminders*, hourly).
 - For the **Moodle app**: *Site administration → Mobile app → Mobile settings* must have **Enable web services for mobile devices** on (it is off by default on a new site). The plugin adds the activity page to the app by itself; nothing else needs setting up. Students can do reviews in the app with the simple points or scale form, a rubric or a marking guide; only a grading method from a third-party plugin opens in the browser, and so do the full report and the allocation page for teachers. See `docs/APP_CHECKLIST.md` for what to try on a phone.
@@ -87,7 +87,7 @@ Default capabilities ("Teachers" means both Teacher and Non-editing teacher; cha
 | Symptom | Likely cause and fix |
 |---|---|
 | "Peer review" is not listed after copying the files | The folder is not called `mod/peerreview`, or it contains an extra folder level. `mod/peerreview/version.php` must exist. |
-| Upgrade stops: "requires Moodle 2025041400" | The site is older than Moodle 5.0. Upgrade Moodle first. |
+| Upgrade stops: "requires Moodle 2024100700" | The site is older than Moodle 4.5. Upgrade Moodle first. |
 | Strings show as `[[something]]` or old text | Purge the caches. |
 | Students see no "Reviews to do" | The teacher has not allocated reviewers yet, or the students lack `mod/peerreview:review`. |
 | Grades do not appear in the gradebook | Grades are sent only when a teacher presses **Push grades to gradebook** on the report page. |
