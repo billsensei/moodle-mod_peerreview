@@ -27,6 +27,7 @@ namespace mod_peerreview\local\allocation;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(rotation_order::class)]
 /**
  * Tests for the order of students used by the rotation method.
  *
@@ -37,7 +38,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  *
  * @covers \mod_peerreview\local\allocation\rotation_order
  */
-#[CoversClass(rotation_order::class)]
 final class rotation_order_test extends \basic_testcase {
     /**
      * Four students whose ids, first names, last names and usernames all sort differently.

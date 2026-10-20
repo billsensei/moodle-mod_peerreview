@@ -33,6 +33,14 @@ use mod_peerreview\local\review\service;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 
+#[CoversClass(allocation_created::class)]
+#[CoversClass(allocation_deleted::class)]
+#[CoversClass(course_module_instance_list_viewed::class)]
+#[CoversClass(course_module_viewed::class)]
+#[CoversClass(feedback_released::class)]
+#[CoversClass(grade_overridden::class)]
+#[CoversClass(review_submitted::class)]
+#[CoversClass(review_updated::class)]
 /**
  * Every event is triggered by the real code path, carries the right data and can be described, linked and restored.
  *
@@ -50,14 +58,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
  * @covers \mod_peerreview\event\review_submitted
  * @covers \mod_peerreview\event\review_updated
  */
-#[CoversClass(allocation_created::class)]
-#[CoversClass(allocation_deleted::class)]
-#[CoversClass(course_module_instance_list_viewed::class)]
-#[CoversClass(course_module_viewed::class)]
-#[CoversClass(feedback_released::class)]
-#[CoversClass(grade_overridden::class)]
-#[CoversClass(review_submitted::class)]
-#[CoversClass(review_updated::class)]
 final class events_test extends \advanced_testcase {
     use \mod_peerreview\tests\activity_trait;
 

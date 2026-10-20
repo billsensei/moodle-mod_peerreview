@@ -30,6 +30,7 @@ use mod_peerreview\local\allocation\manager;
 use mod_peerreview\local\review\service;
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(export::class)]
 /**
  * Tests for the review export.
  *
@@ -40,7 +41,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  *
  * @covers \mod_peerreview\local\export
  */
-#[CoversClass(export::class)]
 final class export_test extends \advanced_testcase {
     use activity_trait;
 

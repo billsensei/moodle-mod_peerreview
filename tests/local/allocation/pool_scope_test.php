@@ -27,6 +27,7 @@ namespace mod_peerreview\local\allocation;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(pool_scope::class)]
 /**
  * Tests for the scope of an automatic allocation method.
  *
@@ -37,7 +38,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  *
  * @covers \mod_peerreview\local\allocation\pool_scope
  */
-#[CoversClass(pool_scope::class)]
 final class pool_scope_test extends \basic_testcase {
     /**
      * Allocation records as the database returns them (string ids and status).

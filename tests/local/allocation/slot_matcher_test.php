@@ -27,6 +27,7 @@ namespace mod_peerreview\local\allocation;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(slot_matcher::class)]
 /**
  * Tests for the matching of missing reviews when topping up allocations.
  *
@@ -37,7 +38,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  *
  * @covers \mod_peerreview\local\allocation\slot_matcher
  */
-#[CoversClass(slot_matcher::class)]
 final class slot_matcher_test extends \basic_testcase {
     /**
      * Run the matcher and return the pairs it placed.

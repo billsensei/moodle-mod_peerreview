@@ -27,6 +27,7 @@ namespace mod_peerreview\local\allocation;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(csv::class)]
 /**
  * Tests for the CSV import and export of allocations (database level).
  *
@@ -37,7 +38,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  *
  * @covers \mod_peerreview\local\allocation\csv
  */
-#[CoversClass(csv::class)]
 final class csv_test extends \advanced_testcase {
     /**
      * Create a course with students and one activity.

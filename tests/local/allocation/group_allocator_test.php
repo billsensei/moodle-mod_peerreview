@@ -27,6 +27,7 @@ namespace mod_peerreview\local\allocation;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(group_allocator::class)]
 /**
  * Tests for the all-to-all and rotation allocators.
  *
@@ -37,7 +38,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  *
  * @covers \mod_peerreview\local\allocation\group_allocator
  */
-#[CoversClass(group_allocator::class)]
 final class group_allocator_test extends \basic_testcase {
     /**
      * Everyone reviews every other member of their own group, and nobody else.

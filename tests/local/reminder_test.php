@@ -19,6 +19,8 @@ namespace mod_peerreview\local;
 use mod_peerreview\local\allocation\manager;
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(reminder::class)]
+#[CoversClass(\mod_peerreview\event\reminders_sent::class)]
 /**
  * Tests for the reminders.
  *
@@ -30,8 +32,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @covers \mod_peerreview\local\reminder
  * @covers \mod_peerreview\event\reminders_sent
  */
-#[CoversClass(reminder::class)]
-#[CoversClass(\mod_peerreview\event\reminders_sent::class)]
 final class reminder_test extends \advanced_testcase {
     use \mod_peerreview\tests\activity_trait;
 

@@ -37,6 +37,7 @@ use mod_peerreview\local\grade\override;
 use mod_peerreview\local\review\service;
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(provider::class)]
 /**
  * Privacy provider tests.
  *
@@ -51,7 +52,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  *
  * @covers \mod_peerreview\privacy\provider
  */
-#[CoversClass(provider::class)]
 final class provider_test extends \core_privacy\tests\provider_testcase {
     use \mod_peerreview\tests\activity_trait;
 

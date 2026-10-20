@@ -30,6 +30,8 @@ use mod_peerreview\local\review\service;
 use mod_peerreview\tests\activity_trait;
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(custom_completion::class)]
+#[CoversClass(\mod_peerreview\local\completion::class)]
 /**
  * Tests for the "submit all assigned reviews" completion rule.
  *
@@ -41,8 +43,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @covers \mod_peerreview\completion\custom_completion
  * @covers \mod_peerreview\local\completion
  */
-#[CoversClass(custom_completion::class)]
-#[CoversClass(\mod_peerreview\local\completion::class)]
 final class custom_completion_test extends \advanced_testcase {
     use activity_trait;
 

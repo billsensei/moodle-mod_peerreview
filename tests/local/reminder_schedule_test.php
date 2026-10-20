@@ -27,6 +27,7 @@ namespace mod_peerreview\local;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(reminder_schedule::class)]
 /**
  * Tests for the automatic reminders of an activity.
  *
@@ -37,7 +38,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  *
  * @covers \mod_peerreview\local\reminder_schedule
  */
-#[CoversClass(reminder_schedule::class)]
 final class reminder_schedule_test extends \advanced_testcase {
     use \mod_peerreview\tests\activity_trait;
 

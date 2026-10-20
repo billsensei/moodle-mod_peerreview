@@ -28,6 +28,8 @@ namespace mod_peerreview\local\allocation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 
+#[CoversClass(random_allocator::class)]
+#[CoversClass(proposal::class)]
 /**
  * Tests for the balanced random allocator.
  *
@@ -39,8 +41,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
  * @covers \mod_peerreview\local\allocation\random_allocator
  * @covers \mod_peerreview\local\allocation\proposal
  */
-#[CoversClass(random_allocator::class)]
-#[CoversClass(proposal::class)]
 final class random_allocator_test extends \basic_testcase {
     /**
      * Assert basic legality of a set of pairs.

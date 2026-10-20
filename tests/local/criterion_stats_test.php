@@ -29,6 +29,7 @@ use mod_peerreview\tests\activity_trait;
 use mod_peerreview\local\review\service;
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(criterion_stats::class)]
 /**
  * Tests for the criterion statistics.
  *
@@ -39,7 +40,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  *
  * @covers \mod_peerreview\local\criterion_stats
  */
-#[CoversClass(criterion_stats::class)]
 final class criterion_stats_test extends \advanced_testcase {
     use activity_trait;
 

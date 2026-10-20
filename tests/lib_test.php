@@ -30,6 +30,9 @@ use mod_peerreview\local\review\service;
 use mod_peerreview\tests\activity_trait;
 use PHPUnit\Framework\Attributes\CoversFunction;
 
+#[CoversFunction('peerreview_reset_userdata')]
+#[CoversFunction('peerreview_update_instance')]
+#[CoversFunction('peerreview_get_coursemodule_info')]
 /**
  * Tests for the module library callbacks.
  *
@@ -42,9 +45,6 @@ use PHPUnit\Framework\Attributes\CoversFunction;
  * @covers ::peerreview_update_instance
  * @covers ::peerreview_get_coursemodule_info
  */
-#[CoversFunction('peerreview_reset_userdata')]
-#[CoversFunction('peerreview_update_instance')]
-#[CoversFunction('peerreview_get_coursemodule_info')]
 final class lib_test extends \advanced_testcase {
     use activity_trait;
 

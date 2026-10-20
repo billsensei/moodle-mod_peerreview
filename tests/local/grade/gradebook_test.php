@@ -31,6 +31,7 @@ use mod_peerreview\local\grade\gradebook;
 use mod_peerreview\tests\activity_trait;
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(gradebook::class)]
 /**
  * Tests for pushing grades to the gradebook.
  *
@@ -41,7 +42,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  *
  * @covers \mod_peerreview\local\grade\gradebook
  */
-#[CoversClass(gradebook::class)]
 final class gradebook_test extends \advanced_testcase {
     use activity_trait;
 

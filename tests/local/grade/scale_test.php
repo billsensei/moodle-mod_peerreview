@@ -23,6 +23,10 @@ use mod_peerreview\local\review\service;
 use mod_peerreview\tests\activity_trait;
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(grade_range::class)]
+#[CoversClass(gradebook::class)]
+#[CoversClass(override::class)]
+#[CoversClass(service::class)]
 /**
  * An activity graded with a scale: reviews, aggregation, override, gradebook and display.
  *
@@ -36,10 +40,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @covers \mod_peerreview\local\grade\override
  * @covers \mod_peerreview\local\review\service
  */
-#[CoversClass(grade_range::class)]
-#[CoversClass(gradebook::class)]
-#[CoversClass(override::class)]
-#[CoversClass(service::class)]
 final class scale_test extends \advanced_testcase {
     use activity_trait;
 

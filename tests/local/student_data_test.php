@@ -30,6 +30,8 @@ use mod_peerreview\local\allocation\manager;
 use mod_peerreview\output\student_view;
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(student_data::class)]
+#[CoversClass(student_view::class)]
 /**
  * Tests for what students see, in particular reviewer anonymity.
  *
@@ -41,8 +43,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @covers \mod_peerreview\local\student_data
  * @covers \mod_peerreview\output\student_view
  */
-#[CoversClass(student_data::class)]
-#[CoversClass(student_view::class)]
 final class student_data_test extends \advanced_testcase {
     use activity_trait;
 

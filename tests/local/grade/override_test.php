@@ -28,6 +28,7 @@ namespace mod_peerreview\local\grade;
 use mod_peerreview\tests\activity_trait;
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(override::class)]
 /**
  * Tests for grade overrides.
  *
@@ -38,7 +39,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  *
  * @covers \mod_peerreview\local\grade\override
  */
-#[CoversClass(override::class)]
 final class override_test extends \advanced_testcase {
     use activity_trait;
 

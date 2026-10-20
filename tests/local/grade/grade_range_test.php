@@ -18,6 +18,7 @@ namespace mod_peerreview\local\grade;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(grade_range::class)]
 /**
  * Tests for the points-or-scale grade range.
  *
@@ -28,7 +29,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  *
  * @covers \mod_peerreview\local\grade\grade_range
  */
-#[CoversClass(grade_range::class)]
 final class grade_range_test extends \advanced_testcase {
     /**
      * Create a four item scale and return its range.

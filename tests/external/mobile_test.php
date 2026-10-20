@@ -22,6 +22,11 @@ use mod_peerreview\output\mobile;
 use mod_peerreview\tests\activity_trait;
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(get_review::class)]
+#[CoversClass(save_review::class)]
+#[CoversClass(set_feedback_release::class)]
+#[CoversClass(view_peerreview::class)]
+#[CoversClass(mobile::class)]
 /**
  * Tests for the Moodle app support: the three web services and the data of the app page.
  *
@@ -36,11 +41,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @covers \mod_peerreview\external\view_peerreview
  * @covers \mod_peerreview\output\mobile
  */
-#[CoversClass(get_review::class)]
-#[CoversClass(save_review::class)]
-#[CoversClass(set_feedback_release::class)]
-#[CoversClass(view_peerreview::class)]
-#[CoversClass(mobile::class)]
 final class mobile_test extends \advanced_testcase {
     use activity_trait;
 

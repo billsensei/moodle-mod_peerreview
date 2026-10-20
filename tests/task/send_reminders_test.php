@@ -20,6 +20,8 @@ use mod_peerreview\local\allocation\manager;
 use mod_peerreview\local\reminder_schedule;
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(send_reminders::class)]
+#[CoversClass(\mod_peerreview\local\reminder::class)]
 /**
  * Tests for the automatic reminders before the close date.
  *
@@ -31,8 +33,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @covers \mod_peerreview\task\send_reminders
  * @covers \mod_peerreview\local\reminder
  */
-#[CoversClass(send_reminders::class)]
-#[CoversClass(\mod_peerreview\local\reminder::class)]
 final class send_reminders_test extends \advanced_testcase {
     use \mod_peerreview\tests\activity_trait;
 

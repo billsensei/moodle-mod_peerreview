@@ -27,6 +27,8 @@ namespace mod_peerreview\local\allocation;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(manager::class)]
+#[CoversClass(deleter::class)]
 /**
  * Tests for the allocation manager (database level).
  *
@@ -38,8 +40,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @covers \mod_peerreview\local\allocation\manager
  * @covers \mod_peerreview\local\allocation\deleter
  */
-#[CoversClass(manager::class)]
-#[CoversClass(deleter::class)]
 final class manager_test extends \advanced_testcase {
     /**
      * Create a course with students and one activity.

@@ -30,6 +30,7 @@ use mod_peerreview\local\allocation\manager;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 
+#[CoversClass(aggregator::class)]
 /**
  * Tests for grade aggregation.
  *
@@ -40,7 +41,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
  *
  * @covers \mod_peerreview\local\grade\aggregator
  */
-#[CoversClass(aggregator::class)]
 final class aggregator_test extends \advanced_testcase {
     use activity_trait;
 

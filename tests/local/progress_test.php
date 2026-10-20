@@ -29,6 +29,8 @@ use mod_peerreview\tests\activity_trait;
 use mod_peerreview\local\allocation\manager;
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(progress::class)]
+#[CoversClass(group_access::class)]
 /**
  * Tests for progress figures and group access.
  *
@@ -40,8 +42,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @covers \mod_peerreview\local\progress
  * @covers \mod_peerreview\local\group_access
  */
-#[CoversClass(progress::class)]
-#[CoversClass(group_access::class)]
 final class progress_test extends \advanced_testcase {
     use activity_trait;
 

@@ -30,6 +30,8 @@ use mod_peerreview\tests\activity_trait;
 use mod_peerreview\local\allocation\manager;
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(get_progress::class)]
+#[CoversClass(set_feedback_release::class)]
 /**
  * Tests for the mod_peerreview web services.
  *
@@ -41,8 +43,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @covers \mod_peerreview\external\get_progress
  * @covers \mod_peerreview\external\set_feedback_release
  */
-#[CoversClass(get_progress::class)]
-#[CoversClass(set_feedback_release::class)]
 final class external_test extends \advanced_testcase {
     use activity_trait;
 

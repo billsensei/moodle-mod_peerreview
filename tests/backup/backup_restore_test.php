@@ -39,6 +39,8 @@ global $CFG;
 require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
 require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
 
+#[CoversClass(\backup_peerreview_activity_structure_step::class)]
+#[CoversClass(\restore_peerreview_activity_structure_step::class)]
 /**
  * Round trip tests: an activity with a rubric, reviews and an override is backed up and restored into another course.
  *
@@ -50,8 +52,6 @@ require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
  * @covers \backup_peerreview_activity_structure_step
  * @covers \restore_peerreview_activity_structure_step
  */
-#[CoversClass(\backup_peerreview_activity_structure_step::class)]
-#[CoversClass(\restore_peerreview_activity_structure_step::class)]
 final class backup_restore_test extends \advanced_testcase {
     use \mod_peerreview\tests\activity_trait;
 

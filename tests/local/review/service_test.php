@@ -28,6 +28,9 @@ namespace mod_peerreview\local\review;
 use mod_peerreview\local\allocation\manager;
 use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(service::class)]
+#[CoversClass(grading_access::class)]
+#[CoversClass(draft_normaliser::class)]
 /**
  * Tests for the review service.
  *
@@ -40,9 +43,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @covers \mod_peerreview\local\review\grading_access
  * @covers \mod_peerreview\local\review\draft_normaliser
  */
-#[CoversClass(service::class)]
-#[CoversClass(grading_access::class)]
-#[CoversClass(draft_normaliser::class)]
 final class service_test extends \advanced_testcase {
     /** @var \stdClass Activity record. */
     private \stdClass $peerreview;
