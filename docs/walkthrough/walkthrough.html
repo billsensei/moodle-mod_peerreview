@@ -1,0 +1,62 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Peer review: a walk-through</title>
+<style>
+@page { size: A4; margin: 14mm 15mm; }
+body { font-family: "DejaVu Sans", sans-serif; font-size: 9.5pt; line-height: 1.5; color: #212529; }
+h1 { font-size: 22pt; margin: 0 0 8pt; }
+h2 { font-size: 13pt; color: #0f6cbf; margin: 0 0 6pt; }
+p { margin: 0 0 7pt; }
+section { break-before: page; }
+.cover { padding-top: 55mm; }
+.sub { color: #6c757d; font-size: 10.5pt; margin-bottom: 18pt; }
+ol { margin: 8pt 0 0; padding-left: 20pt; line-height: 1.7; }
+figure { margin: 8pt 0; text-align: center; }
+figure img, .stack img { box-shadow: 0 0 4px rgba(0,0,0,.3); max-width: 100%; max-height: 215mm; width: auto; }
+.stack { text-align: center; margin: 8pt 0; }
+.stack img { max-width: 72%; }
+.phones { display: flex; justify-content: center; gap: 24pt; align-items: flex-start; }
+.phones figure { margin: 0; }
+.phones img { max-height: 200mm; max-width: 70mm; }
+figcaption { font-size: 8pt; color: #6c757d; margin-top: 4pt; }
+</style></head><body>
+<div class="cover"><h1>Peer review (mod_peerreview)</h1>
+<p class="sub">A walk-through with screenshots. Plugin version 0.20.0 on Moodle 4.5 and 5.x, 31 October 2026.</p>
+<p>The screenshots come from a demo course, <b>Communication Skills 101</b>: one teacher, eight students, one activity <b>Presentations week 5</b> with a three-criterion rubric (Content, Delivery, Slides) and three reviews to give per student. Everything is shown as a teacher on a computer, then as a student on a 425 pixel wide phone.</p>
+<p><b>What the activity is:</b> students assess something that happened in the room, such as a talk. There are no submissions and no phases. The teacher decides who reviews whom, watches the reviews arrive, releases the feedback when ready, and sends the grades to the gradebook.</p>
+<ol><li>Add the activity and set it up</li><li>Define the rubric</li><li>Decide who reviews whom</li><li>Students review on their phones</li><li>Follow progress in the report</li><li>Release feedback and send grades</li><li>What students and the gradebook show</li></ol></div>
+<section><h2>1. The activity in the course</h2><p>The teacher adds a <b>Peer review</b> activity to the course page like any other activity.</p>
+<figure><img src="img/s1.png"></figure>
+</section>
+<section><h2>2. Settings</h2><p><b>Peer review</b> section: how received reviews are combined (mean or median), whether reviewers are shown to reviewees (anonymous by default), optional self-review, optional open and close dates and up to five automatic reminders before the close date.</p>
+<div class="stack"><img src="img/s2a.png"></div><div class="stack"><img src="img/s2b.png"></div><p><b>Grade</b> section: the maximum grade (points or a scale), the grading method (Rubric, Marking guide or simple direct grading) and an optional participation grade for doing the reviews.</p>
+</section>
+<section><h2>3. The activity page (teacher)</h2><p>The teacher sees how many reviews are done, and the buttons <b>Report</b>, <b>Allocate reviewers</b> and <b>Release feedback</b>. Students cannot see the feedback they received until it is released.</p>
+<figure><img src="img/s3.png"></figure>
+</section>
+<section><h2>4. The rubric</h2><p>Under <b>Advanced grading</b> the teacher defines the rubric (or a marking guide) that reviewers will fill in. A rubric used before can be reused as a template.</p>
+<figure><img src="img/s4.png"></figure>
+</section>
+<section><h2>5. Allocate reviewers</h2><p>The <b>Allocate reviewers</b> page has a tab for each method: <b>Manual</b>, <b>Random</b>, <b>Within group</b>, <b>Rotation</b>, <b>Self-assessment</b> and <b>CSV</b>. <b>Current allocations</b> lists every pair; here 24 pairs exist (8 students × 3 reviews).</p>
+<figure><img src="img/s5.png"></figure>
+</section>
+<section><h2>6. Preview before saving</h2><p>Every automatic method shows a preview first. Here Random with 4 reviews per student would add 8 allocations and keep the 22 that already have a saved or submitted review. Nothing is saved until the teacher presses <b>Confirm and save</b>. (This preview was not confirmed.)</p>
+<figure><img src="img/s6.png"></figure>
+</section>
+<section><h2>7. Students review on their phones</h2><p>A student opens the activity and sees a card for every classmate they must review, with a progress bar. This student (Hana) has one review submitted, one draft and one not started. The review form shows the rubric, an <b>Overall comment</b> and the buttons <b>Save draft</b> and <b>Submit review</b>.</p>
+<div class="phones"><figure><img src="img/s7a.png"><figcaption>Reviews to do</figcaption></figure><figure><img src="img/s7b.png"><figcaption>The rubric review form (levels stack, remark box full width)</figcaption></figure></div>
+</section>
+<section><h2>8. The live report</h2><p>The report shows reviews given and received per student, the received grade and the participation share. It refreshes itself every 15 seconds. <b>Average by criterion</b> shows where the whole class was strong or weak. Gus (2 of 3 given) and Hana (1 of 3) still have reviews to do, which <b>Remind students with reviews to do</b> would nudge. The export offers CSV, Excel and other formats.</p>
+<figure><img src="img/s8.png"></figure>
+</section>
+<section><h2>9. One student in detail</h2><p>Clicking a student's name shows the reviews they received and gave, with the criterion scores and remarks. The teacher always sees who wrote what, even when reviewees see “Anonymous”. Here the teacher can also override the received grade with a note.</p>
+<figure><img src="img/s9.png"></figure>
+</section>
+<section><h2>10. Release the feedback and send grades</h2><p>When ready the teacher presses <b>Release feedback</b> (the button then reads <b>Hide feedback</b>, so it can be undone) and <b>Push grades to gradebook</b>. Moodle confirms with “Grades were sent to the gradebook.”</p>
+<figure><img src="img/s10.png"></figure>
+</section>
+<section><h2>11. What the student sees afterwards</h2><p>Under <b>Feedback I received</b> the student sees their grade and each review as “Anonymous” with a short comment. <b>View details</b> opens the rubric with the levels the reviewer chose highlighted, and the remarks.</p>
+<div class="phones"><figure><img src="img/s11a.png"><figcaption>Feedback I received</figcaption></figure><figure><img src="img/s11b.png"><figcaption>View details</figcaption></figure></div>
+</section>
+<section><h2>12. The gradebook</h2><p>The received grade and the participation grade appear in the grader report as two grade items of the course.</p>
+<figure><img src="img/s12.png"></figure>
+</section>
+</body></html>
