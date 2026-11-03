@@ -1,5 +1,9 @@
 name: Release Plugin version to Moodle Marketplace
 
+# The Marketplace keeps only the first 128 characters of the release notes, so the notes are not taken
+# from the GitHub release or the whole of CHANGES.md. They are the one line in CHANGES.md that starts with
+# "Marketplace summary: " (at most 128 characters). Add that line to CHANGES.md with every version.
+
 on:
   push:
     tags:
@@ -11,9 +15,37 @@ on:
         required: true
 
 jobs:
+  summary:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      notes: ${{ steps.read.outputs.notes }}
+    steps:
+      - name: Check out the tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+      - name: Read the Marketplace summary from CHANGES.md
+        id: read
+        run: |
+          LINE=$(grep -m1 '^Marketplace summary: ' CHANGES.md || true)
+          NOTES="${LINE#Marketplace summary: }"
+          if [[ -z "${LINE}" || -z "${NOTES}" ]]; then
+            echo "::error::CHANGES.md has no line starting 'Marketplace summary: '."
+            exit 1
+          fi
+          if (( ${#NOTES} > 128 )); then
+            echo "::error::The Marketplace summary is ${#NOTES} characters; the Marketplace keeps only 128."
+            exit 1
+          fi
+          echo "notes=${NOTES}" >> "$GITHUB_OUTPUT"
+
   release-to-marketplace:
+    needs: summary
     uses: moodlehq/moodle-plugin-release/.github/workflows/moodle-release.yml@4467fd51a0e7f4bcda665eb2f8fb00365d10a39d # main, revision 2026091801, reviewed 2026-10-17
     with:
       tag: ${{ inputs.tag }}
+      release_notes: ${{ needs.summary.outputs.notes }}
     secrets:
       MOODLE_MARKETPLACE_TOKEN: ${{ secrets.MOODLE_MARKETPLACE_TOKEN }}

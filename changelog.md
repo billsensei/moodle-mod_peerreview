@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Release. The Moodle Marketplace keeps only the first 128 characters of the release notes, so a long entry was shown cut off. `moodle-release.yml` now sends the one line of `CHANGES.md` that starts with `Marketplace summary: ` (at most 128 characters) and stops with an error if it is missing or too long. Add that line with every version.
+
 ## 0.20.0 (beta), 2026-10-20
 
 - **Moodle 4.5 is now supported** (4.5, 5.0, 5.1, 5.2 and 5.3): the minimum Moodle version is **4.5** (`$plugin->requires` 2024100700, `supported` 405 to 503). Before, the site refused to install the plugin below Moodle 5.0. No plugin code changed for it; CI now also runs on `MOODLE_405_STABLE`, and the unit tests were made readable for PHPUnit 9.6 (Moodle 4.5) as well as 10+/11 (see below). Tested with PHPUnit and Behat on Moodle 4.5.15 (on PHP 8.4, which Moodle 4.5 does not officially support; GitHub CI uses PHP 8.2 and 8.3). Not tried by hand on a 4.5 site.
